@@ -10,58 +10,8 @@ body {
   background-color: #09090b;
 }
 
-@keyframes blob-drift-1 {
-  0%,
-  100% {
-    transform: translate(0%, 0%) scale(1);
-  }
-  33% {
-    transform: translate(12%, -10%) scale(1.15);
-  }
-  66% {
-    transform: translate(-8%, 8%) scale(0.9);
-  }
-}
-
-@keyframes blob-drift-2 {
-  0%,
-  100% {
-    transform: translate(0%, 0%) scale(1);
-  }
-  33% {
-    transform: translate(-14%, 10%) scale(0.9);
-  }
-  66% {
-    transform: translate(10%, -12%) scale(1.1);
-  }
-}
-
-@keyframes blob-drift-3 {
-  0%,
-  100% {
-    transform: translate(0%, 0%) scale(1);
-  }
-  50% {
-    transform: translate(-10%, -14%) scale(1.2);
-  }
-}
-
-.animate-blob-1 {
-  animation: blob-drift-1 22s ease-in-out infinite;
-}
-
-.animate-blob-2 {
-  animation: blob-drift-2 26s ease-in-out infinite;
-}
-
-.animate-blob-3 {
-  animation: blob-drift-3 30s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .animate-blob-1,
-  .animate-blob-2,
-  .animate-blob-3 {
-    animation: none;
+  .flow-rect {
+    filter: none !important;
   }
 }
