@@ -24,11 +24,10 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
-              Finde dein Duo, deine Crew oder deine Squad (2er, 4er, 8er).
+              Finde dein Duo, deine Crew oder deine Squad.
               <br />
-              100&nbsp;% kostenlos und exklusiv für die Tamil-Community im
-              deutschsprachigen Raum. Sobald 100 Personen auf der Warteliste
-              stehen, wird deine Region freigeschaltet.
+              100&nbsp;% kostenlos &amp; exklusiv für die Tamil-Community in
+              DACH.
             </p>
 
             <WaitlistForm />

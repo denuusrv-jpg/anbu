@@ -8,31 +8,64 @@ import {
   useSpring,
   useTransform,
 } from "motion/react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const items = [
-  { title: "Funktionen", href: "#funktionen" },
-  { title: "Mission", href: "/mission" },
+  { title: "Erfahre mehr", href: "#funktionen" },
+  { title: "Unsere Mission", href: "/mission" },
   { title: "Kontakt", href: "/kontakt" },
 ];
 
+const boxClassName =
+  "flex items-center justify-center whitespace-nowrap rounded-xl bg-zinc-800/80 px-3 text-[10px] font-semibold tracking-wide text-zinc-200 uppercase transition-colors hover:text-white";
+
 export default function Navbar() {
+  const [isDesktop, setIsDesktop] = useState(false);
   const mouseX = useMotionValue(Infinity);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px) and (pointer: fine)");
+    setIsDesktop(mq.matches);
+    const listener = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", listener);
+    return () => mq.removeEventListener("change", listener);
+  }, []);
 
   return (
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className="mx-auto flex w-fit items-end gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2 shadow-lg shadow-black/30 backdrop-blur-md"
+      className="mx-auto flex w-fit flex-wrap items-end justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-2 py-2 shadow-lg shadow-black/30 backdrop-blur-md sm:gap-3 sm:px-3"
     >
-      {items.map((item) => (
-        <NavBox key={item.title} mouseX={mouseX} {...item} />
-      ))}
+      {items.map((item) =>
+        isDesktop ? (
+          <NavBoxDesktop key={item.title} mouseX={mouseX} {...item} />
+        ) : (
+          <NavBoxStatic key={item.title} {...item} />
+        ),
+      )}
     </motion.div>
   );
 }
 
-function NavBox({
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const isAnchor = href.startsWith("#");
+  return isAnchor ? (
+    <a href={href}>{children}</a>
+  ) : (
+    <Link href={href}>{children}</Link>
+  );
+}
+
+function NavBoxStatic({ title, href }: { title: string; href: string }) {
+  return (
+    <NavLink href={href}>
+      <div className={`${boxClassName} h-9 py-2`}>{title}</div>
+    </NavLink>
+  );
+}
+
+function NavBoxDesktop({
   mouseX,
   title,
   href,
@@ -48,7 +81,12 @@ function NavBox({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const widthTransform = useTransform(distance, [-150, 0, 150], [84, 116, 84]);
+  const minWidth = Math.max(76, title.length * 7 + 24);
+  const widthTransform = useTransform(
+    distance,
+    [-150, 0, 150],
+    [minWidth, minWidth + 30, minWidth],
+  );
   const heightTransform = useTransform(distance, [-150, 0, 150], [34, 46, 34]);
 
   const width = useSpring(widthTransform, {
@@ -62,21 +100,11 @@ function NavBox({
     damping: 12,
   });
 
-  const isAnchor = href.startsWith("#");
-
-  const box = (
-    <motion.div
-      ref={ref}
-      style={{ width, height }}
-      className="flex items-center justify-center rounded-xl bg-zinc-800/80 px-2 text-xs font-medium text-zinc-200 transition-colors hover:text-white"
-    >
-      {title}
-    </motion.div>
-  );
-
-  return isAnchor ? (
-    <a href={href}>{box}</a>
-  ) : (
-    <Link href={href}>{box}</Link>
+  return (
+    <NavLink href={href}>
+      <motion.div ref={ref} style={{ width, height }} className={boxClassName}>
+        {title}
+      </motion.div>
+    </NavLink>
   );
 }

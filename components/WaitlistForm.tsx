@@ -12,7 +12,7 @@ export default function WaitlistForm() {
           type="email"
           required
           placeholder="deine@mail.com"
-          className="w-full rounded-full border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-sm text-white placeholder:text-white/70 focus:border-gold focus:outline-none"
+          className="w-full rounded-full border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-center text-sm text-white placeholder:text-white/70 focus:border-gold focus:outline-none"
         />
         <button
           type="submit"
@@ -22,7 +22,7 @@ export default function WaitlistForm() {
         </button>
       </form>
       <p className="mt-3 text-xs text-white">
-        Kein Spam. Wir melden uns nur, wenn's losgeht.
+        Kein Spam. Ab 100 Anmeldungen startet deine Region.
       </p>
     </>
   );
