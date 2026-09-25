@@ -1,6 +1,7 @@
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
+import HubsAndCrews from "@/components/HubsAndCrews";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
 import Link from "next/link";
@@ -46,6 +47,8 @@ export default function Home() {
           </section>
         </div>
       </div>
+
+      <HubsAndCrews />
 
       {/* Funktionen */}
       <section id="funktionen" className="mx-auto max-w-5xl px-6 py-20 sm:px-8">

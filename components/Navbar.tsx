@@ -11,7 +11,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 const items = [
-  { title: "Erfahre mehr", href: "#funktionen" },
+  { title: "Erfahre mehr", href: "#erfahre-mehr" },
   { title: "Unsere Mission", href: "/mission" },
   { title: "Kontakt", href: "/kontakt" },
 ];
