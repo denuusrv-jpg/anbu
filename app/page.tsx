@@ -10,51 +10,35 @@ export default function Home() {
       <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
         <FlowingWaveBackground />
 
-        <div className="mx-auto w-full max-w-5xl px-6 pt-6 sm:px-8">
-          <Navbar />
-        </div>
-
         {/* Hero — takes the full first screen */}
-        <section className="relative mx-auto flex max-w-2xl flex-1 flex-col justify-center px-6 py-16 text-center sm:px-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-4 py-1.5 text-xs text-zinc-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-            Startet bald in der Schweiz, Deutschland &amp; Österreich
-          </span>
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
+          <div className="pt-8">
+            <Navbar />
+          </div>
 
-          <h1 className="mt-6 text-4xl font-bold tracking-tight text-zinc-50 sm:text-6xl">
-            Deine neue Crew
-            <br />
-            wartet in deiner Stadt.
-          </h1>
+          <section className="relative mx-auto flex max-w-2xl flex-1 flex-col justify-center py-16 text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-6xl">
+              Deine neue Crew
+              <br />
+              wartet in deiner Umgebung.
+            </h1>
 
-          <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-zinc-400 sm:text-lg">
-            DSpora bringt junge Sri-Lanka-Tamil:innen in der Schweiz,
-            Deutschland und Österreich in kleinen 4er-Crews zusammen — mit
-            gleichen Interessen, ganz in deiner Nähe. Kein Dating, kein Druck.
-          </p>
+            <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
+              DSpora bringt junge Sri-Lanka-Tamil:innen in der Schweiz,
+              Deutschland und Österreich in kleinen 4er-Crews zusammen — mit
+              gleichen Interessen, ganz in deiner Nähe. Kein Dating, kein
+              Druck.
+            </p>
 
-          <WaitlistForm />
-        </section>
+            <WaitlistForm />
+          </section>
+        </div>
       </div>
 
-      {/* Mission */}
-      <section id="mission" className="mx-auto max-w-3xl px-6 py-20 text-center sm:px-8 sm:py-28">
-        <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
-          Unsere Mission
-        </h2>
-        <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-          Für viele junge Sri-Lanka-Tamil:innen in DACH ist es schwer, abseits
-          von Familie und Community neue, echte Freundschaften zu finden.
-          DSpora schafft dafür einen diskreten, sicheren Ort — ganz ohne
-          Stigma-Druck, ohne Druck zu daten, einfach um Menschen mit
-          ähnlichen Interessen in der eigenen Region kennenzulernen.
-        </p>
-      </section>
-
-      {/* So funktioniert's */}
-      <section className="mx-auto max-w-5xl px-6 py-20 sm:px-8">
+      {/* Funktionen */}
+      <section id="funktionen" className="mx-auto max-w-5xl px-6 py-20 sm:px-8">
         <h2 className="text-center text-2xl font-semibold text-zinc-50 sm:text-3xl">
-          So funktioniert's
+          Funktionen
         </h2>
 
         <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -95,22 +79,6 @@ export default function Home() {
             </p>
           </div>
         </div>
-      </section>
-
-      {/* Kontakt */}
-      <section id="kontakt" className="mx-auto max-w-2xl px-6 py-20 text-center sm:px-8">
-        <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
-          Kontakt
-        </h2>
-        <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-zinc-400">
-          Fragen, Feedback oder Presseanfragen? Schreib uns einfach.
-        </p>
-        <a
-          href="mailto:hallo@dspora.app"
-          className="mt-6 inline-block rounded-full border border-zinc-800 bg-zinc-900/60 px-6 py-3 text-sm font-semibold text-zinc-100 transition hover:border-gold/50 hover:text-gold"
-        >
-          hallo@dspora.app
-        </a>
       </section>
 
       {/* Footer */}
