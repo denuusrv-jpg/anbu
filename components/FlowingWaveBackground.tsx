@@ -36,41 +36,43 @@ const fragmentShader = /* glsl */ `
 
   float fbm(vec2 p) {
     float value = 0.0;
-    float amplitude = 0.55;
-    for (int i = 0; i < 5; i++) {
+    float amplitude = 0.65;
+    for (int i = 0; i < 3; i++) {
       value += amplitude * noise(p);
-      p *= 2.02;
-      amplitude *= 0.55;
+      p *= 1.8;
+      amplitude *= 0.5;
     }
     return value;
   }
 
   void main() {
-    vec3 colorA = vec3(0.051, 0.039, 0.031);
-    vec3 colorB = vec3(0.639, 0.404, 0.173);
-    vec3 colorC = vec3(0.122, 0.294, 0.275);
+    vec3 colorA = vec3(0.031, 0.024, 0.016);
+    vec3 colorB = vec3(0.949, 0.651, 0.353);
+    vec3 colorC = vec3(0.910, 0.365, 0.459);
+    vec3 colorD = vec3(0.310, 0.820, 0.773);
 
     vec2 uv = vUv;
     uv.x *= uResolution.x / uResolution.y;
 
-    float angle = 0.6;
+    float angle = 0.5;
     mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
     vec2 ruv = rot * uv;
 
-    float t = uTime * 0.025;
-    vec2 flow = vec2(t, t * 0.6);
+    float t = uTime * 0.02;
+    vec2 flow = vec2(t, t * 0.5);
 
-    float h = fbm(ruv * 1.8 + flow);
+    float h = fbm(ruv * 0.9 + flow);
 
-    float eps = 0.015;
-    float hx = fbm(ruv * 1.8 + vec2(eps, 0.0) + flow);
-    float hy = fbm(ruv * 1.8 + vec2(0.0, eps) + flow);
+    float eps = 0.03;
+    float hx = fbm(ruv * 0.9 + vec2(eps, 0.0) + flow);
+    float hy = fbm(ruv * 0.9 + vec2(0.0, eps) + flow);
     vec2 grad = vec2(hx - h, hy - h) / eps;
-    float light = clamp(dot(normalize(vec3(-grad * 0.5, 1.0)), normalize(vec3(0.4, 0.6, 0.7))), -1.0, 1.0);
-    light = light * 0.4 + 0.6;
+    float light = clamp(dot(normalize(vec3(-grad * 0.3, 1.0)), normalize(vec3(0.3, 0.5, 0.8))), -1.0, 1.0);
+    light = light * 0.2 + 0.85;
 
-    vec3 base = mix(colorA, colorB, smoothstep(0.15, 0.55, h));
-    base = mix(base, colorC, smoothstep(0.45, 0.85, h));
+    vec3 base = mix(colorA, colorB, smoothstep(0.05, 0.55, h));
+    base = mix(base, colorC, smoothstep(0.45, 0.8, h));
+    base = mix(base, colorD, smoothstep(0.7, 1.05, h));
     vec3 color = base * light;
 
     gl_FragColor = vec4(color, 1.0);
