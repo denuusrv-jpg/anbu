@@ -11,8 +11,8 @@ export default function WaitlistForm() {
         <input
           type="email"
           required
-          placeholder="deine@email.com"
-          className="w-full rounded-full border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-gold focus:outline-none"
+          placeholder="deine@mail.com"
+          className="w-full rounded-full border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-sm text-white placeholder:text-white/70 focus:border-gold focus:outline-none"
         />
         <button
           type="submit"
@@ -21,7 +21,7 @@ export default function WaitlistForm() {
           Auf die Warteliste
         </button>
       </form>
-      <p className="mt-3 text-xs text-zinc-600">
+      <p className="mt-3 text-xs text-white">
         Kein Spam. Wir melden uns nur, wenn's losgeht.
       </p>
     </>

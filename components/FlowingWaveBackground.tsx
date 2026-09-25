@@ -46,9 +46,10 @@ const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    vec3 colorA = vec3(0.024, 0.02, 0.016);
-    vec3 colorB = vec3(0.949, 0.702, 0.153);
-    vec3 colorC = vec3(0.878, 0.216, 0.322);
+    vec3 colorA = vec3(0.420, 0.118, 0.455);
+    vec3 colorB = vec3(0.882, 0.114, 0.247);
+    vec3 colorC = vec3(0.949, 0.439, 0.102);
+    vec3 colorD = vec3(0.961, 0.773, 0.094);
 
     vec2 uv = vUv;
     uv.x *= uResolution.x / uResolution.y;
@@ -69,8 +70,9 @@ const fragmentShader = /* glsl */ `
     float light = clamp(dot(normalize(vec3(-grad * 0.3, 1.0)), normalize(vec3(0.3, 0.5, 0.8))), -1.0, 1.0);
     light = light * 0.2 + 0.85;
 
-    vec3 base = mix(colorA, colorB, smoothstep(0.05, 0.55, h));
-    base = mix(base, colorC, smoothstep(0.5, 0.95, h));
+    vec3 base = mix(colorA, colorB, smoothstep(0.0, 0.4, h));
+    base = mix(base, colorC, smoothstep(0.35, 0.7, h));
+    base = mix(base, colorD, smoothstep(0.65, 1.0, h));
     vec3 color = base * light;
 
     gl_FragColor = vec4(color, 1.0);

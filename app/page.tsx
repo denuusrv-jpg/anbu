@@ -12,22 +12,23 @@ export default function Home() {
 
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
-          <div className="pt-8">
-            <Navbar />
-          </div>
-
           <section className="relative mx-auto flex max-w-2xl flex-1 flex-col justify-center py-16 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-zinc-50 sm:text-6xl">
-              Deine neue Crew
+            <div className="mb-6">
+              <Navbar />
+            </div>
+
+            <h1 className="text-4xl font-bold tracking-tight text-black sm:text-6xl">
+              Deine neue Crew wartet
               <br />
-              wartet in deiner Umgebung.
+              in deiner Umgebung.
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
-              DSpora bringt junge Sri-Lanka-Tamil:innen in der Schweiz,
-              Deutschland und Österreich in kleinen 4er-Crews zusammen — mit
-              gleichen Interessen, ganz in deiner Nähe. Kein Dating, kein
-              Druck.
+              Finde dein Duo, deine Crew oder deine Squad (2er, 4er, 8er).
+              <br />
+              100&nbsp;% kostenlos und exklusiv für die Tamil-Community im
+              deutschsprachigen Raum. Sobald 100 Personen auf der Warteliste
+              stehen, wird deine Region freigeschaltet.
             </p>
 
             <WaitlistForm />
