@@ -14,7 +14,7 @@ export default function Home() {
 
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
-          <section className="relative mx-auto flex max-w-2xl flex-1 flex-col justify-center py-16 text-center">
+          <section className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-16 text-center">
             <div className="mb-6 flex justify-center">
               <Image
                 src="/logo.png"
@@ -30,7 +30,7 @@ export default function Home() {
               <Navbar />
             </div>
 
-            <h1 className="text-4xl font-bold tracking-tight text-black sm:text-6xl">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black">
               Deine neuen Connection
               <br />
               warten in deiner Umgebung
