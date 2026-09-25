@@ -11,10 +11,10 @@ export default function Home() {
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6 sm:px-8">
         <div className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold text-sm font-bold text-zinc-950">
-            A
+            D
           </span>
           <span className="text-lg font-semibold tracking-tight text-zinc-50">
-            Anbu
+            DSpora
           </span>
         </div>
         <span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400">
@@ -30,7 +30,7 @@ export default function Home() {
           Oder deine Crew.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-          Anbu ist die diskrete Plattform für junge Sri-Lanka-Tamil:innen in
+          DSpora ist die diskrete Plattform für junge Sri-Lanka-Tamil:innen in
           der Schweiz, Deutschland und Österreich — zum Verlieben oder um
           echte Freundschaften in kleinen Gruppen zu schliessen. Ganz ohne
           Stigma-Druck.
@@ -75,7 +75,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="mx-auto mt-20 max-w-5xl px-6 py-10 text-center sm:px-8">
         <p className="text-sm text-zinc-600">
-          Anbu &middot; gebaut mit ♥ für die tamilische Diaspora im
+          DSpora &middot; gebaut mit ♥ für die tamilische Diaspora im
           DACH-Raum
         </p>
       </footer>

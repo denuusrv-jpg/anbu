@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Anbu — Dating & Freunde für Sri-Lanka-Tamil:innen in DACH",
+  title: "DSpora — Dating & Freunde für Sri-Lanka-Tamil:innen in DACH",
   description:
     "Die diskrete Plattform für junge Sri-Lanka-Tamil:innen in DACH: Blind-Dating mit KI-Vibe-Check oder neue Freundschaften in lokalen 4er-Crews.",
 };
