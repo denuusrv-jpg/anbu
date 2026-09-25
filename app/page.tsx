@@ -2,6 +2,7 @@ import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
@@ -13,6 +14,17 @@ export default function Home() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section className="relative mx-auto flex max-w-2xl flex-1 flex-col justify-center py-16 text-center">
+            <div className="mb-6 flex justify-center">
+              <Image
+                src="/logo.png"
+                alt="DSpora Community"
+                width={1548}
+                height={403}
+                priority
+                className="h-9 w-auto sm:h-11"
+              />
+            </div>
+
             <div className="mb-12">
               <Navbar />
             </div>
