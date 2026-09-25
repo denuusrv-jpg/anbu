@@ -30,9 +30,9 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-black sm:text-6xl">
-              Deine neuen Connection warten
+              Deine neuen Connection
               <br />
-              in deiner Umgebung.
+              warten in deiner Umgebung
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
