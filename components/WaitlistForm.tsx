@@ -21,7 +21,7 @@ export default function WaitlistForm() {
           Auf die Warteliste
         </button>
       </form>
-      <p className="mt-3 text-xs text-white">
+      <p className="mt-3 text-xs text-zinc-400">
         Kein Spam. Ab 100 Anmeldungen startet deine Region.
       </p>
     </>
