@@ -1,4 +1,4 @@
-import AnimatedBackground from "@/components/AnimatedBackground";
+import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-950">
       <div className="relative isolate overflow-hidden">
-        <AnimatedBackground />
+        <FlowingWaveBackground />
 
         <div className="mx-auto max-w-5xl px-6 pt-6 sm:px-8">
           <Navbar />

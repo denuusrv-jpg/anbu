@@ -9,9 +9,3 @@ html {
 body {
   background-color: #09090b;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .flow-rect {
-    filter: none !important;
-  }
-}
