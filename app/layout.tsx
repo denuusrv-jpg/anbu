@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DSpora — Dating & Freunde für Sri-Lanka-Tamil:innen in DACH",
+  title: "DSpora — Finde deine Crew in DACH",
   description:
-    "Die diskrete Plattform für junge Sri-Lanka-Tamil:innen in DACH: Blind-Dating mit KI-Vibe-Check oder neue Freundschaften in lokalen 4er-Crews.",
+    "DSpora bringt junge Sri-Lanka-Tamil:innen in der Schweiz, Deutschland und Österreich in kleinen, diskreten 4er-Crews zusammen.",
 };
 
 export default function RootLayout({
