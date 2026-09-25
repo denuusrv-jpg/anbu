@@ -1,10 +1,12 @@
 const hubs = [
   "Hub NRW (Ruhrgebiet & Rheinland)",
-  "Hub Rhein-Main (Frankfurt & Umgebung)",
+  "Hub Rhein-Main (Frankfurt & Hessen)",
   "Hub Baden-Württemberg (Stuttgart & Südwesten)",
-  "Hub Alpen-Süd (Bayern & Allgäu)",
+  "Hub Bayern & Allgäu (München & Allgäu)",
+  "Hub Hauptstadt & Ost (Berlin & Ostdeutschland)",
+  "Hub Hamburg & Nord (Hamburg & Norddeutschland)",
   "Hub Schweiz (Zürich & Ostschweiz)",
-  "Hub Hauptstadt & Nord (Berlin & Hamburg)",
+  "Hub Österreich (Wien & Österreich)",
 ];
 
 const groupSizes = [
@@ -61,14 +63,14 @@ export default function HubsAndCrews() {
           </h2>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {hubs.map((hub) => (
             <div
               key={hub}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"
+              className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"
             >
               <span className="text-sm font-medium text-zinc-100">{hub}</span>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-teal">
+              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-teal">
                 <span className="h-1.5 w-1.5 rounded-full bg-teal" />
                 Warteliste aktiv
               </span>
@@ -81,10 +83,21 @@ export default function HubsAndCrews() {
           erreicht sind, schaltet sich das Hub frei.
         </p>
 
+        <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center backdrop-blur-xl">
+          <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
+            <span className="font-medium text-zinc-100">
+              Deine Region ist nicht dabei?
+            </span>{" "}
+            Kein Problem: Sobald sich an einem neuen Standort genug
+            Anmeldungen bündeln, schalten wir flexibel einen zusätzlichen Hub
+            frei.
+          </p>
+        </div>
+
         {/* Teil 2: Gruppengrößen */}
         <div className="mt-24 text-center">
           <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
-            Deine Crew, dein Vibe (2er, 4er, 8er)
+            Deine Crew, dein Vibe (2er Duo, 4er Crew, 8er Squad)
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
             Kein starrer Zwang – wähle die Gruppengröße, die zu deinem
