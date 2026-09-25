@@ -1,11 +1,10 @@
 const hubs = [
-  "Hub NRW (Nordrhein-Westfalen)",
-  "Hub Rhein-Main (Frankfurt & Hessen)",
-  "Hub Baden-Württemberg",
-  "Hub Bayern",
-  "Hub Nord / Ost (Berlin & Hamburg)",
-  "Hub Zürich & Ostschweiz",
-  "Hub Wien & Österreich",
+  "Hub NRW (Ruhrgebiet & Rheinland)",
+  "Hub Rhein-Main (Frankfurt & Umgebung)",
+  "Hub Baden-Württemberg (Stuttgart & Südwesten)",
+  "Hub Alpen-Süd (Bayern & Allgäu)",
+  "Hub Schweiz (Zürich & Ostschweiz)",
+  "Hub Hauptstadt & Nord (Berlin & Hamburg)",
 ];
 
 const groupSizes = [
@@ -60,11 +59,6 @@ export default function HubsAndCrews() {
           <h2 className="mt-5 text-2xl font-semibold text-zinc-50 sm:text-3xl">
             Regionale Hubs &amp; der Startschuss
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Um Ghost-Towns zu vermeiden und echte Nähe zu garantieren,
-            schaltet sich eine Region erst frei, sobald 100 Anmeldungen
-            erreicht sind.
-          </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,6 +75,11 @@ export default function HubsAndCrews() {
             </div>
           ))}
         </div>
+
+        <p className="mx-auto mt-6 max-w-2xl text-center text-sm leading-relaxed text-zinc-400 sm:text-base">
+          Sobald in einer dieser Regionen 100 Anmeldungen im Einzugsgebiet
+          erreicht sind, schaltet sich das Hub frei.
+        </p>
 
         {/* Teil 2: Gruppengrößen */}
         <div className="mt-24 text-center">
