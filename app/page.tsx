@@ -19,9 +19,9 @@ export default function Home() {
                 src="/logo.png"
                 alt="DSpora Community"
                 width={1548}
-                height={403}
+                height={454}
                 priority
-                className="h-9 w-auto sm:h-11"
+                className="h-12 w-auto sm:h-16"
               />
             </div>
 
@@ -30,7 +30,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-black sm:text-6xl">
-              Deine neue Crew wartet
+              Deine neuen Connection warten
               <br />
               in deiner Umgebung.
             </h1>

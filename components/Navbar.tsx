@@ -17,7 +17,7 @@ const items = [
 ];
 
 const boxClassName =
-  "flex items-center justify-center whitespace-nowrap rounded-xl bg-zinc-800/80 px-3 text-[10px] font-semibold tracking-wide text-zinc-200 uppercase transition-colors hover:text-white";
+  "flex items-center justify-center whitespace-nowrap rounded-xl bg-zinc-800/80 px-4 text-xs font-semibold tracking-wide text-zinc-200 uppercase transition-colors hover:text-white";
 
 export default function Navbar() {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -35,7 +35,7 @@ export default function Navbar() {
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className="mx-auto flex w-fit flex-wrap items-end justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-2 py-2 shadow-lg shadow-black/30 backdrop-blur-md sm:gap-3 sm:px-3"
+      className="mx-auto flex w-fit flex-wrap items-end justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2.5 shadow-lg shadow-black/30 backdrop-blur-md sm:gap-4 sm:px-4"
     >
       {items.map((item) =>
         isDesktop ? (
@@ -60,7 +60,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 function NavBoxStatic({ title, href }: { title: string; href: string }) {
   return (
     <NavLink href={href}>
-      <div className={`${boxClassName} h-9 py-2`}>{title}</div>
+      <div className={`${boxClassName} h-11 py-2`}>{title}</div>
     </NavLink>
   );
 }
@@ -81,13 +81,13 @@ function NavBoxDesktop({
     return val - bounds.x - bounds.width / 2;
   });
 
-  const minWidth = Math.max(76, title.length * 7 + 24);
+  const minWidth = Math.max(96, title.length * 8.5 + 32);
   const widthTransform = useTransform(
     distance,
     [-150, 0, 150],
-    [minWidth, minWidth + 30, minWidth],
+    [minWidth, minWidth + 36, minWidth],
   );
-  const heightTransform = useTransform(distance, [-150, 0, 150], [34, 46, 34]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [40, 54, 40]);
 
   const width = useSpring(widthTransform, {
     mass: 0.1,
