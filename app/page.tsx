@@ -65,11 +65,11 @@ export default function Home() {
                 <UsersIcon />
               </div>
               <h3 className="mt-4 font-semibold text-zinc-50">
-                4er-Crews in deiner Region
+                Connections in deiner Region
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                Die KI clustert dich mit drei Leuten aus deiner Nähe, die
-                ähnliche Interessen haben — z.B. Sport, Gaming oder Kultur.
+                Die KI vernetzt dich mit Leuten aus deiner Nähe, die ähnliche
+                Interessen haben — z.B. Sport, Gaming oder Kultur.
               </p>
             </div>
 
@@ -77,10 +77,12 @@ export default function Home() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
                 <ShieldIcon />
               </div>
-              <h3 className="mt-4 font-semibold text-zinc-50">100% diskret</h3>
+              <h3 className="mt-4 font-semibold text-zinc-50">
+                100% gratis und diskret
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-400">
                 Kein Foto, keine Handynummer nötig — ihr chattet sicher direkt
-                in der App, ganz ohne Stigma-Druck.
+                in der Webseite, ganz ohne Stigma-Druck.
               </p>
             </div>
 
@@ -92,8 +94,8 @@ export default function Home() {
                 Echte Treffen statt Chatten
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                Von der App direkt zum gemeinsamen Treffen — Freundschaften
-                vor Ort statt endlosem Hin-und-her-Schreiben.
+                Von der Webseite direkt zum gemeinsamen Treffen —
+                Freundschaften vor Ort statt endlosem Hin-und-her-Schreiben.
               </p>
             </div>
           </div>
