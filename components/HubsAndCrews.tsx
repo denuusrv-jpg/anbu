@@ -1,5 +1,5 @@
-import Image from "next/image";
 import HubCard from "@/components/HubCard";
+import GroupSizeCard from "@/components/GroupSizeCard";
 
 const hubs = [
   "Hub NRW (Ruhrgebiet & Rheinland)",
@@ -91,24 +91,7 @@ export default function HubsAndCrews() {
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
           {groupSizes.map((group) => (
-            <div
-              key={group.title}
-              className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl"
-            >
-              <Image
-                src={group.image}
-                alt={group.title}
-                width={group.width}
-                height={group.height}
-                className="w-full h-auto"
-              />
-              <span className="relative -mt-4 inline-flex w-fit items-center rounded-full border border-gold/20 bg-zinc-950/80 px-3 py-1 text-[11px] font-medium tracking-wide text-gold shadow-[0_0_16px_-4px_rgba(242,166,90,0.6)]">
-                {group.size}
-              </span>
-              <p className="px-6 pt-3 pb-6 text-sm leading-relaxed text-zinc-400">
-                {group.description}
-              </p>
-            </div>
+            <GroupSizeCard key={group.title} group={group} />
           ))}
         </div>
       </div>
