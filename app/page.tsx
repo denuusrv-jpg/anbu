@@ -2,6 +2,7 @@ import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
 import HubsAndCrews from "@/components/HubsAndCrews";
+import AiMatchingCard from "@/components/AiMatchingCard";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,7 +57,11 @@ export default function Home() {
           Funktionen
         </h2>
 
-        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
+        <div className="mt-12">
+          <AiMatchingCard />
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div className="text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal">
               <UsersIcon />
