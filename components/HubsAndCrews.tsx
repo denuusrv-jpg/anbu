@@ -69,12 +69,7 @@ export default function HubsAndCrews() {
           ))}
         </div>
 
-        <p className="mx-auto mt-6 max-w-2xl text-center text-sm leading-relaxed text-zinc-400 sm:text-base">
-          Ab 100 Anmeldungen pro Region öffnet sich das Hub-Feld. Wir
-          benachrichtigen dich per E-Mail und dann kannst du starten.
-        </p>
-
-        <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl">
+        <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl">
           <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
             Sobald sich 100 Personen in einer Region eintragen, öffnet sich
             das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link
