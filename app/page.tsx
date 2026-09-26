@@ -38,10 +38,10 @@ export default function Home() {
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
-              Finde dein Duo, deine Crew oder deine Squad.
-              <br />
-              100&nbsp;% kostenlos &amp; exklusiv für die Tamil-Community in
-              DACH.
+              Echte Freundschaften, neu gedacht. Ein intelligentes KI-System
+              bildet passgenaue Gruppen, anhand von Informationen deiner
+              Persönlichkeit. 100&nbsp;% kostenlos &amp; für die
+              Tamil-Community im deutschsprachigen Raum.
             </p>
 
             <WaitlistForm />
