@@ -1,5 +1,6 @@
 import HubCard from "@/components/HubCard";
 import GroupSizeCard from "@/components/GroupSizeCard";
+import ShareLinkBadge from "@/components/ShareLinkBadge";
 
 const hubs = [
   "Hub NRW (Ruhrgebiet & Rheinland)",
@@ -54,10 +55,7 @@ export default function HubsAndCrews() {
       <div className="mx-auto max-w-5xl">
         {/* Teil 1: Hubs */}
         <div className="text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal" />
-            Der Fahrplan
-          </span>
+          <ShareLinkBadge />
           <h2 className="mt-5 text-2xl font-semibold text-zinc-50 sm:text-3xl">
             Regionale Hubs &amp; der Startschuss
           </h2>
