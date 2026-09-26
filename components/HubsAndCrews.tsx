@@ -18,7 +18,7 @@ const groupSizes = [
     width: 500,
     height: 565,
     description:
-      "Perfekt für entspannte 1-on-1 Coffee-Dates und lockeren Austausch.",
+      "Ideal für sportliche Workouts, Joggen oder den ruhigen Austausch beim Kaffee.",
   },
   {
     title: "Crew",
@@ -26,7 +26,7 @@ const groupSizes = [
     width: 500,
     height: 565,
     description:
-      "Der Sweet Spot für ein gemeinsames Dinner, Bar-Abende oder Café-Treffen.",
+      "Ideal für gemeinsame Spieleabende, Unternehmungen oder tolle Veranstaltungen.",
   },
   {
     title: "Squad",
@@ -34,7 +34,7 @@ const groupSizes = [
     width: 500,
     height: 565,
     description:
-      "Für größere Events, Sommerfeste, Public Viewing oder Party-Runden.",
+      "Ideal für lebendige Events, gemeinsame Ausflüge oder aktive Tanzgruppen.",
   },
 ];
 
@@ -93,7 +93,7 @@ export default function HubsAndCrews() {
         {/* Teil 2: Gruppengrößen */}
         <div className="mt-24 text-center">
           <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
-            Deine Crew, dein Vibe (2er Duo, 4er Crew, 8er Squad)
+            Gemeinschaft nach Maß
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
             Kein starrer Zwang – wähle die Gruppengröße, die zu deinem
