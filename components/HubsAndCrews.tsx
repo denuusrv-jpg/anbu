@@ -15,7 +15,7 @@ const groupSizes = [
   {
     title: "Duo",
     image: "/duo.jpg",
-    width: 480,
+    width: 500,
     height: 565,
     description:
       "Perfekt für entspannte 1-on-1 Coffee-Dates und lockeren Austausch.",
@@ -23,7 +23,7 @@ const groupSizes = [
   {
     title: "Crew",
     image: "/crew.jpg",
-    width: 508,
+    width: 500,
     height: 565,
     description:
       "Der Sweet Spot für ein gemeinsames Dinner, Bar-Abende oder Café-Treffen.",
@@ -31,7 +31,7 @@ const groupSizes = [
   {
     title: "Squad",
     image: "/squad.jpg",
-    width: 548,
+    width: 500,
     height: 565,
     description:
       "Für größere Events, Sommerfeste, Public Viewing oder Party-Runden.",
@@ -114,7 +114,7 @@ export default function HubsAndCrews() {
                 height={group.height}
                 className="w-full h-auto"
               />
-              <p className="px-6 pb-6 text-sm leading-relaxed text-zinc-400">
+              <p className="px-6 pt-4 pb-6 text-sm leading-relaxed text-zinc-400">
                 {group.description}
               </p>
             </div>
