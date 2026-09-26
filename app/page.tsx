@@ -52,14 +52,11 @@ export default function Home() {
       <HubsAndCrews />
 
       {/* Funktionen */}
-      <section id="funktionen" className="mx-auto max-w-5xl px-6 py-20 sm:px-8">
-        <h2 className="text-center text-2xl font-semibold text-zinc-50 sm:text-3xl">
-          Funktionen
-        </h2>
-
-        <div className="mt-12">
-          <AiMatchingCard />
-        </div>
+      <section
+        id="funktionen"
+        className="mx-auto max-w-5xl px-6 pt-8 pb-20 sm:px-8 sm:pt-10 sm:pb-28"
+      >
+        <AiMatchingCard />
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div className="text-center">

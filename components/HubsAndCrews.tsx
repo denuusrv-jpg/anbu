@@ -46,7 +46,7 @@ export default function HubsAndCrews() {
   return (
     <section
       id="erfahre-mehr"
-      className="relative overflow-hidden bg-zinc-950 px-6 py-20 sm:px-8 sm:py-28"
+      className="relative overflow-hidden bg-zinc-950 px-6 pt-20 pb-8 sm:px-8 sm:pt-28 sm:pb-10"
     >
       {/* Sanfter Übergang vom Hero-Farbverlauf */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(242,166,90,0.08),transparent)]" />
