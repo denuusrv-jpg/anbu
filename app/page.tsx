@@ -54,46 +54,48 @@ export default function Home() {
       {/* Funktionen */}
       <section
         id="funktionen"
-        className="mx-auto max-w-5xl px-6 pt-8 pb-20 sm:px-8 sm:pt-10 sm:pb-28"
+        className="px-6 pt-8 pb-20 sm:px-8 sm:pt-10 sm:pb-28"
       >
-        <AiMatchingCard />
+        <div className="mx-auto max-w-5xl">
+          <AiMatchingCard />
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal">
-              <UsersIcon />
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal">
+                <UsersIcon />
+              </div>
+              <h3 className="mt-4 font-semibold text-zinc-50">
+                4er-Crews in deiner Region
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                Die KI clustert dich mit drei Leuten aus deiner Nähe, die
+                ähnliche Interessen haben — z.B. Sport, Gaming oder Kultur.
+              </p>
             </div>
-            <h3 className="mt-4 font-semibold text-zinc-50">
-              4er-Crews in deiner Region
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Die KI clustert dich mit drei Leuten aus deiner Nähe, die
-              ähnliche Interessen haben — z.B. Sport, Gaming oder Kultur.
-            </p>
-          </div>
 
-          <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
-              <ShieldIcon />
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+                <ShieldIcon />
+              </div>
+              <h3 className="mt-4 font-semibold text-zinc-50">100% diskret</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                Kein Foto, keine Handynummer nötig — ihr chattet sicher direkt
+                in der App, ganz ohne Stigma-Druck.
+              </p>
             </div>
-            <h3 className="mt-4 font-semibold text-zinc-50">100% diskret</h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Kein Foto, keine Handynummer nötig — ihr chattet sicher direkt
-              in der App, ganz ohne Stigma-Druck.
-            </p>
-          </div>
 
-          <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose/10 text-rose">
-              <ChatIcon />
+            <div className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose/10 text-rose">
+                <ChatIcon />
+              </div>
+              <h3 className="mt-4 font-semibold text-zinc-50">
+                Echte Treffen statt Chatten
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                Von der App direkt zum gemeinsamen Treffen — Freundschaften
+                vor Ort statt endlosem Hin-und-her-Schreiben.
+              </p>
             </div>
-            <h3 className="mt-4 font-semibold text-zinc-50">
-              Echte Treffen statt Chatten
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Von der App direkt zum gemeinsamen Treffen — Freundschaften vor
-              Ort statt endlosem Hin-und-her-Schreiben.
-            </p>
           </div>
         </div>
       </section>
