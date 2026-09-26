@@ -42,7 +42,7 @@ export default function HubCard({ hub }: { hub: string }) {
         scale,
         transformPerspective: 800,
       }}
-      className="flex cursor-default flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl will-change-transform"
+      className="flex cursor-default flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
     >
       <span className="text-sm font-medium text-zinc-100">{hub}</span>
       <span className="mt-auto inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
