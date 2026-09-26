@@ -1,4 +1,4 @@
-import { SparkleIcon } from "@/components/Icons";
+import { AiConnectIcon, SparkleIcon } from "@/components/Icons";
 
 export default function AiMatchingCard() {
   return (
@@ -12,18 +12,18 @@ export default function AiMatchingCard() {
       </span>
 
       <div className="relative mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 text-gold">
-        <SparkleIcon className="h-7 w-7" />
+        <AiConnectIcon className="h-7 w-7" />
       </div>
 
       <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 sm:text-2xl">
-        Smart Vibe Matching per KI
+        Der KI-Persönlichkeits-Check
       </h3>
 
       <p className="relative mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-        Keine starren Fragebögen. In Phase 1 führst du ein kurzes, entspanntes
-        Gespräch mit unserer KI. Sie versteht deinen Vibe und deine
-        Interessen – und findet so dein perfektes Match für Duo, Crew oder
-        Squad.
+        Keine starren Fragebögen. Du führst ein kurzes, entspanntes Gespräch
+        mit unserer künstlichen Intelligenz. Sie versteht deinen Humor und
+        deine Interessen und findet so dein perfektes Match für Duo, Crew
+        oder Squad.
       </p>
     </div>
   );

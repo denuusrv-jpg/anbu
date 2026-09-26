@@ -67,6 +67,29 @@ export function SparkleIcon({ className = "w-6 h-6" }: { className?: string }) {
   );
 }
 
+export function AiConnectIcon({
+  className = "w-6 h-6",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2.5l1.3 3.7L17 7.5l-3.7 1.3L12 12.5l-1.3-3.7L7 7.5l3.7-1.3L12 2.5z" />
+      <circle cx="6" cy="19" r="1.8" />
+      <circle cx="18" cy="19" r="1.8" />
+      <path d="M7.7 18c1.4-1.3 2.8-2 4.3-2s2.9.7 4.3 2" />
+    </svg>
+  );
+}
+
 export function ArrowRightIcon({
   className = "w-4 h-4",
 }: {
