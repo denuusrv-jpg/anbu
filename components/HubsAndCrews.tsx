@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const hubs = [
   "Hub NRW (Ruhrgebiet & Rheinland)",
   "Hub Rhein-Main (Frankfurt & Hessen)",
@@ -11,36 +13,30 @@ const hubs = [
 
 const groupSizes = [
   {
-    emoji: "☕️",
     title: "Duo",
-    badge: "2er",
+    image: "/duo.jpg",
+    width: 480,
+    height: 565,
     description:
       "Perfekt für entspannte 1-on-1 Coffee-Dates und lockeren Austausch.",
-    accent: "teal" as const,
   },
   {
-    emoji: "🍕",
     title: "Crew",
-    badge: "4er",
+    image: "/crew.jpg",
+    width: 508,
+    height: 565,
     description:
       "Der Sweet Spot für ein gemeinsames Dinner, Bar-Abende oder Café-Treffen.",
-    accent: "gold" as const,
   },
   {
-    emoji: "🎉",
     title: "Squad",
-    badge: "8er",
+    image: "/squad.jpg",
+    width: 548,
+    height: 565,
     description:
       "Für größere Events, Sommerfeste, Public Viewing oder Party-Runden.",
-    accent: "rose" as const,
   },
 ];
-
-const accentClasses = {
-  teal: { badgeText: "text-teal", dot: "bg-teal" },
-  gold: { badgeText: "text-gold", dot: "bg-gold" },
-  rose: { badgeText: "text-rose", dot: "bg-rose" },
-};
 
 export default function HubsAndCrews() {
   return (
@@ -106,33 +102,23 @@ export default function HubsAndCrews() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {groupSizes.map((group) => {
-            const accent = accentClasses[group.accent];
-            return (
-              <div
-                key={group.title}
-                className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl"
-              >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-2xl">
-                  {group.emoji}
-                </div>
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <h3 className="font-semibold text-zinc-50">
-                    {group.title}
-                  </h3>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-semibold ${accent.badgeText}`}
-                  >
-                    <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
-                    {group.badge}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-                  {group.description}
-                </p>
-              </div>
-            );
-          })}
+          {groupSizes.map((group) => (
+            <div
+              key={group.title}
+              className="overflow-hidden rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl"
+            >
+              <Image
+                src={group.image}
+                alt={group.title}
+                width={group.width}
+                height={group.height}
+                className="w-full h-auto"
+              />
+              <p className="px-6 pb-6 text-sm leading-relaxed text-zinc-400">
+                {group.description}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
