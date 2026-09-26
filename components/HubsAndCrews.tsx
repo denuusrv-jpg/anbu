@@ -69,9 +69,9 @@ export default function HubsAndCrews() {
               className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"
             >
               <span className="text-sm font-medium text-zinc-100">{hub}</span>
-              <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
+              <span className="mt-auto inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
                 <span className="h-1.5 w-1.5 rounded-full bg-rose" />
-                Geschlossen
+                Warteliste aktiv
               </span>
             </div>
           ))}
