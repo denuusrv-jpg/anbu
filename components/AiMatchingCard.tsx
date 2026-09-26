@@ -1,5 +1,3 @@
-import { AiConnectIcon } from "@/components/Icons";
-
 export default function AiMatchingCard() {
   return (
     <div className="relative mb-12 overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl sm:px-12">
@@ -9,10 +7,6 @@ export default function AiMatchingCard() {
       <span className="relative inline-flex items-center rounded-full border border-white/10 bg-zinc-950/60 px-3 py-1 text-[10px] font-semibold tracking-wide text-gold uppercase">
         Powered by AI
       </span>
-
-      <div className="relative mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 text-gold">
-        <AiConnectIcon className="h-7 w-7" />
-      </div>
 
       <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 sm:text-2xl">
         Der KI-Persönlichkeits-Check
