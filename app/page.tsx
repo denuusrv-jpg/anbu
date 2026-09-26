@@ -40,8 +40,8 @@ export default function Home() {
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
               Echte Freundschaften, neu gedacht. Ein intelligentes KI-System
               bildet passgenaue Gruppen, anhand von Informationen deiner
-              Persönlichkeit. 100&nbsp;% kostenlos für die Tamil-Community im
-              deutschsprachigen Raum.
+              Persönlichkeit. 100&nbsp;% kostenlos und anonym für die
+              Tamil-Community im deutschsprachigen Raum.
             </p>
 
             <WaitlistForm />
