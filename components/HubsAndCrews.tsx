@@ -1,4 +1,5 @@
 import Image from "next/image";
+import HubCard from "@/components/HubCard";
 
 const hubs = [
   "Hub NRW (Ruhrgebiet & Rheinland)",
@@ -64,16 +65,7 @@ export default function HubsAndCrews() {
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {hubs.map((hub) => (
-            <div
-              key={hub}
-              className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl"
-            >
-              <span className="text-sm font-medium text-zinc-100">{hub}</span>
-              <span className="mt-auto inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
-                <span className="h-1.5 w-1.5 rounded-full bg-rose" />
-                Warteliste aktiv
-              </span>
-            </div>
+            <HubCard key={hub} hub={hub} />
           ))}
         </div>
 
@@ -82,14 +74,12 @@ export default function HubsAndCrews() {
           benachrichtigen dich per E-Mail und dann kannst du starten.
         </p>
 
-        <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center backdrop-blur-xl">
+        <div className="mx-auto mt-12 max-w-2xl rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl">
           <p className="text-sm leading-relaxed text-zinc-300 sm:text-base">
-            <span className="font-medium text-zinc-100">
-              Deine Region ist nicht dabei?
-            </span>{" "}
-            Kein Problem: Sobald sich an einem neuen Standort genug
-            Anmeldungen bündeln, schalten wir flexibel einen zusätzlichen Hub
-            frei.
+            Sobald sich 100 Personen in einer Region eintragen, öffnet sich
+            das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link
+            zu unserem KI-Persönlichkeits-Check, der dein optimales Match
+            ermittelt. Das Ganze bleibt anfangs vollkommen anonym.
           </p>
         </div>
 
