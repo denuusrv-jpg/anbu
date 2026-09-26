@@ -18,7 +18,7 @@ export default function Home() {
           <section className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-16 text-center">
             <div className="mb-6 flex justify-center">
               <Image
-                src="/logo.png"
+                src="/logo-orange.png"
                 alt="DSpora Community"
                 width={1548}
                 height={454}
