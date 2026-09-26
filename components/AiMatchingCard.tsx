@@ -8,7 +8,7 @@ export default function AiMatchingCard() {
         Powered by AI
       </span>
 
-      <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 sm:text-2xl">
+      <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 uppercase sm:text-2xl">
         Der KI-Persönlichkeits-Check
       </h3>
 
