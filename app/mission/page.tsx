@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GlobeIcon, HeartIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
+import MissionCard from "@/components/MissionCard";
 
 export default function Mission() {
   return (
@@ -25,7 +26,7 @@ export default function Mission() {
         {/* Sektionen */}
         <div className="mt-16 flex flex-col gap-6">
           {/* 1. Intention statt Zufall */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
+          <MissionCard color="teal">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal">
               <UsersIcon />
             </div>
@@ -55,10 +56,10 @@ export default function Mission() {
                 Leuten passt.
               </li>
             </ul>
-          </div>
+          </MissionCard>
 
           {/* 2. 100% Kostenlos & Anonym */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
+          <MissionCard color="gold">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
               <ShieldIcon />
             </div>
@@ -77,10 +78,10 @@ export default function Mission() {
               über unsere Plattform den passenden Freundeskreis gefunden hast
               und bereit bist, öffnest du dich mit Namen, Stadt oder Bildern.
             </p>
-          </div>
+          </MissionCard>
 
           {/* 3. Kultur bewahren */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
+          <MissionCard color="rose">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose/10 text-rose">
               <GlobeIcon />
             </div>
@@ -96,12 +97,10 @@ export default function Mission() {
               die denselben kulturellen Hintergrund teilen und genau wissen,
               worauf es ankommt.
             </p>
-          </div>
+          </MissionCard>
 
           {/* 4. Einsamkeit & persönlicher Hintergrund - Highlight */}
-          <div className="relative overflow-hidden rounded-3xl border border-gold/20 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-gold/20 blur-3xl" />
-
+          <MissionCard color="gold" highlight>
             <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
               <HeartIcon />
             </div>
@@ -139,7 +138,7 @@ export default function Mission() {
               echte, vertraute Verbindungen direkt in deiner Umgebung, damit
               niemand im Stillen verloren geht.
             </p>
-          </div>
+          </MissionCard>
         </div>
 
         {/* Zurück zur Startseite */}
