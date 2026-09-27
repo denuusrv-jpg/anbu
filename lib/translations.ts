@@ -24,8 +24,8 @@ export type Translation = {
     description: string;
   };
   waitlist: {
-    placeholder: string;
-    button: string;
+    login: string;
+    register: string;
     note: string;
   };
   share: {
@@ -74,8 +74,8 @@ export const translations: Record<Language, Translation> = {
         "Echte Freundschaften, neu gedacht. Ein intelligentes KI-System bildet passgenaue Gruppen, anhand von Informationen deiner Persönlichkeit. 100 % kostenlos und anonym für die Tamil-Community im deutschsprachigen Raum.",
     },
     waitlist: {
-      placeholder: "deine@mail.com",
-      button: "Auf die Warteliste",
+      login: "Anmelden",
+      register: "Registrieren",
       note: "Kein Spam. Ab 100 Anmeldungen startet deine Region.",
     },
     share: {
@@ -169,8 +169,8 @@ export const translations: Record<Language, Translation> = {
         "Real friendships, reimagined. An intelligent AI system forms perfectly matched groups based on your personality. 100% free and anonymous for the Tamil community across the German-speaking region.",
     },
     waitlist: {
-      placeholder: "your@mail.com",
-      button: "Join the waitlist",
+      login: "Sign in",
+      register: "Register",
       note: "No spam. Your region unlocks at 100 sign-ups.",
     },
     share: {
@@ -262,8 +262,8 @@ export const translations: Record<Language, Translation> = {
         "உண்மையான நட்புகள், புதிய முறையில். ஒரு அறிவார்ந்த AI அமைப்பு உங்கள் ஆளுமைத் தகவல்களின் அடிப்படையில் பொருத்தமான குழுக்களை உருவாக்குகிறது. ஜெர்மன் மொழி பேசும் நாடுகளில் உள்ள தமிழ் சமூகத்திற்கு 100% இலவசமாகவும் அநாமதேயமாகவும்.",
     },
     waitlist: {
-      placeholder: "மின்னஞ்சல் முகவரி",
-      button: "காத்திருப்பு பட்டியலில் சேர்",
+      login: "உள்நுழையுங்கள்",
+      register: "பதிவு செய்யுங்கள்",
       note: "ஸ்பேம் இல்லை. 100 பதிவுகள் நிறைந்தவுடன் உங்கள் பகுதி தொடங்கும்.",
     },
     share: {
