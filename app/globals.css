@@ -10,3 +10,41 @@ html {
 body {
   background-color: #09090b;
 }
+
+@keyframes spin-slow {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes ai-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 7s linear infinite;
+}
+
+.ai-shimmer-text {
+  background-image: linear-gradient(
+    90deg,
+    #f2a65a 0%,
+    #f2a65a 35%,
+    #fff2df 50%,
+    #f2a65a 65%,
+    #f2a65a 100%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ai-shimmer 3.5s linear infinite;
+}
