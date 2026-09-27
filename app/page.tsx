@@ -41,6 +41,10 @@ export default function Home() {
                 height={454}
                 priority
                 className="h-12 w-auto sm:h-16"
+                style={{
+                  filter:
+                    "drop-shadow(0.6px 0 0 black) drop-shadow(-0.6px 0 0 black) drop-shadow(0 0.6px 0 black) drop-shadow(0 -0.6px 0 black) drop-shadow(0.5px 0.5px 0 black) drop-shadow(-0.5px 0.5px 0 black) drop-shadow(0.5px -0.5px 0 black) drop-shadow(-0.5px -0.5px 0 black)",
+                }}
               />
             </div>
 
