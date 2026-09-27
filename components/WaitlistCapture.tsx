@@ -82,6 +82,9 @@ export default function WaitlistCapture() {
           </AnimatePresence>
         </div>
       </form>
+      <p className="mx-auto mt-6 block w-fit rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-xl">
+        <Translated text={t.waitlist.note} />
+      </p>
     </div>
   );
 }

@@ -159,7 +159,7 @@ export const translations: Record<Language, Translation> = {
       datenschutz: "Datenschutz",
     },
     cta: {
-      signUp: "Melde dich jetzt an",
+      signUp: "Registriere dich jetzt",
     },
     waitlistCapture: {
       placeholder: "deine@mail.com",

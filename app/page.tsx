@@ -31,7 +31,7 @@ export default function Home() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section
-            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center ${isTamil ? "max-w-4xl" : "max-w-2xl"}`}
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
             <div className="mb-6 flex justify-center">
               <Image
@@ -48,7 +48,7 @@ export default function Home() {
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase">
               <Translated text={t.hero.heading[0]} />
               <br />
               <Translated text={t.hero.heading[1]} />
