@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import HubCard from "@/components/HubCard";
 import GroupSizeCard from "@/components/GroupSizeCard";
 import ShareLinkBadge from "@/components/ShareLinkBadge";
+import WaitlistCapture from "@/components/WaitlistCapture";
 import Translated from "@/components/Translated";
 import { useLanguage } from "@/lib/LanguageContext";
 
@@ -54,6 +55,16 @@ export default function HubsAndCrews() {
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
             <Translated text={t.hubs.infoText} />
           </p>
+        </motion.div>
+
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+        >
+          <WaitlistCapture />
         </motion.div>
 
         {/* Teil 2: Gruppengrößen */}

@@ -59,6 +59,11 @@ export type Translation = {
   cta: {
     signUp: string;
   };
+  waitlistCapture: {
+    placeholder: string;
+    button: string;
+    success: string;
+  };
 };
 
 export const translations: Record<Language, Translation> = {
@@ -156,6 +161,11 @@ export const translations: Record<Language, Translation> = {
     cta: {
       signUp: "Melde dich jetzt an",
     },
+    waitlistCapture: {
+      placeholder: "deine@mail.com",
+      button: "Beitreten",
+      success: "Fast geschafft! Prüfe dein Postfach",
+    },
   },
   en: {
     nav: {
@@ -248,6 +258,11 @@ export const translations: Record<Language, Translation> = {
     },
     cta: {
       signUp: "Sign up now",
+    },
+    waitlistCapture: {
+      placeholder: "your@mail.com",
+      button: "Join",
+      success: "Almost there! Check your inbox",
     },
   },
   ta: {
@@ -344,6 +359,11 @@ export const translations: Record<Language, Translation> = {
     },
     cta: {
       signUp: "இப்போதே பதிவு செய்யுங்கள்",
+    },
+    waitlistCapture: {
+      placeholder: "மின்னஞ்சல் முகவரி",
+      button: "சேரவும்",
+      success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
     },
   },
 };
