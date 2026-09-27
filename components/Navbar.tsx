@@ -101,7 +101,7 @@ function NavBoxDesktop({
     [-150, 0, 150],
     [minWidth, minWidth + 36, minWidth],
   );
-  const heightTransform = useTransform(distance, [-150, 0, 150], [40, 54, 40]);
+  const heightTransform = useTransform(distance, [-150, 0, 150], [44, 54, 44]);
 
   const width = useSpring(widthTransform, {
     mass: 0.1,
