@@ -30,7 +30,7 @@ const groupSizes = [
     height: 565,
     size: "4er Gruppe",
     description:
-      "Ideal für gemeinsame Spieleabende, Unternehmungen oder tolle Veranstaltungen.",
+      "Ideal für gemeinsame Spieleabende, Gaming oder tolle Veranstaltungen.",
   },
   {
     title: "Squad",
