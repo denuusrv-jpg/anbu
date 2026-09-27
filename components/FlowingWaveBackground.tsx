@@ -36,11 +36,11 @@ const fragmentShader = /* glsl */ `
 
   float fbm(vec2 p) {
     float value = 0.0;
-    float amplitude = 0.65;
-    for (int i = 0; i < 3; i++) {
+    float amplitude = 0.6;
+    for (int i = 0; i < 4; i++) {
       value += amplitude * noise(p);
-      p *= 1.8;
-      amplitude *= 0.5;
+      p *= 1.95;
+      amplitude *= 0.52;
     }
     return value;
   }
@@ -61,11 +61,21 @@ const fragmentShader = /* glsl */ `
     float t = uTime * 0.032;
     vec2 flow = vec2(t, t * 0.5);
 
-    float h = fbm(ruv * 0.9 + flow);
+    /* Domain warp: die UV-Koordinaten werden zuerst durch ein eigenes
+       Rausch-Feld verzerrt, bevor das Endmuster daraus berechnet wird.
+       Dadurch entstehen organische, wirbelnde Formen statt eines
+       einzelnen driftenden Blobs. */
+    vec2 warp = vec2(
+      fbm(ruv * 0.8 + flow * 0.6),
+      fbm(ruv * 0.8 + flow * 0.6 + vec2(5.2, 1.3))
+    );
+    vec2 warpedUv = ruv * 0.9 + warp * 0.7 + flow;
+
+    float h = fbm(warpedUv);
 
     float eps = 0.03;
-    float hx = fbm(ruv * 0.9 + vec2(eps, 0.0) + flow);
-    float hy = fbm(ruv * 0.9 + vec2(0.0, eps) + flow);
+    float hx = fbm(warpedUv + vec2(eps, 0.0));
+    float hy = fbm(warpedUv + vec2(0.0, eps));
     vec2 grad = vec2(hx - h, hy - h) / eps;
     float light = clamp(dot(normalize(vec3(-grad * 0.3, 1.0)), normalize(vec3(0.3, 0.5, 0.8))), -1.0, 1.0);
     light = light * 0.2 + 0.85;
@@ -74,6 +84,22 @@ const fragmentShader = /* glsl */ `
     base = mix(base, colorC, smoothstep(0.35, 0.7, h));
     base = mix(base, colorD, smoothstep(0.65, 1.0, h));
     vec3 color = base * light;
+
+    /* Feines Funkeln - kleine, langsam pulsierende Lichtpunkte für
+       einen edleren, weniger flachen Eindruck. */
+    vec2 starUv = uv * 9.0;
+    vec2 starId = floor(starUv);
+    vec2 starF = fract(starUv) - 0.5;
+    float starHash = hash(starId);
+    float starMask = step(0.94, starHash);
+    float twinkle = 0.5 + 0.5 * sin(uTime * 1.6 + starHash * 62.0);
+    float starDist = length(starF);
+    float star = smoothstep(0.18, 0.0, starDist) * starMask * twinkle;
+    color += vec3(1.0, 0.95, 0.85) * star * 0.5;
+
+    /* Dezente Vignette für mehr Tiefe und Fokus zur Mitte hin. */
+    float vignette = smoothstep(1.15, 0.25, length(vUv - 0.5));
+    color *= mix(0.78, 1.0, vignette);
 
     gl_FragColor = vec4(color, 1.0);
   }
