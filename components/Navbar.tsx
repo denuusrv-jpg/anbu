@@ -161,7 +161,7 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
                 key={lang}
                 type="button"
                 onClick={() => handleSelect(lang)}
-                className="rounded-lg px-4 py-2 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-zinc-200 uppercase transition-colors hover:bg-zinc-800 hover:text-gold"
+                className="rounded-lg px-4 py-2 text-center text-xs font-semibold tracking-wide whitespace-nowrap text-zinc-200 uppercase transition-colors hover:bg-zinc-800 hover:text-gold"
               >
                 {LANGUAGE_LABELS[lang]}
               </button>

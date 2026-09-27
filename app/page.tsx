@@ -20,7 +20,8 @@ const featureStyles = [
 ];
 
 export default function Home() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isTamil = language === "ta";
 
   return (
     <main className="min-h-screen bg-zinc-950">
@@ -29,7 +30,9 @@ export default function Home() {
 
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
-          <section className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-16 text-center">
+          <section
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center ${isTamil ? "max-w-4xl" : "max-w-2xl"}`}
+          >
             <div className="mb-6 flex justify-center">
               <Image
                 src="/logo-orange.png"
@@ -51,7 +54,9 @@ export default function Home() {
               <Translated text={t.hero.heading[1]} />
             </h1>
 
-            <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
+            <p
+              className={`mx-auto mt-5 text-base leading-relaxed text-white sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
+            >
               <Translated text={t.hero.description} />
             </p>
 
