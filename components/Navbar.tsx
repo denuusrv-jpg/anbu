@@ -150,11 +150,11 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.95 }}
+            initial={{ opacity: 0, y: -6, x: "-50%", scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
+            exit={{ opacity: 0, y: -6, x: "-50%", scale: 0.95 }}
             transition={{ duration: 0.18 }}
-            className="absolute top-full left-1/2 z-20 mt-2 flex -translate-x-1/2 flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur-md"
+            className="absolute top-full left-1/2 z-20 mt-2 flex flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur-md"
           >
             {otherLanguages.map((lang) => (
               <button
