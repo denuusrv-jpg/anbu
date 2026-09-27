@@ -128,6 +128,40 @@ export function LinkIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+export function GlobeIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17" />
+      <path d="M12 3.5c2.6 2.3 4 5.3 4 8.5s-1.4 6.2-4 8.5c-2.6-2.3-4-5.3-4-8.5s1.4-6.2 4-8.5z" />
+    </svg>
+  );
+}
+
+export function HeartIcon({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20s-7-4.4-9.5-9C1 8 2 4.5 5.3 3.6 7.6 3 9.9 4 12 6.5 14.1 4 16.4 3 18.7 3.6 22 4.5 23 8 21.5 11c-2.5 4.6-9.5 9-9.5 9z" />
+    </svg>
+  );
+}
+
 export function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
