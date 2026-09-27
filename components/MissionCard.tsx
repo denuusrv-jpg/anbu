@@ -7,6 +7,7 @@ const glowColors = {
   teal: "#4FD1C5",
   gold: "#F2A65A",
   rose: "#E85D75",
+  blue: "#5B9BF2",
 } as const;
 
 export default function MissionCard({

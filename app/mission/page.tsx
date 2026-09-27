@@ -15,7 +15,7 @@ export default function Mission() {
           <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-gold uppercase backdrop-blur-md">
             Über DSpora
           </span>
-          <h1 className="mt-5 text-3xl font-bold text-zinc-50 sm:text-4xl">
+          <h1 className="mt-5 text-3xl font-bold text-zinc-50 uppercase sm:text-4xl">
             Unsere Mission
           </h1>
           <p className="mx-auto mt-4 text-base leading-relaxed text-zinc-400 sm:text-lg">
@@ -34,9 +34,17 @@ export default function Mission() {
               Intention statt Zufall: Verbindungen nach Maß
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-zinc-300 sm:text-base">
+              Klassische Freundschaften entstehen im Leben meistens aus
+              purem Zufall: weil man in derselben Nachbarschaft wohnt, zur
+              Verwandtschaft gehört oder sich aus der Kindheit und
+              Schulzeit kennt. Doch nur weil man sich zufällig im selben
+              Umfeld befindet, passen die Interessen und die Persönlichkeit
+              oft nicht wirklich zusammen.
+            </p>
+            <p className="mt-4 text-sm leading-relaxed text-zinc-300 sm:text-base">
               Wir glauben nicht an den reinen Zufall, wenn es um echte
               Freundschaften geht. Zudem deckt ein einziger Freundeskreis
-              selten alle Facetten deiner Interessen ab.
+              selten alle Facetten deiner Interessen ab:
             </p>
             <ul className="mt-5 flex flex-col gap-3">
               <li className="flex gap-3 text-sm leading-relaxed text-zinc-300 sm:text-base">
@@ -59,24 +67,29 @@ export default function Mission() {
           </MissionCard>
 
           {/* 2. 100% Kostenlos & Anonym */}
-          <MissionCard color="gold">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+          <MissionCard color="blue">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#5B9BF2]/10 text-[#5B9BF2]">
               <ShieldIcon />
             </div>
             <h2 className="mt-5 text-xl font-semibold text-zinc-50 sm:text-2xl">
               Ein Herzensprojekt: 100 % Kostenlos & Anonym
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-zinc-300 sm:text-base">
-              DSpora verfolgt keine kommerziellen Absichten – es ist ein
-              reines Non-Profit-Herzensprojekt für die Community, weshalb die
-              Nutzung vollkommen kostenlos bleibt.
+              DSpora ist ein Herzensprojekt für die Community – deshalb ist
+              die Kernnutzung für dich vollkommen kostenlos. Sollten wir die
+              Plattform in Zukunft durch ausgewählte Community-Partner oder
+              dezente Sponsoren unterstützen, dient das rein dem Erhalt und
+              der Weiterentwicklung des Projekts, niemals der kommerziellen
+              Ausbeutung.
             </p>
             <p className="mt-4 text-sm leading-relaxed text-zinc-300 sm:text-base">
-              Da es nicht immer leicht ist, den ersten Schritt zu machen,
-              legen wir höchsten Wert auf Datenschutz: Du startest vollkommen
-              anonym, ganz ohne Pflichtfotos oder Handynummern. Erst wenn du
-              über unsere Plattform den passenden Freundeskreis gefunden hast
-              und bereit bist, öffnest du dich mit Namen, Stadt oder Bildern.
+              Du hast es vollkommen selbst in der Hand, wie du auftrittst:
+              Anonymität ist bei uns eine Option, kein Zwang. Wer möchte,
+              kann die Plattform geschützt und anonym starten und sich erst
+              öffnen, wenn der passende Freundeskreis gefunden ist. Du
+              kannst aber auch genauso gut direkt von Anfang an mit deinem
+              echten Namen, Profilbild und deiner Stadt kommunizieren – ganz
+              so, wie es sich für dich am besten anfühlt.
             </p>
           </MissionCard>
 
@@ -117,24 +130,22 @@ export default function Mission() {
               Hürden, im Alltag echten Anschluss zu finden.
             </p>
 
-            <div className="relative mt-6 rounded-2xl border border-white/10 bg-zinc-950/40 p-5 sm:p-6">
-              <p className="text-sm leading-relaxed text-zinc-200 sm:text-base">
-                Genau das ist der tiefste Ursprung dieser Plattform: Der
-                erste Impuls, DSpora ins Leben zu rufen, entstand, weil sich
-                ein sehr guter Freund trotz eines vermeintlich guten
-                Freundeskreises das Leben genommen hat – und Einsamkeit im
-                stillen Raum dabei ein verheerender, oft unsichtbarer Faktor
-                war. Niemand sollte sich im Alltag allein oder isoliert
-                fühlen, nur weil die passenden Ansprechpartner fehlen.
-              </p>
-            </div>
+            <p className="relative mt-6 text-sm leading-relaxed text-zinc-200 sm:text-base">
+              Genau das ist der tiefste Ursprung dieser Plattform: Der erste
+              Impuls, DSpora ins Leben zu rufen, entstand, weil sich ein
+              sehr guter Freund trotz eines vermeintlich guten
+              Freundeskreises das Leben genommen hat – und Einsamkeit im
+              stillen Raum dabei ein verheerender, oft unsichtbarer Faktor
+              war. Niemand sollte sich im Alltag allein oder isoliert
+              fühlen, nur weil die passenden Ansprechpartner fehlen.
+            </p>
 
             <p className="relative mt-6 text-sm leading-relaxed text-zinc-300 sm:text-base">
               Durch Home-Office, digitale Isolation und den Mangel an
               natürlichen Treffpunkten zieht sich die Gesellschaft immer
               weiter zurück. DSpora schlägt hier eine Brücke von alt bis
-              jung. Unsere KI sorgt dafür, dass Menschen mit denselben
-              Wurzeln und passenden Interessen zueinander finden – für
+              jung. Unsere Künstliche Intelligenz sorgt dafür, dass Menschen
+              mit denselben Wurzeln und passenden Interessen zueinander finden – für
               echte, vertraute Verbindungen direkt in deiner Umgebung, damit
               niemand im Stillen verloren geht.
             </p>
