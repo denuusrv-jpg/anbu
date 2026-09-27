@@ -61,10 +61,10 @@ export default function GroupSizeCard({ group }: { group: GroupSize }) {
         height={group.height}
         className="w-full h-auto"
       />
-      <span className="relative -mt-4 inline-flex w-fit items-center rounded-full border border-gold/20 bg-zinc-950/80 px-3 py-1 text-[11px] font-medium tracking-wide text-gold shadow-[0_0_16px_-4px_rgba(242,166,90,0.6)]">
+      <span className="relative mt-4 inline-flex w-fit items-center rounded-lg border border-gold/20 bg-zinc-950/80 px-3 py-1 text-[11px] font-medium tracking-wide text-gold shadow-[0_0_16px_-4px_rgba(242,166,90,0.6)]">
         {group.size}
       </span>
-      <p className="px-6 pt-3 pb-6 text-sm leading-relaxed text-zinc-400">
+      <p className="px-6 pt-4 pb-6 text-sm leading-relaxed text-zinc-400">
         {group.description}
       </p>
     </motion.div>
