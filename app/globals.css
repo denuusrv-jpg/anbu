@@ -31,19 +31,19 @@ body {
   0% {
     background-position: 100% 0;
   }
-  42% {
+  36% {
     background-position: 100% 0;
   }
-  46% {
+  41% {
     background-position: 67% 0;
   }
   50% {
     background-position: 50% 0;
   }
-  54% {
+  59% {
     background-position: 33% 0;
   }
-  58% {
+  64% {
     background-position: 0% 0;
   }
   100% {
@@ -52,7 +52,7 @@ body {
 }
 
 .animate-spin-slow {
-  animation: spin-slow 7s linear infinite;
+  animation: spin-slow 11s linear infinite;
 }
 
 .ai-shimmer-text {
@@ -68,5 +68,5 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: ai-shimmer 7s linear infinite;
+  animation: ai-shimmer 11s linear infinite;
 }

@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
 import HubsAndCrews from "@/components/HubsAndCrews";
 import AiMatchingCard from "@/components/AiMatchingCard";
+import SignUpCta from "@/components/SignUpCta";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
 import Link from "next/link";
@@ -99,6 +100,8 @@ export default function Home() {
               </p>
             </div>
           </div>
+
+          <SignUpCta />
         </div>
       </section>
 

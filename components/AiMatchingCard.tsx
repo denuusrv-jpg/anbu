@@ -17,7 +17,7 @@ export default function AiMatchingCard() {
           className="animate-spin-slow absolute top-1/2 left-1/2 h-[1200px] w-[1200px] blur-2xl"
           style={{
             background:
-              "conic-gradient(from 0deg, transparent 0%, #F2A65A 12%, transparent 28%, transparent 55%, #F7C08A 70%, transparent 88%)",
+              "conic-gradient(from 0deg, #F2A65A 0%, transparent 15%, transparent 85%, #F2A65A 100%)",
           }}
         />
       </motion.div>
