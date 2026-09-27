@@ -1,10 +1,20 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useLanguage } from "@/lib/LanguageContext";
+import Translated from "@/components/Translated";
 
 export default function AiMatchingCard() {
+  const { t } = useLanguage();
+
   return (
-    <div className="relative mb-12">
+    <motion.div
+      className="relative mb-12"
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       {/* Rotierende KI-Aura hinter der Karte */}
       <motion.div
         className="pointer-events-none absolute -inset-2 overflow-hidden rounded-[2rem]"
@@ -34,20 +44,17 @@ export default function AiMatchingCard() {
         />
 
         <span className="relative inline-flex items-center rounded-full border border-white/10 bg-zinc-950/60 px-3 py-1 text-[10px] font-semibold tracking-wide uppercase">
-          <span className="ai-shimmer-text">Powered by AI</span>
+          <Translated text={t.ai.badge} className="ai-shimmer-text" />
         </span>
 
         <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 uppercase sm:text-2xl">
-          Der KI-Persönlichkeits-Check
+          <Translated text={t.ai.heading} />
         </h3>
 
         <p className="relative mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-          Keine starren Fragebögen. Du führst ein entspanntes Gespräch mit
-          unserer künstlichen Intelligenz – wie lange es dauert, liegt ganz
-          bei dir. Sie versteht deinen Humor und deine Interessen und findet
-          so dein perfektes Match für Duo, Crew oder Squad.
+          <Translated text={t.ai.description} />
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

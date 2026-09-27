@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import Image from "next/image";
 import { useRef } from "react";
+import Translated from "@/components/Translated";
 
 type GroupSize = {
   title: string;
@@ -13,7 +14,13 @@ type GroupSize = {
   description: string;
 };
 
-export default function GroupSizeCard({ group }: { group: GroupSize }) {
+export default function GroupSizeCard({
+  group,
+  index,
+}: {
+  group: GroupSize;
+  index: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -52,6 +59,10 @@ export default function GroupSizeCard({ group }: { group: GroupSize }) {
         scale,
         transformPerspective: 800,
       }}
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.55, delay: index * 0.12, ease: "easeOut" }}
       className="cursor-default overflow-hidden rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
     >
       <Image
@@ -62,10 +73,10 @@ export default function GroupSizeCard({ group }: { group: GroupSize }) {
         className="w-full h-auto"
       />
       <span className="relative mt-4 inline-flex w-fit items-center rounded-lg border border-gold/20 bg-zinc-950/80 px-3 py-1 text-[11px] font-medium tracking-wide text-gold shadow-[0_0_16px_-4px_rgba(242,166,90,0.6)]">
-        {group.size}
+        <Translated text={group.size} />
       </span>
       <p className="px-6 pt-4 pb-6 text-sm leading-relaxed text-zinc-400">
-        {group.description}
+        <Translated text={group.description} />
       </p>
     </motion.div>
   );

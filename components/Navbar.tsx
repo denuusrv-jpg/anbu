@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  AnimatePresence,
   MotionValue,
   motion,
   useMotionValue,
@@ -9,19 +10,23 @@ import {
   useTransform,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-
-const items = [
-  { title: "Erfahre mehr", href: "#erfahre-mehr" },
-  { title: "Unsere Mission", href: "/mission" },
-  { title: "Kontakt", href: "/kontakt" },
-];
+import { useLanguage } from "@/lib/LanguageContext";
+import { Language, languages } from "@/lib/translations";
+import Translated from "@/components/Translated";
 
 const boxClassName =
   "flex items-center justify-center whitespace-nowrap rounded-xl bg-zinc-800/80 px-4 text-xs font-semibold tracking-wide text-zinc-200 uppercase transition-colors hover:text-white";
 
+const LANGUAGE_LABELS: Record<Language, string> = {
+  de: "Deutsch",
+  ta: "Tamil",
+  en: "English",
+};
+
 export default function Navbar() {
   const [isDesktop, setIsDesktop] = useState(false);
   const mouseX = useMotionValue(Infinity);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 640px) and (pointer: fine)");
@@ -31,6 +36,12 @@ export default function Navbar() {
     return () => mq.removeEventListener("change", listener);
   }, []);
 
+  const items = [
+    { id: "erfahreMehr", title: t.nav.erfahreMehr, href: "#erfahre-mehr" },
+    { id: "mission", title: t.nav.mission, href: "/mission" },
+    { id: "kontakt", title: t.nav.kontakt, href: "/kontakt" },
+  ];
+
   return (
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
@@ -39,11 +50,12 @@ export default function Navbar() {
     >
       {items.map((item) =>
         isDesktop ? (
-          <NavBoxDesktop key={item.title} mouseX={mouseX} {...item} />
+          <NavBoxDesktop key={item.id} mouseX={mouseX} {...item} />
         ) : (
-          <NavBoxStatic key={item.title} {...item} />
+          <NavBoxStatic key={item.id} {...item} />
         ),
       )}
+      <LanguageSwitcher isDesktop={isDesktop} />
     </motion.div>
   );
 }
@@ -60,7 +72,9 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 function NavBoxStatic({ title, href }: { title: string; href: string }) {
   return (
     <NavLink href={href}>
-      <div className={`${boxClassName} h-11 py-2`}>{title}</div>
+      <div className={`${boxClassName} h-11 py-2`}>
+        <Translated text={title} />
+      </div>
     </NavLink>
   );
 }
@@ -103,8 +117,58 @@ function NavBoxDesktop({
   return (
     <NavLink href={href}>
       <motion.div ref={ref} style={{ width, height }} className={boxClassName}>
-        {title}
+        <Translated text={title} />
       </motion.div>
     </NavLink>
+  );
+}
+
+function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
+  const { language, setLanguage } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const otherLanguages = languages.filter((lang) => lang !== language);
+
+  function handleSelect(lang: Language) {
+    setLanguage(lang);
+    setOpen(false);
+  }
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => isDesktop && setOpen(true)}
+      onMouseLeave={() => isDesktop && setOpen(false)}
+    >
+      <button
+        type="button"
+        onClick={() => !isDesktop && setOpen((o) => !o)}
+        className={`${boxClassName} h-11 py-2`}
+      >
+        <Translated text={LANGUAGE_LABELS[language]} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.95 }}
+            transition={{ duration: 0.18 }}
+            className="absolute top-full left-1/2 z-20 mt-2 flex -translate-x-1/2 flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur-md"
+          >
+            {otherLanguages.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => handleSelect(lang)}
+                className="rounded-lg px-4 py-2 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-zinc-200 uppercase transition-colors hover:bg-zinc-800 hover:text-gold"
+              >
+                {LANGUAGE_LABELS[lang]}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

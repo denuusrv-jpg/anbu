@@ -2,8 +2,17 @@
 
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { useRef } from "react";
+import Translated from "@/components/Translated";
 
-export default function HubCard({ hub }: { hub: string }) {
+export default function HubCard({
+  hub,
+  badgeLabel,
+  index,
+}: {
+  hub: string;
+  badgeLabel: string;
+  index: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -42,12 +51,18 @@ export default function HubCard({ hub }: { hub: string }) {
         scale,
         transformPerspective: 800,
       }}
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.08, ease: "easeOut" }}
       className="flex cursor-default flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
     >
-      <span className="text-sm font-medium text-zinc-100">{hub}</span>
+      <span className="text-sm font-medium text-zinc-100">
+        <Translated text={hub} />
+      </span>
       <span className="mt-auto inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
         <span className="h-1.5 w-1.5 rounded-full bg-rose" />
-        Warteliste aktiv
+        <Translated text={badgeLabel} />
       </span>
     </motion.div>
   );

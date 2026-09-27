@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { CheckIcon, LinkIcon } from "@/components/Icons";
+import { useLanguage } from "@/lib/LanguageContext";
+import Translated from "@/components/Translated";
 
 export default function ShareLinkBadge() {
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
 
   async function handleCopy() {
     try {
@@ -25,12 +28,12 @@ export default function ShareLinkBadge() {
       {copied ? (
         <>
           <CheckIcon className="h-3.5 w-3.5 text-gold" />
-          Link kopiert!
+          <Translated text={t.share.copied} />
         </>
       ) : (
         <>
           <LinkIcon className="h-3.5 w-3.5" />
-          Teile den Link – so wird dein Hub schneller freigeschaltet
+          <Translated text={t.share.text} />
         </>
       )}
     </button>

@@ -1,49 +1,21 @@
+"use client";
+
+import { motion } from "motion/react";
 import HubCard from "@/components/HubCard";
 import GroupSizeCard from "@/components/GroupSizeCard";
 import ShareLinkBadge from "@/components/ShareLinkBadge";
+import Translated from "@/components/Translated";
+import { useLanguage } from "@/lib/LanguageContext";
 
-const hubs = [
-  "Hub NRW (Ruhrgebiet & Rheinland)",
-  "Hub Rhein-Main (Frankfurt & Hessen)",
-  "Hub Baden-Württemberg (Stuttgart & Südwesten)",
-  "Hub Bayern & Allgäu (München & Allgäu)",
-  "Hub Hauptstadt & Ost (Berlin & Ostdeutschland)",
-  "Hub Hamburg & Nord (Hamburg & Norddeutschland)",
-  "Hub Schweiz (Zürich & Ostschweiz)",
-  "Hub Österreich (Wien & Österreich)",
-];
-
-const groupSizes = [
-  {
-    title: "Duo",
-    image: "/duo.jpg",
-    width: 500,
-    height: 565,
-    size: "2er Gruppe",
-    description:
-      "Ideal für sportliche Workouts, Joggen oder den ruhigen Austausch beim Kaffee.",
-  },
-  {
-    title: "Crew",
-    image: "/crew.jpg",
-    width: 500,
-    height: 565,
-    size: "4er Gruppe",
-    description:
-      "Ideal für gemeinsame Spieleabende, Gaming oder tolle Veranstaltungen.",
-  },
-  {
-    title: "Squad",
-    image: "/squad.jpg",
-    width: 500,
-    height: 565,
-    size: "8er Gruppe",
-    description:
-      "Ideal für lebendige Events, gemeinsame Ausflüge oder aktive Tanzgruppen.",
-  },
+const groupImages = [
+  { image: "/duo.jpg", width: 500, height: 565 },
+  { image: "/crew.jpg", width: 500, height: 565 },
+  { image: "/squad.jpg", width: 500, height: 565 },
 ];
 
 export default function HubsAndCrews() {
+  const { t } = useLanguage();
+
   return (
     <section
       id="erfahre-mehr"
@@ -57,39 +29,50 @@ export default function HubsAndCrews() {
         <div className="text-center">
           <ShareLinkBadge />
           <h2 className="mt-5 text-2xl font-semibold text-zinc-50 sm:text-3xl">
-            Regionale Hubs &amp; der Startschuss
+            <Translated text={t.hubs.heading} />
           </h2>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {hubs.map((hub) => (
-            <HubCard key={hub} hub={hub} />
+          {t.hubs.list.map((hub, index) => (
+            <HubCard
+              key={index}
+              hub={hub}
+              badgeLabel={t.hubs.badgeActive}
+              index={index}
+            />
           ))}
         </div>
 
-        <div className="mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl">
+        <motion.div
+          className="mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
           <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-            Sobald sich 100 Personen in einer Region eintragen, öffnet sich
-            das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link
-            zu unserem KI-Persönlichkeits-Check, der dein optimales Match
-            ermittelt. Das Ganze bleibt anfangs vollkommen anonym.
+            <Translated text={t.hubs.infoText} />
           </p>
-        </div>
+        </motion.div>
 
         {/* Teil 2: Gruppengrößen */}
         <div className="mt-24 text-center">
           <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
-            Gemeinschaft nach Maß
+            <Translated text={t.groups.heading} />
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Kein starrer Zwang – wähle die Gruppengröße, die zu deinem
-            sozialen Akku passt.
+            <Translated text={t.groups.subheading} />
           </p>
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {groupSizes.map((group) => (
-            <GroupSizeCard key={group.title} group={group} />
+          {t.groups.items.map((item, index) => (
+            <GroupSizeCard
+              key={item.title}
+              index={index}
+              group={{ ...item, ...groupImages[index] }}
+            />
           ))}
         </div>
       </div>

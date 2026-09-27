@@ -1,6 +1,11 @@
 "use client";
 
+import { useLanguage } from "@/lib/LanguageContext";
+import Translated from "@/components/Translated";
+
 export default function WaitlistForm() {
+  const { t, language } = useLanguage();
+
   return (
     <>
       <form
@@ -11,18 +16,19 @@ export default function WaitlistForm() {
         <input
           type="email"
           required
-          placeholder="deine@mail.com"
+          placeholder={t.waitlist.placeholder}
+          key={language}
           className="w-full rounded-full border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-center text-sm text-white placeholder:text-white/70 focus:border-gold focus:outline-none"
         />
         <button
           type="submit"
           className="whitespace-nowrap rounded-full bg-gold px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-gold-light"
         >
-          Auf die Warteliste
+          <Translated text={t.waitlist.button} />
         </button>
       </form>
       <p className="mx-auto mt-6 block w-fit rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-xl">
-        Kein Spam. Ab 100 Anmeldungen startet deine Region.
+        <Translated text={t.waitlist.note} />
       </p>
     </>
   );

@@ -1,14 +1,27 @@
+"use client";
+
+import { motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
 import HubsAndCrews from "@/components/HubsAndCrews";
 import AiMatchingCard from "@/components/AiMatchingCard";
 import SignUpCta from "@/components/SignUpCta";
+import Translated from "@/components/Translated";
+import { useLanguage } from "@/lib/LanguageContext";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
 import Link from "next/link";
 
+const featureStyles = [
+  { Icon: UsersIcon, wrap: "bg-teal/10 text-teal" },
+  { Icon: ShieldIcon, wrap: "bg-gold/10 text-gold" },
+  { Icon: ChatIcon, wrap: "bg-rose/10 text-rose" },
+];
+
 export default function Home() {
+  const { t } = useLanguage();
+
   return (
     <main className="min-h-screen bg-zinc-950">
       <div className="relative isolate flex min-h-screen flex-col overflow-hidden">
@@ -33,16 +46,13 @@ export default function Home() {
             </div>
 
             <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black">
-              Deine neuen Connection
+              <Translated text={t.hero.heading[0]} />
               <br />
-              warten in deiner Umgebung
+              <Translated text={t.hero.heading[1]} />
             </h1>
 
             <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-white sm:text-lg">
-              Echte Freundschaften, neu gedacht. Ein intelligentes KI-System
-              bildet passgenaue Gruppen, anhand von Informationen deiner
-              Persönlichkeit. 100&nbsp;% kostenlos und anonym für die
-              Tamil-Community im deutschsprachigen Raum.
+              <Translated text={t.hero.description} />
             </p>
 
             <WaitlistForm />
@@ -61,44 +71,35 @@ export default function Home() {
           <AiMatchingCard />
 
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10 text-teal">
-                <UsersIcon />
-              </div>
-              <h3 className="mt-4 font-semibold text-zinc-50">
-                Connections in deiner Region
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                Die KI vernetzt dich mit Leuten aus deiner Nähe, die ähnliche
-                Interessen haben — z.B. Sport, Gaming oder Kultur.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
-                <ShieldIcon />
-              </div>
-              <h3 className="mt-4 font-semibold text-zinc-50">
-                100% gratis und diskret
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                Kein Foto, keine Handynummer nötig — ihr chattet sicher direkt
-                in der Webseite, ganz ohne Stigma-Druck.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose/10 text-rose">
-                <ChatIcon />
-              </div>
-              <h3 className="mt-4 font-semibold text-zinc-50">
-                Echte Treffen statt Chatten
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                Von der Webseite direkt zum gemeinsamen Treffen —
-                Freundschaften vor Ort statt endlosem Hin-und-her-Schreiben.
-              </p>
-            </div>
+            {t.features.items.map((feature, index) => {
+              const { Icon, wrap } = featureStyles[index];
+              return (
+                <motion.div
+                  key={feature.title}
+                  className="text-center"
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.4 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: index * 0.1,
+                    ease: "easeOut",
+                  }}
+                >
+                  <div
+                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl ${wrap}`}
+                  >
+                    <Icon />
+                  </div>
+                  <h3 className="mt-4 font-semibold text-zinc-50">
+                    <Translated text={feature.title} />
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                    <Translated text={feature.description} />
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
 
           <SignUpCta />
@@ -108,16 +109,15 @@ export default function Home() {
       {/* Footer */}
       <footer className="mx-auto max-w-5xl px-6 py-10 text-center sm:px-8">
         <p className="text-sm text-zinc-600">
-          DSpora &middot; gebaut mit ♥ für die tamilische Diaspora im
-          DACH-Raum
+          <Translated text={t.footer.tagline} />
         </p>
         <div className="mt-3 flex items-center justify-center gap-4 text-xs text-zinc-600">
           <Link href="/impressum" className="hover:text-zinc-400">
-            Impressum
+            <Translated text={t.footer.impressum} />
           </Link>
           <span>&middot;</span>
           <Link href="/datenschutz" className="hover:text-zinc-400">
-            Datenschutz
+            <Translated text={t.footer.datenschutz} />
           </Link>
         </div>
       </footer>

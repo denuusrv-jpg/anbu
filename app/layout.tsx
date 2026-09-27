@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LanguageProvider } from "@/lib/LanguageContext";
 
 export const metadata: Metadata = {
   title: "DSpora — Finde deine Crew in DACH",
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="bg-zinc-950 text-zinc-100 antialiased">
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );
