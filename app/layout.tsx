@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/LanguageContext";
+import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: "DSpora — Finde deine Crew in DACH",
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="bg-zinc-950 text-zinc-100 antialiased">
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          <PageTransition>{children}</PageTransition>
+        </LanguageProvider>
       </body>
     </html>
   );
