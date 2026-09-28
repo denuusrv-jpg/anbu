@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChatIcon, CheckIcon, GlobeIcon, ShieldIcon } from "@/components/Icons";
+import SlideToSend from "@/components/SlideToSend";
 
 type Topic = "allgemein" | "presse" | "sicherheit";
-type Status = "idle" | "loading" | "success";
+type Status = "idle" | "success";
 
 const topics: { id: Topic; label: string; Icon: typeof ChatIcon }[] = [
   { id: "allgemein", label: "Allgemeine Frage", Icon: ChatIcon },
@@ -16,12 +17,10 @@ const topics: { id: Topic; label: string; Icon: typeof ChatIcon }[] = [
 export default function ContactForm() {
   const [topic, setTopic] = useState<Topic>("allgemein");
   const [status, setStatus] = useState<Status>("idle");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (status !== "idle") return;
-    setStatus("loading");
-  }
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length > 0;
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
@@ -78,12 +77,11 @@ export default function ContactForm() {
               </p>
             </motion.div>
           ) : (
-            <motion.form
+            <motion.div
               key="form"
               initial={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              onSubmit={handleSubmit}
               className="mt-6 flex flex-col gap-4"
             >
               <div className="grid gap-4 sm:grid-cols-2">
@@ -94,8 +92,7 @@ export default function ContactForm() {
                   <input
                     id="name"
                     type="text"
-                    disabled={status === "loading"}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none disabled:opacity-60"
+                    className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none"
                     placeholder="Wie dürfen wir dich nennen?"
                   />
                 </div>
@@ -107,8 +104,9 @@ export default function ContactForm() {
                     id="email"
                     type="email"
                     required
-                    disabled={status === "loading"}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none disabled:opacity-60"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none"
                     placeholder="deine@mail.com"
                   />
                 </div>
@@ -122,31 +120,21 @@ export default function ContactForm() {
                   id="message"
                   required
                   rows={5}
-                  disabled={status === "loading"}
-                  className="resize-none rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none disabled:opacity-60"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="resize-none rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none"
                   placeholder="Erzähl uns, worum es geht …"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={status === "loading"}
-                className="relative mt-2 overflow-hidden rounded-full bg-gold px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-gold-light disabled:opacity-90"
-              >
-                <motion.span
-                  className="absolute inset-y-0 left-0 bg-gold-light"
-                  initial={{ width: "0%" }}
-                  animate={{ width: status === "loading" ? "100%" : "0%" }}
-                  transition={{ duration: 0.6, ease: [0.65, 0, 0.35, 1] }}
-                  onAnimationComplete={() => {
-                    if (status === "loading") setStatus("success");
-                  }}
+              <div className="mt-2">
+                <SlideToSend
+                  label="Zum Senden schieben"
+                  disabled={!isValid}
+                  onSuccess={() => setStatus("success")}
                 />
-                <span className="relative">
-                  {status === "loading" ? "Wird gesendet …" : "Nachricht senden"}
-                </span>
-              </button>
-            </motion.form>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
