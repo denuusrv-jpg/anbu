@@ -13,7 +13,7 @@ type Topic = {
 const TOPICS: Topic[] = [
   {
     id: "sport",
-    keywords: ["gym", "fitness", "sport", "training", "bouldern", "klettern", "lauf", "joggen", "fußball", "fussball", "kampfsport", "yoga", "schwimm"],
+    keywords: ["gym", "fitness", "sport", "training", "bouldern", "klettern", "lauf", "läuf", "marathon", "wandern", "radfahr", "joggen", "fußball", "fussball", "kampfsport", "yoga", "schwimm"],
     questions: [
       "Du schreibst von „{k}“. Trainierst du lieber allein oder mit anderen, und was treibt dich dabei an?",
       "Bei „{k}“ gibt es oft ein Ziel dahinter. Woran arbeitest du gerade?",

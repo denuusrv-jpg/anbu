@@ -63,6 +63,21 @@ export const VISIBILITIES: Option[] = [
   { id: "stealth", label: "Stealth: nur nach gegenseitigem Match" },
 ];
 
+// Geschlecht (Selbstangabe, freiwillig) und mit wem man sich verbinden möchte.
+// Die Angaben beziehen sich immer auf die Selbstidentifikation: trans Frauen sind Frauen, trans Männer sind Männer.
+export const GENDERS: Option[] = [
+  { id: "female", label: "Weiblich" },
+  { id: "male", label: "Männlich" },
+  { id: "nonbinary", label: "Nicht-binär / divers" },
+  { id: "na", label: "Möchte ich nicht angeben" },
+];
+
+export const MATCH_GENDERS: Option[] = [
+  { id: "any", label: "Egal" },
+  { id: "female", label: "Frauen (inkl. trans Frauen)" },
+  { id: "male", label: "Männer (inkl. trans Männer)" },
+];
+
 // Gewünschte Gruppengröße (Duo, Crew, Squad wie auf der Startseite)
 export const GROUP_SIZES: Option[] = [
   { id: "duo", label: "Duo (2er Gruppe)" },
@@ -140,7 +155,12 @@ export type BusinessData = {
 
 export type FollowUp = { question: string; answer: string };
 
+// Eine Zeile des Chatverlaufs (pro Konto gespeichert, für Nutzer nicht sichtbar)
+export type ChatTurn = { role: "bot" | "user"; text: string };
+
 export type OnboardingAnswers = {
+  gender?: string; // Id aus GENDERS oder eigener Text
+  matchGender?: string; // Id aus MATCH_GENDERS
   groupSize?: string; // Id aus GROUP_SIZES
   region: string; // erster gewählter Hub: Id aus REGIONS oder eigener Text
   secondRegion?: string; // optional zweiter Hub (höchstens zwei)
@@ -170,6 +190,8 @@ export const FOLLOW_UP_ANSWER_MAX = 600;
 export const WISHES_MAX = 1500;
 export const MAX_CHOICES = 8;
 export const MAX_HUBS = 2;
+export const MAX_TRANSCRIPT = 300; // Zeilen des Chatverlaufs pro Speichervorgang
+export const TRANSCRIPT_TEXT_MAX = 800;
 export const MAX_FOLLOW_UPS = 100; // Fragen und Antworten aus dem längeren Gespräch (insgesamt)
 export const HUB_REASON_MAX = 300;
 export const MAX_CUSTOM = 5;

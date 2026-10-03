@@ -10,15 +10,19 @@ import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
 import { getBrowserClient } from "@/lib/supabase/client";
 import {
+  GENDERS,
   GROUP_SIZES,
   INTERESTS,
+  MATCH_GENDERS,
   REGIONS,
   VIBES,
   VISIBILITIES,
   choiceLabels,
   type BusinessData,
   type Choice,
+  type OnboardingAnswers,
 } from "@/lib/onboarding";
+import { buildSteckbrief, type SteckbriefFact } from "@/lib/steckbrief";
 
 export type HubProfile = {
   region: string;
@@ -33,6 +37,9 @@ export type HubProfile = {
   visibility: "public" | "business" | "stealth";
   group_size: string | null;
   second_region: string | null;
+  gender: string | null;
+  match_gender: string | null;
+  extras: OnboardingAnswers["extras"] | null;
 };
 
 export type HubStat = { id: string; label: string; count: number };
@@ -90,6 +97,19 @@ export default function HubDashboard({
     .filter((h): h is string => Boolean(h))
     .map((h) => REGIONS.find((r) => r.id === h)?.label ?? h);
   const [setupBusiness, setSetupBusiness] = useState(false);
+  const steckbrief = buildSteckbrief({
+    gender: profile.gender,
+    matchGender: profile.match_gender,
+    groupSize: profile.group_size,
+    region: profile.region,
+    secondRegion: profile.second_region,
+    city: profile.city,
+    interests: profile.interests,
+    vibes: profile.vibes,
+    track: profile.track,
+    business: profile.business,
+    extras: profile.extras,
+  });
   const lastError = useRef("");
   const hasProfile = Boolean(profile.profile);
   const anonymous = profile.mode === "anonymous";
@@ -141,6 +161,32 @@ export default function HubDashboard({
   async function changeVisibility(next: HubProfile["visibility"]) {
     if (next === profile.visibility) return;
     if (await patch({ visibility: next })) setProfile((p) => ({ ...p, visibility: next }));
+  }
+
+  async function changeGender(next: string) {
+    if (next === profile.gender) return;
+    if (await patch({ gender: next })) setProfile((p) => ({ ...p, gender: next }));
+  }
+
+  async function changeMatchGender(next: string) {
+    if (next === profile.match_gender) return;
+    if (await patch({ matchGender: next })) setProfile((p) => ({ ...p, match_gender: next }));
+  }
+
+  // Eine Angabe aus dem Steckbrief entfernen: wirklich weg, auch im Admin
+  async function removeFact(fact: SteckbriefFact) {
+    if (!(await patch({ removeFact: fact }))) return;
+    setProfile((p) => {
+      const extras = { ...(p.extras ?? {}) };
+      if (fact.kind === "free") delete extras.freeText;
+      else {
+        const list = (extras.followUps ?? []).slice();
+        const index = list.findIndex((f) => f.question === fact.question && f.answer === fact.answer);
+        if (index >= 0) list.splice(index, 1);
+        extras.followUps = list;
+      }
+      return { ...p, extras };
+    });
   }
 
   async function changeGroupSize(next: string) {
@@ -543,6 +589,31 @@ export default function HubDashboard({
             </div>
           </div>
 
+          {/* Geschlecht und Wunsch */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <p className="text-sm font-medium text-zinc-100">Geschlecht</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Freiwillig. Es zählt, wie du dich selbst identifizierst.</p>
+            <div className="mt-3" role="radiogroup" aria-label="Geschlecht">
+              <ChipRow>
+                {GENDERS.map((g) => (
+                  <Chip key={g.id} selected={profile.gender === g.id} onClick={() => changeGender(g.id)}>
+                    {g.label}
+                  </Chip>
+                ))}
+              </ChipRow>
+            </div>
+            <p className="mt-5 text-sm font-medium text-zinc-100">Mit wem möchtest du dich verbinden?</p>
+            <div className="mt-3" role="radiogroup" aria-label="Verbinden mit">
+              <ChipRow>
+                {MATCH_GENDERS.map((g) => (
+                  <Chip key={g.id} selected={profile.match_gender === g.id} onClick={() => changeMatchGender(g.id)}>
+                    {g.label}
+                  </Chip>
+                ))}
+              </ChipRow>
+            </div>
+          </div>
+
           {/* Gruppengröße */}
           <div className="mt-6 border-t border-white/10 pt-5">
             <p className="text-sm font-medium text-zinc-100">Gewünschte Gruppengröße</p>
@@ -649,23 +720,73 @@ export default function HubDashboard({
           )}
         </motion.section>
 
-        {/* Gespräch fortsetzen */}
+        {/* Steckbrief: was DSpora über dich weiß, und das Gespräch mit der KI */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
           className={card}
         >
-          <h2 className="text-lg font-semibold text-zinc-50">Gespräch fortsetzen</h2>
+          <h2 className="text-lg font-semibold text-zinc-50">Dein Steckbrief</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            Je besser wir dich kennen, desto passender werden deine Verbindungen. Setz das Gespräch mit dem Chat
-            fort, so lange und so oft du magst. Bereits Gefragtes wiederholt er nicht.
+            Das weiß DSpora aktuell über dich. So kann die KI dich immer auf dem neuesten Stand ansprechen. Erzähl ihr
+            jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen. Gefragt wird sie auch im Gespräch
+            („Zeig mir meinen Steckbrief“).
           </p>
+
+          {steckbrief.lines.length > 0 && (
+            <dl className="mt-4 space-y-1.5 text-sm">
+              {steckbrief.lines.map((l) => (
+                <div key={l.label} className="flex gap-3">
+                  <dt className="w-40 shrink-0 text-zinc-500">{l.label}</dt>
+                  <dd className="min-w-0 text-zinc-200">{l.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <p className="text-sm font-medium text-zinc-100">Das hast du erzählt</p>
+            {steckbrief.facts.length === 0 ? (
+              <p className="mt-2 text-xs text-zinc-500">Noch nichts. Im Gespräch lernt die KI dich besser kennen.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                <AnimatePresence initial={false}>
+                  {steckbrief.facts.map((f) => (
+                    <motion.li
+                      key={`${f.kind}-${f.question}-${f.answer}`}
+                      layout="position"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5"
+                    >
+                      <div className="min-w-0 flex-1 text-sm">
+                        {f.kind === "follow" && <p className="text-xs text-zinc-500">{f.question}</p>}
+                        <p className="break-words text-zinc-200">{f.answer}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFact(f)}
+                        disabled={saving}
+                        aria-label="Diese Angabe entfernen"
+                        title="Entfernen"
+                        className="shrink-0 text-lg leading-none text-zinc-500 transition-colors hover:text-rose disabled:opacity-50"
+                      >
+                        ×
+                      </button>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            )}
+          </div>
+
           <Link
             href={preview ? "#" : "/onboarding?talk=1"}
-            className="cta-premium mt-4 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
+            className="cta-premium mt-5 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
           >
-            Weiter erzählen
+            Mit der KI sprechen
           </Link>
         </motion.section>
 

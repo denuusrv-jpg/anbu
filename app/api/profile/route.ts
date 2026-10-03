@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { GROUP_SIZES, INTERESTS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
+import { GENDERS, GROUP_SIZES, INTERESTS, MATCH_GENDERS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
 import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
-import { Invalid, choice, followUps, oneOf, validateBusiness } from "@/lib/onboardingValidation";
+import { Invalid, choice, followUps, idOrCustom, oneOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
+import { saveTranscript } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 import { logError } from "@/lib/errorLog";
@@ -37,20 +38,51 @@ export async function PATCH(request: Request) {
   }
 
   const update: Record<string, unknown> = {};
+  let transcript: ReturnType<typeof validateTranscript> = [];
   try {
     if (body.interests !== undefined) update.interests = choice(body.interests, INTERESTS, "Interessen", 1);
     if (body.vibes !== undefined) update.vibes = choice(body.vibes, VIBES, "Vibe", 1);
 
-    // Gespräch fortsetzen: neue Fragen und Antworten werden an die bisherigen angehängt
+    // Gespräch fortsetzen: neue Fragen und Antworten werden an die bisherigen angehängt,
+    // der Chatverlauf wird pro Konto abgelegt (für die Person selbst unsichtbar)
     if (body.talk !== undefined) {
-      const talk = body.talk as { followUps?: unknown } | null;
-      const added = followUps(talk && typeof talk === "object" ? talk.followUps : undefined) ?? [];
+      const talk = (body.talk && typeof body.talk === "object" ? body.talk : {}) as {
+        followUps?: unknown;
+        transcript?: unknown;
+      };
+      const added = followUps(talk.followUps) ?? [];
       if (added.length > 0) {
-        const extras = (row.extras ?? {}) as { followUps?: unknown[] };
+        const extras = (update.extras ?? row.extras ?? {}) as { followUps?: unknown[] };
         const merged = [...(extras.followUps ?? []), ...added].slice(-MAX_FOLLOW_UPS);
         update.extras = { ...extras, followUps: merged };
       }
+      transcript = validateTranscript(talk.transcript);
     }
+
+    // Eine Angabe aus dem Steckbrief entfernen (Dashboard: ×)
+    if (body.removeFact !== undefined) {
+      const fact = (body.removeFact && typeof body.removeFact === "object" ? body.removeFact : {}) as {
+        kind?: unknown;
+        question?: unknown;
+        answer?: unknown;
+      };
+      if ((fact.kind !== "free" && fact.kind !== "follow") || typeof fact.answer !== "string") {
+        throw new Invalid("Angabe ist ungültig.");
+      }
+      const extras = { ...((update.extras ?? row.extras ?? {}) as Record<string, unknown>) };
+      if (fact.kind === "free") {
+        if (extras.freeText === fact.answer) delete extras.freeText;
+      } else {
+        const list = ((extras.followUps ?? []) as { question: string; answer: string }[]).slice();
+        const index = list.findIndex((f) => f.question === fact.question && f.answer === fact.answer);
+        if (index >= 0) list.splice(index, 1);
+        extras.followUps = list;
+      }
+      update.extras = extras;
+    }
+
+    if (body.gender !== undefined) update.gender = idOrCustom(body.gender, GENDERS, "Geschlecht", true);
+    if (body.matchGender !== undefined) update.match_gender = oneOf(body.matchGender, MATCH_GENDERS, "Wunsch", true);
 
     if (body.groupSize !== undefined) {
       update.group_size = oneOf(body.groupSize, GROUP_SIZES, "Gruppengröße", true);
@@ -102,9 +134,12 @@ export async function PATCH(request: Request) {
     if (error instanceof Invalid) return NextResponse.json({ error: error.message }, { status: 400 });
     throw error;
   }
-  if (Object.keys(update).length === 0) {
+  if (Object.keys(update).length === 0 && transcript.length === 0) {
     return NextResponse.json({ error: "Nichts zu ändern." }, { status: 400 });
   }
+
+  await saveTranscript(data.user.id, transcript);
+  if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
 
   const { error } = await supabase.from("user_profiles").update(update).eq("user_id", data.user.id);
   if (error) {

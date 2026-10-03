@@ -65,6 +65,16 @@ export const SAMPLE_PRIVATE: HubProfile = {
   business: null,
   visibility: "public",
   group_size: "crew",
+  gender: "female",
+  match_gender: "any",
+  extras: {
+    freeText: "Ich liebe Bouldern am Wochenende und suche Leute, mit denen man auch mal tiefer ins Gespräch kommt.",
+    followUps: [
+      { question: "Trainierst du lieber allein oder mit anderen?", answer: "Am liebsten mit einer Freundin, das motiviert mich." },
+      { question: "Wie verbringst du am liebsten einen ruhigen Abend?", answer: "Mit Serien und Tee." },
+    ],
+    meetFrequency: "weekend",
+  },
 };
 
 export const SAMPLE_BUSINESS: HubProfile = {

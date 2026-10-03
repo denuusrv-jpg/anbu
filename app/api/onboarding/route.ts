@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
-import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
+import { Invalid, validateAnswers, validateTranscript } from "@/lib/onboardingValidation";
 import { saveProfile } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_CHARS = 20000;
+const MAX_BODY_CHARS = 400000; // Antworten plus Chatverlauf
 
 // Speichern der Antworten für einen bereits angemeldeten Nutzer.
 // (Gäste schicken ihre Antworten über /api/auth/magic-link, sie werden nach der Anmeldung übernommen.)
@@ -26,8 +26,10 @@ export async function POST(request: Request) {
   }
 
   let answers;
+  let transcript;
   try {
     ({ answers } = validateAnswers(parsed));
+    transcript = validateTranscript(parsed.transcript);
   } catch (error) {
     if (error instanceof Invalid) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Bitte melde dich zuerst an." }, { status: 401 });
   }
 
-  if (!(await saveProfile(supabase, data.user, answers))) {
+  if (!(await saveProfile(supabase, data.user, answers, transcript))) {
     return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
   }
   return NextResponse.json({ ok: true, stored: true });

@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import OnboardingChat from "@/components/OnboardingChat";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
+import { buildSteckbrief } from "@/lib/steckbrief";
+import type { BusinessData, Choice, OnboardingAnswers } from "@/lib/onboarding";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 
@@ -36,7 +38,7 @@ export default async function Onboarding({
   if (data.user && talk === "1") {
     const { data: row } = await supabase
       .from("user_profiles")
-      .select("extras, deleted_at")
+      .select("extras, deleted_at, gender, match_gender, group_size, region, second_region, city, interests, vibes, track, business")
       .eq("user_id", data.user.id)
       .maybeSingle();
     if (row && !row.deleted_at) {
@@ -49,6 +51,19 @@ export default async function Onboarding({
           resume={{
             asked: previous.map((f) => f.question),
             context: [extras.freeText ?? "", ...previous.map((f) => f.answer)].join(" "),
+            steckbrief: buildSteckbrief({
+              gender: row.gender,
+              matchGender: row.match_gender,
+              groupSize: row.group_size,
+              region: row.region,
+              secondRegion: row.second_region,
+              city: row.city,
+              interests: row.interests as Choice,
+              vibes: row.vibes as Choice,
+              track: row.track as "community" | "business",
+              business: row.business as BusinessData | null,
+              extras: row.extras as OnboardingAnswers["extras"],
+            }),
           }}
         />
       );

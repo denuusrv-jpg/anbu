@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
+import { Invalid, validateAnswers, validateTranscript } from "@/lib/onboardingValidation";
 import { saveProfile } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -34,7 +34,7 @@ export async function POST() {
   const email = user.email.toLowerCase();
   const { data: draft } = await db
     .from("onboarding_drafts")
-    .select("answers, created_at")
+    .select("answers, transcript, created_at")
     .eq("email", email)
     .maybeSingle();
   if (!draft || Date.now() - new Date(draft.created_at).getTime() > DRAFT_MAX_AGE_MS) {
@@ -42,14 +42,16 @@ export async function POST() {
   }
 
   let answers;
+  let transcript;
   try {
     ({ answers } = validateAnswers(draft.answers));
+    transcript = validateTranscript(draft.transcript);
   } catch (error) {
     if (error instanceof Invalid) return NextResponse.json({ status: "none" });
     throw error;
   }
 
-  if (!(await saveProfile(supabase, user, answers))) {
+  if (!(await saveProfile(supabase, user, answers, transcript))) {
     return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
   }
   await db.from("onboarding_drafts").delete().eq("email", email);

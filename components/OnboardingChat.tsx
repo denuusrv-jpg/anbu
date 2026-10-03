@@ -13,15 +13,26 @@ import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
 import { nextQuestion } from "@/lib/followups";
 import { answerSiteQuestion, type ChatLink } from "@/lib/siteKnowledge";
+import {
+  FREE_FACT_QUESTION,
+  buildSteckbrief,
+  isRemoveRequest,
+  isSteckbriefRequest,
+  steckbriefText,
+  type Steckbrief,
+} from "@/lib/steckbrief";
 import ReadyWindow, { type ReadyKind } from "@/components/onboarding/ReadyWindow";
 import {
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
   HUB_REASON_MAX,
+  GENDERS,
   GOALS,
   GROUP_SIZES,
   INTERESTS,
+  MATCH_GENDERS,
   MAX_HUBS,
+  MAX_TRANSCRIPT,
   MEET_FREQUENCIES,
   REGIONS,
   ROLE_MAX,
@@ -31,6 +42,7 @@ import {
   WISHES_MAX,
   choiceLabels,
   labelOf,
+  type ChatTurn,
   type Choice,
   type LightCv,
   type OnboardingAnswers,
@@ -38,6 +50,8 @@ import {
 
 type Step =
   | "intro"
+  | "gender"
+  | "matchGender"
   | "groupSize"
   | "region"
   | "hubReason"
@@ -74,20 +88,22 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_SECONDS = 30;
 
 // Fortschritt der Kernfragen (Anzeige oben); danach "Profil" und "Finale"
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 const STEP_NUMBER: Partial<Record<Step, number>> = {
-  groupSize: 1,
-  region: 2,
-  hubReason: 2,
-  city: 2,
-  interests: 3,
-  vibes: 4,
-  more: 5,
-  freeText: 5,
-  followUp: 5,
-  checkpoint: 5,
-  frequency: 5,
-  mode: 5,
+  gender: 1,
+  matchGender: 1,
+  groupSize: 2,
+  region: 3,
+  hubReason: 3,
+  city: 3,
+  interests: 4,
+  vibes: 5,
+  more: 6,
+  freeText: 6,
+  followUp: 6,
+  checkpoint: 6,
+  frequency: 6,
+  mode: 6,
 };
 const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "profile"];
 const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
@@ -125,7 +141,7 @@ export default function OnboardingChat({
   mode?: ChatMode;
   userId?: string;
   /** Eingeloggte Person setzt das Gespräch fort: bereits Gefragtes wird nicht wiederholt */
-  resume?: { asked: string[]; context: string };
+  resume?: { asked: string[]; context: string; steckbrief: Steckbrief };
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -136,6 +152,7 @@ export default function OnboardingChat({
   const [inputError, setInputError] = useState("");
   const [hubs, setHubs] = useState<Choice>(EMPTY);
   const [chosenFrequency, setChosenFrequency] = useState<string | undefined>();
+  const [chosenGender, setChosenGender] = useState<string | undefined>();
   const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
   const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
   const [followQuestion, setFollowQuestion] = useState("");
@@ -157,6 +174,8 @@ export default function OnboardingChat({
   const photos = useRef<Blob[]>([]);
   const business = useRef<{ sector?: string; role?: string; goals?: Choice }>({});
   const followAnswers = useRef<{ question: string; answer: string }[]>([]);
+  // Chatverlauf (wird pro Konto gespeichert, für die Person selbst nicht sichtbar)
+  const history = useRef<ChatTurn[]>([]);
   // Längeres Gespräch: schon gestellte Fragen, alles bisher Gesagte, Zähler für Zwischenfragen
   const askedQuestions = useRef<string[]>(resume?.asked ?? []);
   const talkContext = useRef<string>(resume?.context ?? "");
@@ -198,6 +217,7 @@ export default function OnboardingChat({
       await sleep(650 + Math.min(message.text.length * 8, 850));
       if (!alive.current) return;
       setTyping(false);
+      history.current.push({ role: "bot", text: message.text });
       setMessages((m) => [...m, { id: nextId.current++, from: "bot", ...message }]);
       await sleep(220);
     }
@@ -205,6 +225,7 @@ export default function OnboardingChat({
   }
 
   function user(message: string) {
+    history.current.push({ role: "user", text: message });
     setMessages((m) => [...m, { id: nextId.current++, from: "user", text: message }]);
   }
 
@@ -221,20 +242,47 @@ export default function OnboardingChat({
     if (started.current) return;
     started.current = true;
     if (resume) {
-      askNext(["Schön, dass du wieder da bist! Wir machen da weiter, wo wir aufgehört haben."]);
+      ask(
+        [
+          "Schön, dass du wieder da bist! Was gibt es Neues bei dir? Erzähl mir gern, was sich geändert hat, oder frag mich nach deinem Steckbrief. Wenn du magst, stelle ich dir auch einfach weitere Fragen.",
+        ],
+        "freeText",
+      );
       return;
     }
     ask(
       [
         "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
-        "Ein paar kurze Fragen, dann bist du durch. Zuerst: In welcher Gruppengröße möchtest du Leute treffen?",
+        "Ein paar kurze Fragen, dann bist du durch. Zuerst: Als was identifizierst du dich? Die Angabe ist freiwillig, du kannst auch etwas Eigenes schreiben.",
       ],
-      "groupSize",
+      "gender",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ——— Basis-Flow: Gruppengröße, Region, Interessen, Vibe ———
+
+  function pickGender(value: string, label: string) {
+    if (!value) {
+      setChosenGender(undefined);
+      return;
+    }
+    answers.current.gender = value;
+    setChosenGender(value);
+    user(label);
+    ask(
+      [
+        "Danke dir! Mit wem möchtest du dich am liebsten verbinden? Das bezieht sich immer darauf, wie sich Menschen selbst identifizieren: trans Frauen sind Frauen, trans Männer sind Männer.",
+      ],
+      "matchGender",
+    );
+  }
+
+  function pickMatchGender(value: string, label: string) {
+    answers.current.matchGender = value;
+    user(label);
+    ask(["Gut zu wissen! In welcher Gruppengröße möchtest du Leute treffen?"], "groupSize");
+  }
 
   function pickGroupSize(value: string, label: string) {
     answers.current.groupSize = value;
@@ -455,11 +503,74 @@ export default function OnboardingChat({
   // Fragt eine Person zwischendurch etwas zu DSpora, antwortet der Chat anhand der Webseiten-Infos
   // (nichts Erfundenes, sonst Hinweis auf das Kontaktformular) und stellt dann dieselbe Frage noch einmal.
   function tryAnswerSiteQuestion(value: string, question: string, backTo: Step): boolean {
+    // Der Steckbrief: Wie sehe ich aktuell aus? Anpassen ist im Dashboard und im Gespräch jederzeit möglich.
+    if (isSteckbriefRequest(value)) {
+      user(value);
+      ask(
+        [
+          { text: steckbriefText(currentSteckbrief()) },
+          loggedIn
+            ? {
+                text: "Wenn etwas nicht mehr stimmt, erzähl mir hier einfach den neuen Stand. Einzelne Angaben kannst du im Dashboard auch selbst entfernen.",
+                link: { href: "/dashboard", label: "Steckbrief im Dashboard" },
+              }
+            : "Nach der Anmeldung kannst du alles jederzeit im Dashboard anpassen und mir im Gespräch Neues erzählen.",
+          `Aber zurück zu dir: ${question}`,
+        ],
+        backTo,
+      );
+      return true;
+    }
+    // Etwas vergessen/entfernen: das geschieht bewusst sichtbar im Dashboard, nicht heimlich im Gespräch
+    if (isRemoveRequest(value)) {
+      user(value);
+      ask(
+        [
+          loggedIn
+            ? {
+                text: "Einzelne Angaben entfernst du im Dashboard unter „Dein Steckbrief“ mit dem ×. Dann sind sie auch wirklich weg. Wenn sich etwas geändert hat, erzähl mir hier gern den neuen Stand.",
+                link: { href: "/dashboard", label: "Zum Steckbrief" },
+              }
+            : "Nach der Anmeldung kannst du im Dashboard unter „Dein Steckbrief“ jede Angabe mit dem × entfernen. Wenn sich etwas geändert hat, erzähl mir gern den neuen Stand.",
+          `Aber zurück zu dir: ${question}`,
+        ],
+        backTo,
+      );
+      return true;
+    }
     const reply = answerSiteQuestion(value);
     if (!reply) return false;
     user(value);
     ask([{ text: reply.text, link: reply.link }, `Aber zurück zu dir: ${question}`], backTo);
     return true;
+  }
+
+  // Angemeldet: der Chat kennt den gespeicherten Steckbrief. Gast: er entsteht aus den bisherigen Antworten.
+  const loggedIn = mode === "live" || mode === "test";
+  function currentSteckbrief(): Steckbrief {
+    if (resume) {
+      return {
+        lines: resume.steckbrief.lines,
+        facts: [
+          ...resume.steckbrief.facts,
+          ...followAnswers.current.map((f) => ({ kind: "follow" as const, question: f.question, answer: f.answer })),
+        ],
+      };
+    }
+    const a = answers.current;
+    return buildSteckbrief({
+      gender: a.gender,
+      matchGender: a.matchGender,
+      groupSize: a.groupSize,
+      region: a.region,
+      secondRegion: a.secondRegion,
+      city: a.city,
+      interests: a.interests,
+      vibes: a.vibes,
+      track: a.track,
+      business: a.business,
+      extras: { ...a.extras, followUps: followAnswers.current },
+    });
   }
 
   function submitFreeText(skip = false) {
@@ -472,6 +583,18 @@ export default function OnboardingChat({
       return;
     }
     const answered = !skip && Boolean(value);
+    if (resume) {
+      // Fortgesetztes Gespräch: Neues wird als Angabe im Steckbrief gemerkt
+      user(answered ? value : "Frag du mich");
+      if (answered) {
+        followAnswers.current.push({ question: "Das hast du mir mitgeteilt", answer: value });
+        talkContext.current += ` ${value}`;
+        lastAnswer.current = value;
+        sinceCheckpoint.current += 1;
+      }
+      askNext(answered ? ["Danke, das merke ich mir."] : []);
+      return;
+    }
     extras().freeText = answered ? value : undefined;
     user(answered ? value : "Überspringen");
     followAnswers.current = [];
@@ -564,7 +687,7 @@ export default function OnboardingChat({
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ talk: { followUps: followAnswers.current } }),
+        body: JSON.stringify({ talk: { followUps: followAnswers.current, transcript: history.current.slice(-MAX_TRANSCRIPT) } }),
       });
       if (!res.ok) throw new Error("save failed");
       setTyping(false);
@@ -639,7 +762,11 @@ export default function OnboardingChat({
         fetch("/api/onboarding", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...answers.current, test: mode === "test" ? true : undefined }),
+          body: JSON.stringify({
+            ...answers.current,
+            transcript: history.current.slice(-MAX_TRANSCRIPT),
+            test: mode === "test" ? true : undefined,
+          }),
         }),
         sleep(900),
       ]);
@@ -688,6 +815,7 @@ export default function OnboardingChat({
           website: honeypot.current?.value ?? "",
           elapsed: Date.now() - shownAt.current,
           draft: answers.current,
+          transcript: history.current.slice(-MAX_TRANSCRIPT),
         }),
       });
       if (!res.ok) {
@@ -773,7 +901,7 @@ export default function OnboardingChat({
                 <div
                   className={
                     message.from === "bot"
-                      ? "max-w-[85%] rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_26px_-12px_rgba(242,166,90,0.45)] backdrop-blur-xl"
+                      ? "max-w-[85%] rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed whitespace-pre-line text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_26px_-12px_rgba(242,166,90,0.45)] backdrop-blur-xl"
                       : "max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-b from-gold-light to-gold px-4 py-2.5 text-sm leading-relaxed font-medium break-words text-zinc-950 shadow-[0_8px_20px_-10px_rgba(242,166,90,0.5)]"
                   }
                 >
@@ -832,6 +960,25 @@ export default function OnboardingChat({
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.3, ease: EASE }}
               >
+                {step === "gender" && (
+                  <SingleChoice
+                    options={GENDERS}
+                    value={chosenGender}
+                    onSelect={pickGender}
+                    customPlaceholder="Etwas anderes? Schreib es selbst"
+                  />
+                )}
+
+                {step === "matchGender" && (
+                  <ChipRow>
+                    {MATCH_GENDERS.map((g) => (
+                      <Chip key={g.id} onClick={() => pickMatchGender(g.id, g.label)}>
+                        {g.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                )}
+
                 {step === "groupSize" && (
                   <ChipRow>
                     {GROUP_SIZES.map((g) => (
@@ -974,6 +1121,7 @@ export default function OnboardingChat({
                     maxLength={FREE_TEXT_MAX}
                     minLength={10}
                     rows={5}
+                    skipLabel={resume ? "Frag du mich" : "Überspringen"}
                     onSkip={() => submitFreeText(true)}
                   />
                 )}

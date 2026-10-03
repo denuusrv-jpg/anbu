@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import type { OnboardingAnswers } from "@/lib/onboarding";
+import type { ChatTurn, OnboardingAnswers } from "@/lib/onboarding";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { logError } from "@/lib/errorLog";
 
@@ -10,6 +10,7 @@ export async function saveProfile(
   supabase: SupabaseClient,
   user: User,
   answers: OnboardingAnswers,
+  transcript: ChatTurn[] = [],
 ): Promise<boolean> {
   // Wünsche/Ideen für DSpora liegen in einer eigenen Tabelle (Co-Creation), nicht im Profil
   const wishes = answers.extras?.wishes?.trim();
@@ -18,6 +19,8 @@ export async function saveProfile(
   const { error } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
+      gender: answers.gender ?? null,
+      match_gender: answers.matchGender ?? null,
       group_size: answers.groupSize ?? null,
       region: answers.region,
       second_region: answers.secondRegion ?? null,
@@ -40,6 +43,8 @@ export async function saveProfile(
     return false;
   }
 
+  await saveTranscript(user.id, transcript);
+
   if (wishes) {
     // Dieselbe Idee nicht doppelt ablegen, wenn jemand den Chat erneut durchläuft
     const { data: same } = await supabase
@@ -61,4 +66,19 @@ export async function saveProfile(
       .eq("email", user.email.toLowerCase());
   }
   return true;
+}
+
+// Chatverlauf pro Konto ablegen. Nutzer sehen ihn nicht (keine Lese-Policy), er dient dem Steckbrief und
+// dem Fortsetzen des Gesprächs. Ein Fehler hier darf das Speichern des Profils nie verhindern.
+export async function saveTranscript(userId: string, transcript: ChatTurn[]): Promise<void> {
+  if (transcript.length === 0 || !isServiceRoleConfigured()) return;
+  const base = Date.now() - transcript.length;
+  const rows = transcript.map((turn, i) => ({
+    user_id: userId,
+    role: turn.role,
+    text: turn.text,
+    created_at: new Date(base + i).toISOString(),
+  }));
+  const { error } = await getServiceClient().from("chat_messages").insert(rows);
+  if (error) await logError(error, "saveTranscript (chat_messages)");
 }

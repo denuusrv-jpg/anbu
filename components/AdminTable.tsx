@@ -3,8 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
+  GENDERS,
   GOALS,
   GROUP_SIZES,
+  MATCH_GENDERS,
   MEET_FREQUENCIES,
   INTERESTS,
   LANGUAGES,
@@ -108,6 +110,8 @@ function Detail({
         </div>
 
         <Section title="Basis">
+          <Line label="Geschlecht" value={answers.gender ? labelOf(answers.gender, GENDERS) : undefined} />
+          <Line label="Verbinden mit" value={answers.matchGender ? labelOf(answers.matchGender, MATCH_GENDERS) : undefined} />
           <Line label="Gruppengröße" value={answers.groupSize ? labelOf(answers.groupSize, GROUP_SIZES) : undefined} />
           <Line
             label="Hubs"
@@ -192,6 +196,8 @@ function Detail({
 
 function answersOf(row: AdminProfile): OnboardingAnswers {
   return {
+    gender: row.gender ?? undefined,
+    matchGender: row.match_gender ?? undefined,
     groupSize: row.group_size ?? undefined,
     region: row.region,
     secondRegion: row.second_region ?? undefined,

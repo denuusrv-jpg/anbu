@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cleanEmail, looksLikeBot, rateLimited } from "@/lib/botGuard";
-import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
+import { Invalid, validateAnswers, validateTranscript } from "@/lib/onboardingValidation";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, safeNextPath, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
 import { logError } from "@/lib/errorLog";
@@ -51,9 +51,10 @@ export async function POST(request: Request) {
     }
     try {
       const { answers } = validateAnswers(body.draft);
+      const transcript = validateTranscript(body.transcript);
       const { error: draftError } = await getServiceClient()
         .from("onboarding_drafts")
-        .upsert({ email, answers, created_at: new Date().toISOString() }, { onConflict: "email" });
+        .upsert({ email, answers, transcript, created_at: new Date().toISOString() }, { onConflict: "email" });
       if (draftError) throw new Error("draft failed");
       next = "/onboarding/save";
     } catch (error) {

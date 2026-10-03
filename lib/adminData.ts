@@ -21,6 +21,8 @@ export type AdminProfile = {
   business: BusinessData | null;
   visibility: "public" | "business" | "stealth";
   group_size: string | null;
+  gender: string | null;
+  match_gender: string | null;
 };
 export type AdminWish = { id: string; user_id: string; wish: string; created_at: string; email: string; name: string };
 export type AdminWaitlist = { id: string; email: string; status: string; created_at: string };
@@ -64,7 +66,7 @@ export async function loadAdminData(db: SupabaseClient): Promise<AdminData> {
   const [pr, users, wl, dr, ws] = await Promise.all([
     db
       .from("user_profiles")
-      .select("user_id, region, second_region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras, track, business, visibility, group_size")
+      .select("user_id, region, second_region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras, track, business, visibility, group_size, gender, match_gender")
       .order("created_at", { ascending: false })
       .limit(2000),
     db.auth.admin.listUsers({ page: 1, perPage: 1000 }),

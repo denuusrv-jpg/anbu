@@ -1,7 +1,7 @@
 import "server-only";
 import { daysLeft } from "@/lib/accountLifecycle";
 import { computeKpis, startOfTodayBerlin, type AdminData, type AdminProfile } from "@/lib/adminData";
-import { GOALS, GROUP_SIZES, INTERESTS, LANGUAGES, MEET_FREQUENCIES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
+import { GENDERS, GOALS, GROUP_SIZES, MATCH_GENDERS, INTERESTS, LANGUAGES, MEET_FREQUENCIES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
 
 // Admin-Copilot: beantwortet Fragen zu den Nutzerdaten in natürlicher Sprache.
 // Regelbasiert (Stichwörter), ohne externe KI. Die Funktion lässt sich später durch einen
@@ -121,6 +121,21 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
         : "Es gibt noch keine Business-Profile.",
       items: business.slice(0, 15).map((p) => ({ label: who(p), value: `${labelOf(p.business!.sector, SECTORS)} · ${p.business!.role}` })),
     };
+  }
+
+  // Geschlecht und Verbindungswunsch
+  if (has("geschlecht", "männlich", "maennlich", "weiblich", "frauen", "männer", "maenner", "divers", "binär", "binaer", "gender")) {
+    const own = tally(active.filter((p) => p.gender), (p) => [labelOf(p.gender as string, GENDERS)]);
+    const wish = tally(active.filter((p) => p.match_gender), (p) => [labelOf(p.match_gender as string, MATCH_GENDERS)]);
+    return own.size || wish.size
+      ? {
+          answer: "Geschlecht und Verbindungswunsch (Selbstangaben):",
+          items: [
+            ...(own.size ? [{ label: "Geschlecht" }, ...top(own)] : []),
+            ...(wish.size ? [{ label: "Möchte sich verbinden mit" }, ...top(wish)] : []),
+          ],
+        }
+      : { answer: "Noch hat niemand Angaben zum Geschlecht gemacht." };
   }
 
   // Gruppengröße (Duo, Crew, Squad)
@@ -293,6 +308,7 @@ export const COPILOT_EXAMPLES = [
   "Wie viele Business-Profile gibt es?",
   "Wie ist die Sichtbarkeit verteilt?",
   "Welche Gruppengröße ist am beliebtesten?",
+  "Wie ist die Geschlechterverteilung?",
   "Wer hat zwei Hubs gewählt und warum?",
   "Wie oft wollen sich die Leute maximal treffen?",
 ];

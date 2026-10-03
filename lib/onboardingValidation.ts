@@ -3,12 +3,16 @@ import {
   ACHIEVEMENT_MAX,
   CUSTOM_PATTERN,
   EXPERTISE_MAX,
+  GENDERS,
   GOALS,
   GROUP_SIZES,
   HUB_REASON_MAX,
   MAX_ACHIEVEMENTS,
+  MATCH_GENDERS,
   MAX_FOLLOW_UPS,
+  MAX_TRANSCRIPT,
   MEET_FREQUENCIES,
+  TRANSCRIPT_TEXT_MAX,
   MAX_LINKS,
   ROLE_MAX,
   SECTORS,
@@ -31,6 +35,7 @@ import {
   VISIBILITIES,
   WISHES_MAX,
   type BusinessData,
+  type ChatTurn,
   type Choice,
   type FollowUp,
   type OnboardingAnswers,
@@ -240,6 +245,22 @@ export function followUps(value: unknown): FollowUp[] | undefined {
   });
 }
 
+/** Chatverlauf prüfen: nur Rolle und Text, begrenzte Länge und Anzahl (die letzten Zeilen zählen). */
+export function validateTranscript(value: unknown): ChatTurn[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) fail("Chatverlauf ist ungültig.");
+  const turns: ChatTurn[] = [];
+  for (const item of value as unknown[]) {
+    if (!isObject(item)) fail("Chatverlauf ist ungültig.");
+    const role = (item as Record<string, unknown>).role;
+    const text = (item as Record<string, unknown>).text;
+    if ((role !== "bot" && role !== "user") || typeof text !== "string") fail("Chatverlauf ist ungültig.");
+    const clean = (text as string).trim().slice(0, TRANSCRIPT_TEXT_MAX);
+    if (clean) turns.push({ role: role as "bot" | "user", text: clean });
+  }
+  return turns.slice(-MAX_TRANSCRIPT);
+}
+
 export function validateAnswers(body: unknown): { answers: OnboardingAnswers; token?: string } {
   if (!isObject(body)) fail("Ungültige Anfrage.");
   const b = body as Record<string, unknown>;
@@ -275,6 +296,8 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   if (track === "business" && mode !== "profile") fail("Business-Profile können nicht anonym sein.");
 
   const answers: OnboardingAnswers = {
+    gender: idOrCustom(b.gender, GENDERS, "Geschlecht"),
+    matchGender: oneOf(b.matchGender, MATCH_GENDERS, "Wunsch"),
     groupSize: oneOf(b.groupSize, GROUP_SIZES, "Gruppengröße"),
     region: idOrCustom(b.region, REGIONS, "Region", true) as string,
     secondRegion: idOrCustom(b.secondRegion, REGIONS, "Zweiter Hub"),
