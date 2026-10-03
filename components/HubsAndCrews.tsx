@@ -52,7 +52,7 @@ export default function HubsAndCrews() {
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="mx-auto max-w-2xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
+          <p className="mx-auto max-w-5xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
             <Translated text={t.hubs.infoText} />
           </p>
           <div className="mt-6">
