@@ -46,7 +46,7 @@ export default function Navbar() {
     <motion.div
       onMouseMove={(e) => mouseX.set(e.pageX)}
       onMouseLeave={() => mouseX.set(Infinity)}
-      className="mx-auto flex w-fit flex-wrap items-end justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2.5 shadow-lg shadow-black/30 backdrop-blur-md sm:gap-4 sm:px-4"
+      className="relative z-30 mx-auto flex w-fit flex-wrap items-end justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-3 py-2.5 shadow-lg shadow-black/30 backdrop-blur-md sm:gap-4 sm:px-4"
     >
       {items.map((item) =>
         isDesktop ? (
