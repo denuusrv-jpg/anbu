@@ -11,6 +11,7 @@ type Status = "idle" | "loading" | "success";
 export default function WaitlistCapture() {
   const [status, setStatus] = useState<Status>("idle");
   const [email, setEmail] = useState("");
+  const [sheenKey, setSheenKey] = useState(0);
   const { t, language } = useLanguage();
 
   function handleSubmit(e: React.FormEvent) {
@@ -27,7 +28,18 @@ export default function WaitlistCapture() {
   return (
     <div className="mx-auto w-full max-w-md">
       <form onSubmit={handleSubmit}>
-        <div className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50">
+        <div
+          onMouseEnter={() => {
+            if (status === "idle") setSheenKey((k) => k + 1);
+          }}
+          className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
+        >
+          {sheenKey > 0 && (
+            <div key={sheenKey} aria-hidden className="pointer-events-none absolute inset-0 z-10">
+              <div className="amber-ring absolute inset-0 rounded-2xl shadow-[inset_0_0_0_1px_rgba(242,166,90,0.65),inset_0_0_18px_-4px_rgba(242,166,90,0.35)]" />
+              <div className="amber-sheen absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-gold/35 to-transparent" />
+            </div>
+          )}
           <motion.div
             className="absolute inset-y-0 left-0 -z-10 bg-gradient-to-r from-gold to-gold-light"
             initial={{ width: "0%" }}

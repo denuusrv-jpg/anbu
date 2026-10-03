@@ -34,6 +34,43 @@ body {
   }
 }
 
+/* Amber-Glanz für die E-Mail-Leiste: ein schräges Lichtband läuft einmal
+   von links nach rechts durch, der Rand leuchtet dabei kurz in Amber auf. */
+@keyframes amber-sheen {
+  0% {
+    transform: translateX(-160%) skewX(-20deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(520%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes amber-ring {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+
+.amber-sheen {
+  animation: amber-sheen 0.95s cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+
+.amber-ring {
+  animation: amber-ring 0.95s ease-in-out both;
+}
+
 /* Browser-Autofill (gespeicherte E-Mail-Adressen) soll Eingabefelder nicht
    blau/gelb einfärben - überall gleich aussehen. Der extrem lange
    Übergang hält die eigene Hintergrundfarbe, die Textfarbe wird erzwungen. */
