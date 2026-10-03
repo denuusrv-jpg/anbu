@@ -3,14 +3,16 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// Glass-Blur-Crossfade: Glas-Karten bleiben stehen, nur ihr Inhalt blendet über
-// (Regeln in globals.css, Attribut data-page-transition), und ein Blur-Schleier
-// über der ganzen Seite zieht für einen Moment an (Schärfentiefe-Effekt).
-type Phase = "idle" | "exit" | "enter-start" | "enter";
+// Amber-Wand: steigt von unten auf und verdeckt alles, die neue Seite entsteht
+// dahinter, danach zieht die Wand nach oben weiter ab und gibt sie frei.
+type Phase = "idle" | "cover" | "reveal";
 
-const DURATION_MS = 300;
-const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const BLUR_PX = 6;
+const COVER_MS = 440;
+const REVEAL_MS = 500;
+const EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
+// Glas-Lippen ragen über und unter die Wand hinaus, daher etwas mehr Weg
+const HIDDEN_BELOW = "translate3d(0, calc(100% + 140px), 0)";
+const HIDDEN_ABOVE = "translate3d(0, calc(-100% - 140px), 0)";
 
 export default function PageTransition({
   children,
@@ -21,7 +23,13 @@ export default function PageTransition({
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const prevPathname = useRef(pathname);
+  const phaseRef = useRef<Phase>("idle");
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  function changePhase(next: Phase) {
+    phaseRef.current = next;
+    setPhase(next);
+  }
 
   function later(fn: () => void, ms: number) {
     timers.current.push(setTimeout(fn, ms));
@@ -32,19 +40,20 @@ export default function PageTransition({
     timers.current = [];
   }
 
-  function finish() {
-    setPhase("idle");
-    document.documentElement.style.overflowX = "";
+  function startReveal() {
+    clearTimers();
+    changePhase("reveal");
+    later(() => changePhase("idle"), REVEAL_MS + 50);
   }
 
-  // Interne Link-Klicks abfangen: erst ausblenden, dann navigieren
+  // Interne Link-Klicks abfangen: erst Wand hochfahren, dann navigieren
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     function onClick(e: MouseEvent) {
       if (e.defaultPrevented || e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (reduceMotion.matches) return;
+      if (reduceMotion.matches || phaseRef.current !== "idle") return;
 
       const anchor = (e.target as Element | null)?.closest?.("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
@@ -59,12 +68,14 @@ export default function PageTransition({
       e.stopPropagation();
 
       clearTimers();
-      document.documentElement.style.overflowX = "clip";
-      setPhase("exit");
+      changePhase("cover");
 
-      later(() => router.push(url.pathname + url.search + url.hash), DURATION_MS);
+      later(
+        () => router.push(url.pathname + url.search + url.hash),
+        COVER_MS,
+      );
       // Sicherheitsnetz, falls die Navigation nie ankommt
-      later(finish, 4000);
+      later(startReveal, COVER_MS + 4000);
     }
 
     document.addEventListener("click", onClick, true);
@@ -72,46 +83,61 @@ export default function PageTransition({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  // Neue Seite ist da: Inhalt blendet ein, Blur löst sich (Layout-Effect, damit kein Frame in voller Deckkraft aufblitzt)
+  // Neue Seite ist da: Wand zieht nach oben ab (nur wenn sie gerade deckt)
   useLayoutEffect(() => {
     if (prevPathname.current === pathname) return;
     prevPathname.current = pathname;
-
-    clearTimers();
-    document.documentElement.style.overflowX = "clip";
-    setPhase("enter-start");
-    // kurz warten, damit der Startzustand (Inhalt unsichtbar, Blur voll) gerendert ist
-    later(() => setPhase("enter"), 30);
-    later(finish, 30 + DURATION_MS);
+    if (phaseRef.current !== "cover") return;
+    startReveal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => clearTimers, []);
 
-  const blur =
-    phase === "idle" ? "none" : `blur(${phase === "enter" ? 0 : BLUR_PX}px)`;
-  const overlayStyle: React.CSSProperties = {
-    backdropFilter: blur,
-    WebkitBackdropFilter: blur,
-    transition:
-      phase === "exit" || phase === "enter"
-        ? `backdrop-filter ${DURATION_MS}ms ${EASE}, -webkit-backdrop-filter ${DURATION_MS}ms ${EASE}`
-        : "none",
-  };
+  const transform =
+    phase === "cover"
+      ? "translate3d(0,0,0)"
+      : phase === "reveal"
+        ? HIDDEN_ABOVE
+        : HIDDEN_BELOW;
+  // Beim Zurücksetzen nach unten (idle) darf nichts animiert werden
+  const transition =
+    phase === "cover"
+      ? `transform ${COVER_MS}ms ${EASE}`
+      : phase === "reveal"
+        ? `transform ${REVEAL_MS}ms ${EASE}`
+        : "none";
 
   return (
     <>
-      <div
-        data-page-transition={phase}
-        style={phase === "exit" ? { pointerEvents: "none" } : undefined}
-      >
-        {children}
-      </div>
+      {children}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-[100]"
-        style={overlayStyle}
-      />
+        style={{
+          transform,
+          transition,
+          visibility: phase === "idle" ? "hidden" : "visible",
+          willChange: phase === "idle" ? undefined : "transform",
+        }}
+      >
+        {/* Wand: tiefes Amber mit Verlauf */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#f7bd7e] via-gold to-[#c9772a]" />
+        {/* Glasiger Schimmer: diagonales Licht und weiche Aufhellung oben */}
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.28)_46%,rgba(255,255,255,0.06)_54%,transparent_70%)]" />
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/25 to-transparent" />
+        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),inset_0_-1px_0_rgba(0,0,0,0.15)]" />
+
+        {/* Glas-Lippen: weicher Blur-Saum an Ober- und Unterkante der Wand */}
+        <div
+          className="absolute inset-x-0 bottom-full h-[120px] bg-gradient-to-t from-gold/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_top,black,transparent)]"
+          style={{ WebkitBackdropFilter: "blur(10px)" }}
+        />
+        <div
+          className="absolute inset-x-0 top-full h-[120px] bg-gradient-to-b from-[#c9772a]/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]"
+          style={{ WebkitBackdropFilter: "blur(10px)" }}
+        />
+      </div>
     </>
   );
 }

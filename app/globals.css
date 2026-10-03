@@ -183,20 +183,6 @@ body {
   animation: cta-sheen 1s cubic-bezier(0.45, 0, 0.2, 1) both;
 }
 
-/* Seitenwechsel (Glass-Blur-Crossfade, siehe PageTransition.tsx): Während der
-   Phasen "exit"/"enter-start" ist der Inhalt unsichtbar - nur Elemente ohne
-   Kinder (Texte, Icons) und typische Inhalts-Tags, nicht die Glas-Container
-   selbst. Die Karten bleiben dadurch stehen, ihr Inhalt blendet über. */
-[data-page-transition="exit"] :is(h1, h2, h3, h4, p, li, label, a, button, svg, img, input, textarea, *:not(:has(*))),
-[data-page-transition="enter-start"] :is(h1, h2, h3, h4, p, li, label, a, button, svg, img, input, textarea, *:not(:has(*))) {
-  opacity: 0 !important;
-}
-
-[data-page-transition="exit"] :is(h1, h2, h3, h4, p, li, label, a, button, svg, img, input, textarea, *:not(:has(*))),
-[data-page-transition="enter"] :is(h1, h2, h3, h4, p, li, label, a, button, svg, img, input, textarea, *:not(:has(*))) {
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
 /* Browser-Autofill (gespeicherte E-Mail-Adressen) soll Eingabefelder nicht
    blau/gelb einfärben - überall gleich aussehen. Der extrem lange
    Übergang hält die eigene Hintergrundfarbe, die Textfarbe wird erzwungen. */
