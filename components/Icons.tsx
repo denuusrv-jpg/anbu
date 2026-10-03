@@ -194,3 +194,19 @@ export function RetryIcon({ className = "w-4 h-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function BoltIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M13 3L5 13.5h6L10 21l8-10.5h-6L13 3z" />
+    </svg>
+  );
+}

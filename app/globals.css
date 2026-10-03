@@ -158,10 +158,13 @@ body {
   }
 }
 
-.cta-premium {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
+/* In @layer components, damit Tailwind-Utilities wie "fixed" Vorrang behalten */
+@layer components {
+  .cta-premium {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
 }
 
 .cta-premium::after {
