@@ -27,12 +27,7 @@ export default function WaitlistCapture() {
   return (
     <div className="mx-auto w-full max-w-md">
       <form onSubmit={handleSubmit}>
-        <div className="relative isolate overflow-hidden rounded-full border border-white/15 bg-gradient-to-b from-white/[0.12] to-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(255,255,255,0.04),0_10px_30px_-10px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
-          {/* Glas-Glanz: heller Schimmer in der oberen Hälfte, liegt auch über der Gold-Füllung */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-3 top-0 z-10 h-1/2 rounded-full bg-gradient-to-b from-white/[0.14] to-transparent"
-          />
+        <div className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
           <motion.div
             className="absolute inset-y-0 left-0 -z-10 bg-gradient-to-r from-gold to-gold-light"
             initial={{ width: "0%" }}
@@ -63,7 +58,7 @@ export default function WaitlistCapture() {
                   onClick={handleRetry}
                   aria-label={t.waitlistCapture.retry}
                   title={t.waitlistCapture.retry}
-                  className="group m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-950/15 text-zinc-950 transition hover:scale-105 hover:bg-zinc-950/25 active:scale-95"
+                  className="group m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950/15 text-zinc-950 transition hover:scale-105 hover:bg-zinc-950/25 active:scale-95"
                 >
                   <RetryIcon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:-rotate-90" />
                 </button>
@@ -94,7 +89,7 @@ export default function WaitlistCapture() {
                   type="submit"
                   disabled={status === "loading"}
                   aria-label={t.waitlistCapture.button}
-                  className="group m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-zinc-950 shadow-[0_0_18px_-4px_rgba(242,166,90,0.8)] transition hover:scale-105 hover:bg-gold-light hover:shadow-[0_0_24px_-2px_rgba(242,166,90,0.95)] active:scale-95 disabled:opacity-70"
+                  className="group m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold text-zinc-950 transition hover:scale-105 hover:bg-gold-light active:scale-95 disabled:opacity-70"
                 >
                   <ArrowRightIcon className="h-[18px] w-[18px] transition-transform group-hover:translate-x-0.5" />
                 </button>
@@ -103,7 +98,7 @@ export default function WaitlistCapture() {
           </AnimatePresence>
         </div>
       </form>
-      <p className="mx-auto mt-6 block w-fit rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-xl">
+      <p className="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-medium text-zinc-300 backdrop-blur-xl">
         <Translated text={t.waitlist.note} />
       </p>
     </div>
