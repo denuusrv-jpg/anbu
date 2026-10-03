@@ -77,7 +77,7 @@ export function LightCvFields({
               inputMode="url"
               autoCapitalize="none"
               spellCheck={false}
-              placeholder={["github.com/dein-name", "deine-website.de", "Weiterer Link"][i]}
+              placeholder={["Link einfügen (z. B. LinkedIn)", "Weiterer Link", "Weiterer Link"][i]}
               aria-label={`Link ${i + 1}`}
               className={fieldClass}
             />
