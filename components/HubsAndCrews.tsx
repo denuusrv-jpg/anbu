@@ -55,6 +55,9 @@ export default function HubsAndCrews() {
           <p className="mx-auto max-w-5xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
             <Translated text={t.hubs.infoText} />
           </p>
+          <p className="mx-auto mt-3 max-w-5xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
+            <Translated text={t.hubs.businessText} />
+          </p>
           <div className="mt-6">
             <WaitlistCapture />
           </div>

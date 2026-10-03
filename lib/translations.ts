@@ -37,6 +37,7 @@ export type Translation = {
     list: string[];
     badgeActive: string;
     infoText: string;
+    businessText: string;
   };
   groups: {
     heading: string;
@@ -104,6 +105,8 @@ export const translations: Record<Language, Translation> = {
       badgeActive: "Warteliste aktiv",
       infoText:
         "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam.",
+      businessText:
+        "DSpora ist nicht nur für Freundschaften da: Du kannst die Plattform auch für Business-Kontakte nutzen – zum Beispiel, um Co-Founder, Partner oder Mentoren zu finden. Dafür legst du im Onboarding ein kurzes Light-CV an und bestimmst selbst, wer dich sehen darf.",
     },
     groups: {
       heading: "Gemeinschaft nach Maß",
@@ -206,6 +209,8 @@ export const translations: Record<Language, Translation> = {
       badgeActive: "Waitlist active",
       infoText:
         "As soon as 100 people in a region sign up, the hub unlocks. The first step: you'll get an email with the link to our AI personality check, which finds your ideal match. It all stays completely anonymous at first, and completely spam-free.",
+      businessText:
+        "DSpora isn't just for friendships: you can also use the platform for business connections – for example to find co-founders, partners or mentors. During onboarding you create a short Light CV and decide yourself who gets to see you.",
     },
     groups: {
       heading: "Community, your size",
@@ -306,6 +311,8 @@ export const translations: Record<Language, Translation> = {
       badgeActive: "காத்திருப்பு பட்டியல் செயலில்",
       infoText:
         "ஒரு பகுதியில் 100 பேர் பதிவு செய்தவுடன், அந்த மையம் திறக்கப்படும். முதல் படி: எங்கள் AI ஆளுமை சோதனைக்கான இணைப்புடன் ஒரு மின்னஞ்சல் உங்களுக்கு வரும், இது உங்கள் சரியான பொருத்தத்தைக் கண்டறியும். இது ஆரம்பத்தில் முற்றிலும் அநாமதேயமாகவும், ஸ்பேம் இல்லாமலும் இருக்கும்.",
+      businessText:
+        "DSpora நட்புக்காக மட்டுமல்ல: வணிகத் தொடர்புகளுக்கும் இந்த தளத்தைப் பயன்படுத்தலாம் – எடுத்துக்காட்டாக இணை நிறுவனர்கள், கூட்டாளிகள் அல்லது வழிகாட்டிகளைக் கண்டறிய. பதிவின் போது ஒரு சிறிய Light-CV உருவாக்கி, யார் உங்களைப் பார்க்கலாம் என்பதை நீங்களே தீர்மானிக்கிறீர்கள்.",
     },
     groups: {
       heading: "உங்களுக்கேற்ற குழு அளவு",
