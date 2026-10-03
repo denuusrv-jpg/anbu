@@ -3,16 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// Schwarze Wand: steigt von unten auf und verdeckt alles, die neue Seite entsteht
-// dahinter, danach zieht die Wand nach oben weiter ab und gibt sie frei.
-type Phase = "idle" | "cover" | "reveal";
+// Ruhiger Seitenwechsel: die alte Seite blendet schnell aus, die neue blendet
+// weich ein und setzt sich dabei minimal von unten an ihren Platz.
+type Phase = "idle" | "exit" | "enter-start" | "enter";
 
-const COVER_MS = 440;
-const REVEAL_MS = 500;
-const EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
-// Glas-Lippen ragen über und unter die Wand hinaus, daher etwas mehr Weg
-const HIDDEN_BELOW = "translate3d(0, calc(100% + 140px), 0)";
-const HIDDEN_ABOVE = "translate3d(0, calc(-100% - 140px), 0)";
+const EXIT_MS = 180;
+const ENTER_MS = 380;
+const EXIT_EASE = "cubic-bezier(0.4, 0, 1, 1)";
+const ENTER_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 export default function PageTransition({
   children,
@@ -40,13 +38,15 @@ export default function PageTransition({
     timers.current = [];
   }
 
-  function startReveal() {
+  function startEnter() {
     clearTimers();
-    changePhase("reveal");
-    later(() => changePhase("idle"), REVEAL_MS + 50);
+    changePhase("enter-start");
+    // kurz warten, damit der Startzustand (unsichtbar, leicht tiefer) gerendert ist
+    later(() => changePhase("enter"), 30);
+    later(() => changePhase("idle"), 30 + ENTER_MS + 20);
   }
 
-  // Interne Link-Klicks abfangen: erst Wand hochfahren, dann navigieren
+  // Interne Link-Klicks abfangen: erst ausblenden, dann navigieren
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -68,14 +68,11 @@ export default function PageTransition({
       e.stopPropagation();
 
       clearTimers();
-      changePhase("cover");
+      changePhase("exit");
 
-      later(
-        () => router.push(url.pathname + url.search + url.hash),
-        COVER_MS,
-      );
+      later(() => router.push(url.pathname + url.search + url.hash), EXIT_MS);
       // Sicherheitsnetz, falls die Navigation nie ankommt
-      later(startReveal, COVER_MS + 4000);
+      later(startEnter, EXIT_MS + 4000);
     }
 
     document.addEventListener("click", onClick, true);
@@ -83,61 +80,49 @@ export default function PageTransition({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  // Neue Seite ist da: Wand zieht nach oben ab (nur wenn sie gerade deckt)
+  // Neue Seite ist da: einblenden (nur wenn die alte gerade ausgeblendet wurde)
   useLayoutEffect(() => {
     if (prevPathname.current === pathname) return;
     prevPathname.current = pathname;
-    if (phaseRef.current !== "cover") return;
-    startReveal();
+    if (phaseRef.current !== "exit") return;
+    startEnter();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => clearTimers, []);
 
-  const transform =
-    phase === "cover"
-      ? "translate3d(0,0,0)"
-      : phase === "reveal"
-        ? HIDDEN_ABOVE
-        : HIDDEN_BELOW;
-  // Beim Zurücksetzen nach unten (idle) darf nichts animiert werden
-  const transition =
-    phase === "cover"
-      ? `transform ${COVER_MS}ms ${EASE}`
-      : phase === "reveal"
-        ? `transform ${REVEAL_MS}ms ${EASE}`
-        : "none";
+  let style: React.CSSProperties | undefined;
+  switch (phase) {
+    case "exit":
+      style = {
+        opacity: 0,
+        transition: `opacity ${EXIT_MS}ms ${EXIT_EASE}`,
+        pointerEvents: "none",
+      };
+      break;
+    case "enter-start":
+      style = {
+        opacity: 0,
+        transform: "translate3d(0, 10px, 0)",
+        transition: "none",
+        pointerEvents: "none",
+      };
+      break;
+    case "enter":
+      style = {
+        opacity: 1,
+        transform: "translate3d(0, 0, 0)",
+        transition: `opacity ${ENTER_MS}ms ${ENTER_EASE}, transform ${ENTER_MS}ms ${ENTER_EASE}`,
+      };
+      break;
+    default:
+      // Im Ruhezustand keine Transform-Eigenschaft, damit nichts einen eigenen Stacking-Kontext bekommt
+      style = undefined;
+  }
 
   return (
-    <>
+    <div style={style && { ...style, willChange: "opacity, transform" }}>
       {children}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[100]"
-        style={{
-          transform,
-          transition,
-          visibility: phase === "idle" ? "hidden" : "visible",
-          willChange: phase === "idle" ? undefined : "transform",
-        }}
-      >
-        {/* Wand: tiefes Schwarz mit minimalem Verlauf */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a1a1f] via-[#0b0b0d] to-black" />
-        {/* Glasiger Schimmer: schwaches diagonales Licht und weiche Aufhellung oben */}
-        <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.09)_46%,rgba(255,255,255,0.02)_54%,transparent_70%)]" />
-        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/[0.07] to-transparent" />
-        <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_0_rgba(255,255,255,0.12)]" />
-
-        {/* Glas-Lippen: weicher Blur-Saum an Ober- und Unterkante der Wand */}
-        <div
-          className="absolute inset-x-0 bottom-full h-[120px] bg-gradient-to-t from-black/50 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_top,black,transparent)]"
-          style={{ WebkitBackdropFilter: "blur(10px)" }}
-        />
-        <div
-          className="absolute inset-x-0 top-full h-[120px] bg-gradient-to-b from-black/50 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]"
-          style={{ WebkitBackdropFilter: "blur(10px)" }}
-        />
-      </div>
-    </>
+    </div>
   );
 }
