@@ -63,6 +63,7 @@ export type Translation = {
     placeholder: string;
     button: string;
     success: string;
+    retry: string;
   };
 };
 
@@ -165,6 +166,7 @@ export const translations: Record<Language, Translation> = {
       placeholder: "deine@mail.com",
       button: "Beitreten",
       success: "Fast geschafft! Prüfe dein Postfach",
+      retry: "Andere E-Mail eingeben",
     },
   },
   en: {
@@ -263,6 +265,7 @@ export const translations: Record<Language, Translation> = {
       placeholder: "your@mail.com",
       button: "Join",
       success: "Almost there! Check your inbox",
+      retry: "Enter a different email",
     },
   },
   ta: {
@@ -364,6 +367,7 @@ export const translations: Record<Language, Translation> = {
       placeholder: "மின்னஞ்சல் முகவரி",
       button: "சேரவும்",
       success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
+      retry: "வேறு மின்னஞ்சலை உள்ளிடவும்",
     },
   },
 };

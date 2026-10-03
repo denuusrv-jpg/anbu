@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRightIcon, CheckIcon } from "@/components/Icons";
+import { ArrowRightIcon, CheckIcon, RetryIcon } from "@/components/Icons";
 import { useLanguage } from "@/lib/LanguageContext";
 import Translated from "@/components/Translated";
 
@@ -17,6 +17,11 @@ export default function WaitlistCapture() {
     e.preventDefault();
     if (status !== "idle") return;
     setStatus("loading");
+  }
+
+  function handleRetry() {
+    setEmail("");
+    setStatus("idle");
   }
 
   return (
@@ -42,10 +47,21 @@ export default function WaitlistCapture() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.25 }}
-                className="flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold text-zinc-950"
+                className="flex items-center"
               >
-                <CheckIcon className="h-4 w-4" />
-                <Translated text={t.waitlistCapture.success} />
+                <div className="flex flex-1 items-center justify-center gap-2 py-3.5 pr-2 pl-6 text-sm font-semibold text-zinc-950">
+                  <CheckIcon className="h-4 w-4 shrink-0" />
+                  <Translated text={t.waitlistCapture.success} />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRetry}
+                  aria-label={t.waitlistCapture.retry}
+                  title={t.waitlistCapture.retry}
+                  className="group m-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-950/15 text-zinc-950 transition hover:scale-105 hover:bg-zinc-950/25 active:scale-95"
+                >
+                  <RetryIcon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:-rotate-90" />
+                </button>
               </motion.div>
             ) : (
               <motion.div
