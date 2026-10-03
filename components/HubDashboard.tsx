@@ -29,16 +29,20 @@ export type HubProfile = {
 const EASE = [0.16, 1, 0.3, 1] as const;
 const HUB_TARGET = 100;
 
+export type HubWish = { id: string; wish: string; created_at: string };
+
 type Passkey = { id: string; friendly_name?: string | null; created_at: string };
 
 export default function HubDashboard({
   email,
   profile: initial,
   regionCount,
+  wishes: initialWishes,
 }: {
   email: string;
   profile: HubProfile;
   regionCount: number | null;
+  wishes: HubWish[];
 }) {
   const router = useRouter();
   const [profile, setProfile] = useState(initial);
@@ -49,6 +53,13 @@ export default function HubDashboard({
   const [passkeys, setPasskeys] = useState<Passkey[] | null>(null);
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyMessage, setPasskeyMessage] = useState("");
+  const [wishes, setWishes] = useState(initialWishes);
+  const [wishText, setWishText] = useState("");
+  const [wishMessage, setWishMessage] = useState("");
+  const [wishBusy, setWishBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const regionLabel = REGIONS.find((r) => r.id === profile.region)?.label ?? profile.region;
   const hasProfile = Boolean(profile.profile);
@@ -98,6 +109,47 @@ export default function HubDashboard({
   async function toggleAnonymous() {
     const next = anonymous ? "profile" : "anonymous";
     if (await patch({ mode: next })) setProfile((p) => ({ ...p, mode: next }));
+  }
+
+  async function submitWish(e: React.FormEvent) {
+    e.preventDefault();
+    const text = wishText.trim();
+    if (text.length < 3 || wishBusy) return;
+    setWishBusy(true);
+    setWishMessage("");
+    try {
+      const res = await fetch("/api/wishes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wish: text }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setWishMessage(data?.error ?? "Das hat nicht geklappt.");
+        return;
+      }
+      setWishes((list) => [{ id: String(Date.now()), wish: text, created_at: new Date().toISOString() }, ...list]);
+      setWishText("");
+      setWishMessage("Danke! Deine Idee ist angekommen.");
+    } catch {
+      setWishMessage("Keine Verbindung. Bitte versuch es noch einmal.");
+    } finally {
+      setWishBusy(false);
+    }
+  }
+
+  async function deleteAccount() {
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) throw new Error("failed");
+      router.push("/");
+      router.refresh();
+    } catch {
+      setDeleteError("Das Konto konnte nicht gelöscht werden. Bitte versuch es noch einmal.");
+      setDeleting(false);
+    }
   }
 
   async function signOut() {
@@ -343,6 +395,51 @@ export default function HubDashboard({
           )}
         </motion.section>
 
+        {/* Ideen für DSpora (Co-Creation) */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE, delay: 0.12 }}
+          className={card}
+        >
+          <h2 className="text-lg font-semibold text-zinc-50">Deine Ideen für DSpora</h2>
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            Was wünschst du dir? Welche Features sollten wir unbedingt einbauen? Wir lesen jede Idee.
+          </p>
+          <form onSubmit={submitWish} className="mt-4 space-y-2.5">
+            <textarea
+              value={wishText}
+              onChange={(e) => setWishText(e.target.value.slice(0, 1500))}
+              rows={3}
+              placeholder="Meine Idee …"
+              aria-label="Idee für DSpora"
+              className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs text-zinc-500">{wishMessage}</span>
+              <button
+                type="submit"
+                disabled={wishBusy || wishText.trim().length < 3}
+                className="cta-premium rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-sm font-semibold text-zinc-950 transition-opacity disabled:opacity-40"
+              >
+                {wishBusy ? "Sende …" : "Idee senden"}
+              </button>
+            </div>
+          </form>
+          {wishes.length > 0 && (
+            <ul className="mt-5 space-y-2 border-t border-white/10 pt-4">
+              {wishes.map((w) => (
+                <li key={w.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-200">{w.wish}</p>
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    {new Date(w.created_at).toLocaleDateString("de-DE", { dateStyle: "medium" })}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </motion.section>
+
         {/* Sicherheit: Passkeys */}
         {passkeySupported && (
           <motion.section
@@ -390,6 +487,52 @@ export default function HubDashboard({
             )}
           </motion.section>
         )}
+
+        {/* Konto löschen (Soft-Delete, 30 Tage) */}
+        <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-7">
+          <h2 className="text-sm font-semibold text-zinc-300">Konto löschen</h2>
+          {!confirmDelete ? (
+            <>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Dein Konto wird sofort gesperrt. Deine Daten bleiben noch 30 Tage gespeichert, falls du es dir anders
+                überlegst oder Hilfe brauchst. Danach werden sie endgültig gelöscht.
+              </p>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="mt-4 rounded-full border border-white/10 px-4 py-1.5 text-xs text-zinc-400 transition-colors hover:border-rose/50 hover:text-rose"
+              >
+                Konto löschen …
+              </button>
+            </>
+          ) : (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm leading-relaxed text-zinc-300">Möchtest du dein Konto wirklich löschen?</p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={deleteAccount}
+                  disabled={deleting}
+                  className="rounded-full bg-rose/90 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {deleting ? "Lösche …" : "Ja, Konto löschen"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="text-xs text-zinc-400 transition-colors hover:text-zinc-200"
+                >
+                  Abbrechen
+                </button>
+              </div>
+              {deleteError && (
+                <p role="alert" className="text-xs text-rose">
+                  {deleteError}
+                </p>
+              )}
+            </div>
+          )}
+        </section>
 
         <footer className="flex items-center justify-between px-1 pt-2 text-xs text-zinc-500">
           <Link href="/onboarding" className="transition-colors hover:text-zinc-300">

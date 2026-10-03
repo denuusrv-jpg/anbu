@@ -3,7 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import AdminLogoutButton from "@/components/AdminLogoutButton";
-import AdminTable, { type DraftRow, type ProfileRow, type WaitlistRow } from "@/components/AdminTable";
+import AdminDashboard from "@/components/admin/AdminDashboard";
+import { COPILOT_EXAMPLES } from "@/lib/adminCopilot";
+import { computeKpis, loadAdminData, type AdminData } from "@/lib/adminData";
+import { purgeExpired } from "@/lib/accountLifecycle";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { ArrowRightIcon, BoltIcon } from "@/components/Icons";
 
@@ -18,41 +21,16 @@ export default async function Admin() {
     redirect("/");
   }
 
-  // Daten der Warteliste und der Nutzerprofile (nur serverseitig mit dem Service-Role-Key)
-  let waitlist: WaitlistRow[] = [];
-  let profiles: ProfileRow[] = [];
-  let drafts: DraftRow[] = [];
+  // Daten (nur serverseitig mit dem Service-Role-Key). Abgelaufene Soft-Deletes werden dabei
+  // gleich mit aufgeräumt - zusätzlich zum täglichen Job.
+  let data: AdminData | null = null;
   let dataError = "";
   const connected = isServiceRoleConfigured();
   if (connected) {
     try {
       const db = getServiceClient();
-      const [wl, pr, users, dr] = await Promise.all([
-        db
-          .from("waitlist")
-          .select("id, email, status, created_at")
-          .order("created_at", { ascending: false })
-          .limit(1000),
-        db
-          .from("user_profiles")
-          .select("user_id, region, city, mode, status, created_at, interests, vibes, profile, extras")
-          .order("created_at", { ascending: false })
-          .limit(1000),
-        db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-        db
-          .from("onboarding_drafts")
-          .select("email, answers, created_at")
-          .order("created_at", { ascending: false })
-          .limit(1000),
-      ]);
-      if (wl.error || pr.error || dr.error) throw new Error("query failed");
-      drafts = (dr.data ?? []) as DraftRow[];
-      const emailById = new Map(users.data?.users.map((u) => [u.id, u.email ?? ""]) ?? []);
-      waitlist = (wl.data ?? []) as WaitlistRow[];
-      profiles = (pr.data ?? []).map((p) => ({
-        ...(p as Omit<ProfileRow, "email">),
-        email: emailById.get(p.user_id as string) ?? "",
-      }));
+      await purgeExpired(db).catch(() => 0);
+      data = await loadAdminData(db);
     } catch {
       dataError =
         "Die Daten konnten nicht geladen werden. Sind die Tabellen angelegt (supabase/schema.sql)?";
@@ -73,7 +51,7 @@ export default async function Admin() {
           Dashboard
         </h1>
         <p className="mt-4 text-base leading-relaxed text-zinc-400">
-          Du bist angemeldet. Hier siehst du die Warteliste und alle Nutzerprofile.
+          Du bist angemeldet. Kennzahlen, Nutzer, Wünsche und der Copilot in einem Blick.
         </p>
 
         {/* Werkzeuge für die Entwicklung */}
@@ -102,7 +80,7 @@ export default async function Admin() {
 
         {/* Warteliste & Nutzer */}
         <h2 className="mt-12 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
-          Warteliste &amp; Nutzer
+          Übersicht
         </h2>
         <div className="mt-3">
           {!connected ? (
@@ -115,7 +93,7 @@ export default async function Admin() {
               {dataError}
             </p>
           ) : (
-            <AdminTable waitlist={waitlist} profiles={profiles} drafts={drafts} />
+            data ? <AdminDashboard data={data} kpis={computeKpis(data)} examples={COPILOT_EXAMPLES} /> : null
           )}
         </div>
       </div>

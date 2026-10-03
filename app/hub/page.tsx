@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import HubDashboard, { type HubProfile } from "@/components/HubDashboard";
+import HubDashboard, { type HubProfile, type HubWish } from "@/components/HubDashboard";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
@@ -35,10 +35,22 @@ export default async function Hub() {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("region, city, interests, vibes, mode, profile, status")
+    .select("region, city, interests, vibes, mode, profile, status, deleted_at")
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
+  // Gelöschtes Konto (Soft-Delete): kein Zugriff mehr, solange die Frist läuft
+  if (profile.deleted_at) {
+    await supabase.auth.signOut();
+    redirect("/");
+  }
+
+  // Eigene eingereichte Ideen (die RLS-Regeln zeigen nur die eigenen)
+  const { data: wishes } = await supabase
+    .from("user_wishes")
+    .select("id, wish, created_at")
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   // Wie viele Leute sind schon in der eigenen Region dabei? (zählt serverseitig über alle Profile)
   let regionCount: number | null = null;
@@ -53,8 +65,9 @@ export default async function Hub() {
   return (
     <HubDashboard
       email={auth.user.email ?? ""}
-      profile={profile as HubProfile}
+      profile={profile as unknown as HubProfile}
       regionCount={regionCount}
+      wishes={(wishes ?? []) as HubWish[]}
     />
   );
 }

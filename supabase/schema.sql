@@ -107,3 +107,37 @@ create table if not exists public.onboarding_drafts (
 
 alter table public.onboarding_drafts enable row level security;
 -- bewusst KEINE Policies: Browser-Nutzer haben hier keinen Zugriff.
+
+-- ─────────────────────────────────────────────────────────────
+-- 5) Soft-Delete (DSGVO): gelöschte Accounts bleiben 30 Tage sichtbar für den Support,
+--    danach löscht ein täglicher Job sie endgültig ("Recht auf Vergessenwerden").
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists deleted_at timestamptz;
+create index if not exists user_profiles_deleted_at_idx
+  on public.user_profiles (deleted_at) where deleted_at is not null;
+
+-- ─────────────────────────────────────────────────────────────
+-- 6) Wünsche & Ideen für DSpora (Co-Creation)
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.user_wishes (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  wish       text not null check (char_length(wish) between 3 and 1500),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists user_wishes_created_at_idx on public.user_wishes (created_at desc);
+
+alter table public.user_wishes enable row level security;
+
+drop policy if exists "Eigene Wünsche lesen" on public.user_wishes;
+create policy "Eigene Wünsche lesen" on public.user_wishes
+  for select to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Eigene Wünsche anlegen" on public.user_wishes;
+create policy "Eigene Wünsche anlegen" on public.user_wishes
+  for insert to authenticated with check (auth.uid() = user_id);
+
+drop policy if exists "Eigene Wünsche löschen" on public.user_wishes;
+create policy "Eigene Wünsche löschen" on public.user_wishes
+  for delete to authenticated using (auth.uid() = user_id);

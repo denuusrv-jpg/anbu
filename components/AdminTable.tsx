@@ -11,43 +11,30 @@ import {
   VISIBILITIES,
   choiceLabels,
   labelOf,
-  type Choice,
   type OnboardingAnswers,
-  type ProfileData,
 } from "@/lib/onboarding";
+import type { AdminDraft, AdminProfile, AdminWaitlist, AdminWish } from "@/lib/adminData";
 
-export type WaitlistRow = { id: string; email: string; status: string; created_at: string };
-export type ProfileRow = {
-  user_id: string;
-  email: string;
-  region: string;
-  city: string | null;
-  mode: string;
-  status: string;
-  created_at: string;
-  interests: Choice;
-  vibes: Choice;
-  profile: ProfileData | null;
-  extras: OnboardingAnswers["extras"] | null;
-};
-export type DraftRow = { email: string; created_at: string; answers: OnboardingAnswers };
+const RETENTION_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-type Tab = "waitlist" | "profiles" | "drafts";
+type Tab = "profiles" | "waitlist" | "drafts" | "deleted";
+type Confirm = { id: string; action: "delete" | "purge" | "waitlist" | "draft" } | null;
 
 const date = (value: string) =>
   new Date(value).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
 
-function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "gold" }) {
+const daysLeft = (deletedAt: string) =>
+  Math.max(0, Math.ceil((new Date(deletedAt).getTime() + RETENTION_DAYS * DAY_MS - Date.now()) / DAY_MS));
+
+function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "gold" | "rose" }) {
+  const styles = {
+    neutral: "border-white/10 bg-white/5 text-zinc-300",
+    gold: "border-gold/40 bg-gold/10 text-gold",
+    rose: "border-rose/40 bg-rose/10 text-rose",
+  }[tone];
   return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${
-        tone === "gold"
-          ? "border-gold/40 bg-gold/10 text-gold"
-          : "border-white/10 bg-white/5 text-zinc-300"
-      }`}
-    >
-      {children}
-    </span>
+    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${styles}`}>{children}</span>
   );
 }
 
@@ -74,14 +61,17 @@ function Line({ label, value }: { label: string; value?: React.ReactNode }) {
 function Detail({
   email,
   answers,
+  wishes,
   onClose,
 }: {
   email: string;
   answers: OnboardingAnswers;
+  wishes: string[];
   onClose: () => void;
 }) {
   const p = answers.profile;
   const e = answers.extras;
+  const allWishes = [...wishes, ...(e?.wishes && !wishes.includes(e.wishes) ? [e.wishes] : [])];
   return (
     <div
       className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-md"
@@ -149,9 +139,13 @@ function Detail({
           </Section>
         )}
 
-        {e?.wishes && (
+        {allWishes.length > 0 && (
           <Section title="Wünsche & Ideen für DSpora">
-            <p className="whitespace-pre-wrap">{e.wishes}</p>
+            {allWishes.map((w, i) => (
+              <p key={i} className="whitespace-pre-wrap">
+                {w}
+              </p>
+            ))}
           </Section>
         )}
       </div>
@@ -159,53 +153,72 @@ function Detail({
   );
 }
 
+function answersOf(row: AdminProfile): OnboardingAnswers {
+  return {
+    region: row.region,
+    city: row.city ?? undefined,
+    interests: row.interests,
+    vibes: row.vibes,
+    mode: row.mode as OnboardingAnswers["mode"],
+    profile: row.profile ?? undefined,
+    extras: row.extras ?? undefined,
+  };
+}
+
 export default function AdminTable({
   waitlist,
   profiles,
-  drafts = [],
+  drafts,
+  wishes,
 }: {
-  waitlist: WaitlistRow[];
-  profiles: ProfileRow[];
-  drafts?: DraftRow[];
+  waitlist: AdminWaitlist[];
+  profiles: AdminProfile[];
+  drafts: AdminDraft[];
+  wishes: AdminWish[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("waitlist");
+  const [tab, setTab] = useState<Tab>("profiles");
   const [query, setQuery] = useState("");
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<Confirm>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [detail, setDetail] = useState<{ email: string; answers: OnboardingAnswers } | null>(null);
+  const [detail, setDetail] = useState<{ email: string; answers: OnboardingAnswers; wishes: string[] } | null>(null);
+
+  const active = useMemo(() => profiles.filter((p) => !p.deleted_at), [profiles]);
+  const deleted = useMemo(
+    () =>
+      profiles
+        .filter((p) => p.deleted_at)
+        .sort((a, b) => (b.deleted_at as string).localeCompare(a.deleted_at as string)),
+    [profiles],
+  );
 
   const q = query.trim().toLowerCase();
-  const waitlistRows = useMemo(
-    () => waitlist.filter((r) => !q || r.email.toLowerCase().includes(q)),
-    [waitlist, q],
-  );
-  const profileRows = useMemo(
-    () =>
-      profiles.filter(
-        (r) => !q || r.email.toLowerCase().includes(q) || (r.city ?? "").toLowerCase().includes(q),
-      ),
-    [profiles, q],
-  );
+  const nameOf = (p: AdminProfile) => p.profile?.displayName ?? "Anonym";
+  const matches = (p: AdminProfile) =>
+    !q || p.email.toLowerCase().includes(q) || nameOf(p).toLowerCase().includes(q) || (p.city ?? "").toLowerCase().includes(q);
 
-  const draftRows = useMemo(
-    () => drafts.filter((r) => !q || r.email.toLowerCase().includes(q)),
-    [drafts, q],
-  );
+  const activeRows = active.filter(matches);
+  const deletedRows = deleted.filter(matches);
+  const waitlistRows = waitlist.filter((r) => !q || r.email.toLowerCase().includes(q));
+  const draftRows = drafts.filter((r) => !q || r.email.toLowerCase().includes(q));
 
-  async function remove(kind: "waitlist" | "profile" | "draft", id: string) {
+  function openDetail(row: AdminProfile) {
+    setDetail({
+      email: row.email,
+      answers: answersOf(row),
+      wishes: wishes.filter((w) => w.user_id === row.user_id).map((w) => w.wish),
+    });
+  }
+
+  async function call(id: string, url: string, init: RequestInit) {
     setBusy(id);
     setError("");
     try {
-      const res = await fetch("/api/admin/entries", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, id }),
-      });
+      const res = await fetch(url, { headers: { "Content-Type": "application/json" }, ...init });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Löschen hat nicht geklappt.");
+        setError(data?.error ?? "Das hat nicht geklappt.");
         return;
       }
       setConfirming(null);
@@ -215,23 +228,31 @@ export default function AdminTable({
     }
   }
 
-  function DeleteCell({ id, kind }: { id: string; kind: "waitlist" | "profile" | "draft" }) {
-    if (confirming === id) {
+  const account = (id: string, action: "delete" | "restore" | "purge") =>
+    call(id, "/api/admin/accounts", { method: "POST", body: JSON.stringify({ action, id }) });
+  const entry = (id: string, kind: "waitlist" | "draft") =>
+    call(id, "/api/admin/entries", { method: "DELETE", body: JSON.stringify({ kind, id }) });
+
+  // Zeile "Löschen" mit Sicherheitsabfrage
+  function renderDelete(
+    id: string,
+    kind: NonNullable<Confirm>["action"],
+    onConfirm: () => void,
+    label = "Löschen",
+    confirmLabel = "Ja, löschen",
+  ) {
+    if (confirming?.id === id && confirming.action === kind) {
       return (
         <span className="inline-flex items-center gap-2 text-xs">
           <button
             type="button"
             disabled={busy === id}
-            onClick={() => remove(kind, id)}
+            onClick={onConfirm}
             className="rounded-full bg-rose/90 px-3 py-1 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {busy === id ? "Lösche …" : "Ja, löschen"}
+            {busy === id ? "Moment …" : confirmLabel}
           </button>
-          <button
-            type="button"
-            onClick={() => setConfirming(null)}
-            className="text-zinc-400 transition-colors hover:text-zinc-200"
-          >
+          <button type="button" onClick={() => setConfirming(null)} className="text-zinc-400 transition-colors hover:text-zinc-200">
             Abbrechen
           </button>
         </span>
@@ -240,26 +261,28 @@ export default function AdminTable({
     return (
       <button
         type="button"
-        onClick={() => setConfirming(id)}
+        onClick={() => setConfirming({ id, action: kind })}
         className="text-xs text-zinc-500 transition-colors hover:text-rose"
       >
-        Löschen
+        {label}
       </button>
     );
   }
 
   const th = "px-4 py-3 text-left text-[11px] font-semibold tracking-wide text-zinc-500 uppercase";
   const td = "px-4 py-3 align-middle text-sm text-zinc-200";
+  const detailBtn = "text-xs text-zinc-300 transition-colors hover:text-gold";
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl">
+        <div className="inline-flex flex-wrap rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-xl">
           {(
             [
+              { id: "profiles", label: `User (${active.length})` },
               { id: "waitlist", label: `Warteliste (${waitlist.length})` },
-              { id: "profiles", label: `Profile (${profiles.length})` },
               { id: "drafts", label: `Entwürfe (${drafts.length})` },
+              { id: "deleted", label: `Gelöscht (${deleted.length})` },
             ] as const
           ).map((t) => (
             <button
@@ -293,7 +316,62 @@ export default function AdminTable({
       )}
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-        {tab === "waitlist" ? (
+        {tab === "profiles" && (
+          <table className="w-full min-w-[820px] border-collapse">
+            <thead className="border-b border-white/10">
+              <tr>
+                <th className={th}>Profilname</th>
+                <th className={th}>E-Mail</th>
+                <th className={th}>Status</th>
+                <th className={th}>Letzter Login</th>
+                <th className={th}>Region</th>
+                <th className={`${th} text-right`}>Aktion</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {activeRows.map((row) => (
+                <tr key={row.user_id} className="transition-colors hover:bg-white/[0.03]">
+                  <td className={td}>{nameOf(row)}</td>
+                  <td className={td}>{row.email || "–"}</td>
+                  <td className={td}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <Badge tone="gold">Aktiv</Badge>
+                      <Badge>{row.mode === "profile" ? "Profil" : "Anonym"}</Badge>
+                    </span>
+                  </td>
+                  <td className={`${td} text-zinc-400`}>{row.last_sign_in_at ? date(row.last_sign_in_at) : "–"}</td>
+                  <td className={td}>
+                    {labelOf(row.region, REGIONS)}
+                    {row.city ? <span className="text-zinc-500"> · {row.city}</span> : null}
+                  </td>
+                  <td className={`${td} text-right`}>
+                    <span className="inline-flex items-center gap-4">
+                      <button type="button" onClick={() => openDetail(row)} className={detailBtn}>
+                        Details
+                      </button>
+                      {renderDelete(
+                        row.user_id,
+                        "delete",
+                        () => account(row.user_id, "delete"),
+                        "Konto löschen",
+                        "Ja, löschen (30 Tage)",
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {activeRows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
+                    Keine User.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+
+        {tab === "waitlist" && (
           <table className="w-full min-w-[560px] border-collapse">
             <thead className="border-b border-white/10">
               <tr>
@@ -314,7 +392,7 @@ export default function AdminTable({
                   </td>
                   <td className={`${td} text-zinc-400`}>{date(row.created_at)}</td>
                   <td className={`${td} text-right`}>
-                    <DeleteCell id={row.id} kind="waitlist" />
+                    {renderDelete(row.id, "waitlist", () => entry(row.id, "waitlist"))}
                   </td>
                 </tr>
               ))}
@@ -327,81 +405,15 @@ export default function AdminTable({
               )}
             </tbody>
           </table>
-        ) : tab === "profiles" ? (
-          <table className="w-full min-w-[900px] border-collapse">
-            <thead className="border-b border-white/10">
-              <tr>
-                <th className={th}>E-Mail</th>
-                <th className={th}>Region</th>
-                <th className={th}>Interessen</th>
-                <th className={th}>Modus</th>
-                <th className={th}>Wünsche</th>
-                <th className={th}>Erstellt</th>
-                <th className={`${th} text-right`}>Aktion</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {profileRows.map((row) => (
-                <tr key={row.user_id} className="transition-colors hover:bg-white/[0.03]">
-                  <td className={td}>{row.email || "–"}</td>
-                  <td className={td}>
-                    {labelOf(row.region, REGIONS)}
-                    {row.city ? <span className="text-zinc-500"> · {row.city}</span> : null}
-                  </td>
-                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>
-                    {choiceLabels(row.interests, INTERESTS).join(", ") || "–"}
-                  </td>
-                  <td className={td}>
-                    <Badge tone={row.mode === "profile" ? "gold" : "neutral"}>
-                      {row.mode === "profile" ? "Profil" : "Anonym"}
-                    </Badge>
-                  </td>
-                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>{row.extras?.wishes || "–"}</td>
-                  <td className={`${td} text-zinc-400`}>{date(row.created_at)}</td>
-                  <td className={`${td} text-right`}>
-                    <span className="inline-flex items-center gap-4">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDetail({
-                            email: row.email,
-                            answers: {
-                              region: row.region,
-                              city: row.city ?? undefined,
-                              interests: row.interests,
-                              vibes: row.vibes,
-                              mode: row.mode as OnboardingAnswers["mode"],
-                              profile: row.profile ?? undefined,
-                              extras: row.extras ?? undefined,
-                            },
-                          })
-                        }
-                        className="text-xs text-zinc-300 transition-colors hover:text-gold"
-                      >
-                        Details
-                      </button>
-                      <DeleteCell id={row.user_id} kind="profile" />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {profileRows.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-zinc-500">
-                    Keine Profile.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        ) : (
+        )}
+
+        {tab === "drafts" && (
           <table className="w-full min-w-[700px] border-collapse">
             <thead className="border-b border-white/10">
               <tr>
                 <th className={th}>E-Mail</th>
                 <th className={th}>Region</th>
                 <th className={th}>Modus</th>
-                <th className={th}>Wünsche</th>
                 <th className={th}>Eingereicht</th>
                 <th className={`${th} text-right`}>Aktion</th>
               </tr>
@@ -416,25 +428,24 @@ export default function AdminTable({
                       {row.answers.mode === "profile" ? "Profil" : "Anonym"}
                     </Badge>
                   </td>
-                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>{row.answers.extras?.wishes || "–"}</td>
                   <td className={`${td} text-zinc-400`}>{date(row.created_at)}</td>
                   <td className={`${td} text-right`}>
                     <span className="inline-flex items-center gap-4">
                       <button
                         type="button"
-                        onClick={() => setDetail({ email: row.email, answers: row.answers })}
-                        className="text-xs text-zinc-300 transition-colors hover:text-gold"
+                        onClick={() => setDetail({ email: row.email, answers: row.answers, wishes: [] })}
+                        className={detailBtn}
                       >
                         Details
                       </button>
-                      <DeleteCell id={row.email} kind="draft" />
+                      {renderDelete(row.email, "draft", () => entry(row.email, "draft"))}
                     </span>
                   </td>
                 </tr>
               ))}
               {draftRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-500">
                     Keine offenen Entwürfe.
                   </td>
                 </tr>
@@ -442,13 +453,75 @@ export default function AdminTable({
             </tbody>
           </table>
         )}
+
+        {tab === "deleted" && (
+          <table className="w-full min-w-[820px] border-collapse">
+            <thead className="border-b border-white/10">
+              <tr>
+                <th className={th}>Profilname</th>
+                <th className={th}>E-Mail</th>
+                <th className={th}>Gelöscht am</th>
+                <th className={th}>Endgültig in</th>
+                <th className={`${th} text-right`}>Aktion</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {deletedRows.map((row) => (
+                <tr key={row.user_id} className="transition-colors hover:bg-white/[0.03]">
+                  <td className={td}>{nameOf(row)}</td>
+                  <td className={td}>{row.email || "–"}</td>
+                  <td className={`${td} text-zinc-400`}>{date(row.deleted_at as string)}</td>
+                  <td className={td}>
+                    <Badge tone="rose">{daysLeft(row.deleted_at as string)} Tage</Badge>
+                  </td>
+                  <td className={`${td} text-right`}>
+                    <span className="inline-flex items-center gap-4">
+                      <button type="button" onClick={() => openDetail(row)} className={detailBtn}>
+                        Details
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy === row.user_id}
+                        onClick={() => account(row.user_id, "restore")}
+                        className="text-xs text-zinc-300 transition-colors hover:text-gold disabled:opacity-50"
+                      >
+                        Wiederherstellen
+                      </button>
+                      {renderDelete(
+                        row.user_id,
+                        "purge",
+                        () => account(row.user_id, "purge"),
+                        "Endgültig löschen",
+                        "Ja, endgültig",
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {deletedRows.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-500">
+                    Keine gelöschten Accounts.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
-      <p className="mt-3 text-xs text-zinc-600">
-        {tab === "drafts"
-          ? "Entwürfe sind fertig ausgefüllte Chats, deren Anmelde-Link noch nicht angeklickt wurde. Nach 7 Tagen werden sie nicht mehr übernommen."
-          : "Beim Löschen eines Profils werden der Nutzer, seine Antworten und seine Fotos endgültig entfernt."}
+
+      <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+        {tab === "deleted"
+          ? `Gelöschte Accounts bleiben ${RETENTION_DAYS} Tage für den Support sichtbar und werden danach automatisch und endgültig entfernt (Recht auf Vergessenwerden).`
+          : tab === "drafts"
+            ? "Entwürfe sind fertig ausgefüllte Chats, deren Anmelde-Link noch nicht angeklickt wurde. Nach 7 Tagen werden sie nicht mehr übernommen."
+            : tab === "profiles"
+              ? `„Konto löschen“ sperrt den Account sofort. Er bleibt ${RETENTION_DAYS} Tage unter „Gelöscht“ erhalten.`
+              : ""}
       </p>
-      {detail && <Detail email={detail.email} answers={detail.answers} onClose={() => setDetail(null)} />}
+      {detail && (
+        <Detail email={detail.email} answers={detail.answers} wishes={detail.wishes} onClose={() => setDetail(null)} />
+      )}
     </div>
   );
 }

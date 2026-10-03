@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Einträge löschen (nur mit gültigem Admin-Cookie).
+// Wartelisten-Einträge und Entwürfe löschen (nur mit gültigem Admin-Cookie).
+// Konten laufen über /api/admin/accounts (Soft-Delete).
 export async function DELETE(request: Request) {
   const store = await cookies();
   if (!verifySessionToken(store.get(ADMIN_COOKIE)?.value)) {
@@ -41,19 +42,6 @@ export async function DELETE(request: Request) {
 
   if (body.kind === "waitlist") {
     const { error } = await db.from("waitlist").delete().eq("id", body.id);
-    if (error) return NextResponse.json({ error: "Löschen hat nicht geklappt." }, { status: 500 });
-    return NextResponse.json({ ok: true });
-  }
-
-  if (body.kind === "profile") {
-    // body.id ist die user_id: erst Fotos entfernen, dann den Nutzer samt Profil löschen
-    const files = await db.storage.from("profile-photos").list(body.id);
-    if (files.data && files.data.length > 0) {
-      await db.storage
-        .from("profile-photos")
-        .remove(files.data.map((f) => `${body.id}/${f.name}`));
-    }
-    const { error } = await db.auth.admin.deleteUser(body.id);
     if (error) return NextResponse.json({ error: "Löschen hat nicht geklappt." }, { status: 500 });
     return NextResponse.json({ ok: true });
   }

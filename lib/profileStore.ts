@@ -10,6 +10,10 @@ export async function saveProfile(
   user: User,
   answers: OnboardingAnswers,
 ): Promise<boolean> {
+  // Wünsche/Ideen für DSpora liegen in einer eigenen Tabelle (Co-Creation), nicht im Profil
+  const wishes = answers.extras?.wishes?.trim();
+  const extras = answers.extras ? { ...answers.extras, wishes: undefined } : null;
+
   const { error } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
@@ -19,11 +23,25 @@ export async function saveProfile(
       vibes: answers.vibes,
       mode: answers.mode,
       profile: answers.profile ?? null,
-      extras: answers.extras ?? null,
+      extras,
+      deleted_at: null,
     },
     { onConflict: "user_id" },
   );
   if (error) return false;
+
+  if (wishes) {
+    // Dieselbe Idee nicht doppelt ablegen, wenn jemand den Chat erneut durchläuft
+    const { data: same } = await supabase
+      .from("user_wishes")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("wish", wishes)
+      .limit(1);
+    if (!same || same.length === 0) {
+      await supabase.from("user_wishes").insert({ user_id: user.id, wish: wishes });
+    }
+  }
 
   // Wartelisten-Eintrag als "onboarded" markieren (nicht kritisch)
   if (user.email && isServiceRoleConfigured()) {
