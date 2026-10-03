@@ -126,9 +126,32 @@ function NavBoxDesktop({
 function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const otherLanguages = languages.filter((lang) => lang !== language);
 
+  function cancelClose() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }
+
+  function handleEnter() {
+    if (!isDesktop) return;
+    cancelClose();
+    setOpen(true);
+  }
+
+  function handleLeave() {
+    if (!isDesktop) return;
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpen(false), 300);
+  }
+
+  useEffect(() => cancelClose, []);
+
   function handleSelect(lang: Language) {
+    cancelClose();
     setLanguage(lang);
     setOpen(false);
   }
@@ -136,8 +159,8 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
   return (
     <div
       className="relative"
-      onMouseEnter={() => isDesktop && setOpen(true)}
-      onMouseLeave={() => isDesktop && setOpen(false)}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
     >
       <button
         type="button"
@@ -154,18 +177,20 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
             animate={{ opacity: 1, y: 0, x: "-50%", scale: 1 }}
             exit={{ opacity: 0, y: -6, x: "-50%", scale: 0.95 }}
             transition={{ duration: 0.18 }}
-            className="absolute top-full left-1/2 z-20 mt-2 flex flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur-md"
+            className="absolute top-full left-1/2 z-20 pt-2"
           >
-            {otherLanguages.map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => handleSelect(lang)}
-                className="rounded-lg px-4 py-2 text-center text-xs font-semibold tracking-wide whitespace-nowrap text-zinc-200 uppercase transition-colors hover:bg-zinc-800 hover:text-gold"
-              >
-                {LANGUAGE_LABELS[lang]}
-              </button>
-            ))}
+            <div className="flex flex-col gap-1 rounded-xl border border-zinc-800 bg-zinc-900/95 p-1.5 shadow-lg shadow-black/40 backdrop-blur-md">
+              {otherLanguages.map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => handleSelect(lang)}
+                  className="rounded-lg px-5 py-2.5 text-center text-xs font-semibold tracking-wide whitespace-nowrap text-zinc-200 uppercase transition-colors hover:bg-zinc-800 hover:text-gold"
+                >
+                  {LANGUAGE_LABELS[lang]}
+                </button>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
