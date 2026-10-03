@@ -172,7 +172,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, var(--sheen-alpha, 0.5)),
     transparent
   );
   transform: translateX(-120%) skewX(-22deg);
