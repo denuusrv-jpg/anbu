@@ -3,6 +3,7 @@ import { answerQuestion } from "@/lib/adminCopilot";
 import { loadAdminData } from "@/lib/adminData";
 import { isAdminRequest } from "@/lib/requireAdmin";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
+import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,8 @@ export async function POST(request: Request) {
   try {
     const data = await loadAdminData(getServiceClient());
     return NextResponse.json(answerQuestion(body.question, data));
-  } catch {
+  } catch (error) {
+    await logError(error, "API /api/admin/copilot");
     return NextResponse.json({ error: "Die Daten konnten nicht geladen werden." }, { status: 500 });
   }
 }

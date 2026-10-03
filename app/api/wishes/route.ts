@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { WISHES_MAX } from "@/lib/onboarding";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
+import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
   }
 
   const { error } = await supabase.from("user_wishes").insert({ user_id: data.user.id, wish });
-  if (error) return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
+  if (error) {
+    await logError(error, "API /api/wishes (Speichern)");
+    return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

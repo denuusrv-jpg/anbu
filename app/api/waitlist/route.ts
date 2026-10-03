@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cleanEmail, looksLikeBot, rateLimited } from "@/lib/botGuard";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
+import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
 
@@ -56,8 +57,8 @@ export async function POST(request: Request) {
         emailRedirectTo: `${siteOrigin(request)}/auth/confirm?next=/onboarding`,
       },
     });
-  } catch {
-    // ignorieren
+  } catch (error) {
+    await logError(error, "API /api/waitlist (Bestätigungs-Mail)");
   }
 
   return ok;

@@ -271,3 +271,74 @@ begin
   end if;
 end
 $$;
+
+-- ─────────────────────────────────────────────────────────────
+-- 10) Geschlecht (Selbstangabe) und Wunsch, mit wem man sich verbinden möchte
+--     gender: Id (female, male, nonbinary, na) oder eigener Text; match_gender: any, female, male
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists gender text;
+alter table public.user_profiles add column if not exists match_gender text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_match_gender_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_match_gender_check check (match_gender is null or match_gender in ('any', 'female', 'male'));
+  end if;
+end
+$$;
+
+-- ─────────────────────────────────────────────────────────────
+-- 11) Chatverlauf pro Konto. Für Nutzer nicht sichtbar: keine Policy, nur der Server (Service Role)
+--     schreibt und liest. Der Verlauf dient dem Steckbrief und dem Fortsetzen des Gesprächs.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.chat_messages (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  role       text not null check (role in ('bot', 'user')),
+  text       text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists chat_messages_user_idx on public.chat_messages (user_id, created_at);
+alter table public.chat_messages enable row level security;
+
+-- Gäste: der Verlauf reist mit dem Entwurf, bis die Anmeldung per Link bestätigt ist
+alter table public.onboarding_drafts add column if not exists transcript jsonb;
+
+-- ─────────────────────────────────────────────────────────────
+-- 12) System-Fehler (Fehler-Tracking). Gleiche Fehler werden zusammengefasst:
+--     fingerprint = Hash aus bereinigter Meldung + Ort. Nur der Server (Service Role) liest und schreibt.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.system_errors (
+  id                uuid primary key default gen_random_uuid(),
+  fingerprint       text not null unique,
+  error_message     text not null,
+  component_path    text not null default 'unbekannt',
+  occurrences_count integer not null default 1,
+  first_occurred_at timestamptz not null default now(),
+  last_occurred_at  timestamptz not null default now(),
+  stack_trace       text
+);
+
+create index if not exists system_errors_last_idx on public.system_errors (last_occurred_at desc);
+alter table public.system_errors enable row level security;
+
+-- Atomar zählen: neuer Fehler = neue Zeile, derselbe Fehler = Zähler +1 und neuer Zeitpunkt
+create or replace function public.log_system_error(p_fingerprint text, p_message text, p_path text, p_stack text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.system_errors (fingerprint, error_message, component_path, stack_trace)
+  values (p_fingerprint, p_message, p_path, p_stack)
+  on conflict (fingerprint) do update
+    set occurrences_count = public.system_errors.occurrences_count + 1,
+        last_occurred_at = now();
+end;
+$$;
+
+revoke all on function public.log_system_error(text, text, text, text) from public, anon, authenticated;
+grant execute on function public.log_system_error(text, text, text, text) to service_role;

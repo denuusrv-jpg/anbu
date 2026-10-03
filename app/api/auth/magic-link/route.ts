@@ -4,6 +4,7 @@ import { cleanEmail, looksLikeBot, rateLimited } from "@/lib/botGuard";
 import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, safeNextPath, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
+import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
       if (error instanceof Invalid) {
         return NextResponse.json({ error: error.message }, { status: 400 });
       }
+      await logError(error, "API /api/auth/magic-link (Entwurf speichern)");
       return NextResponse.json({ error: "Das hat leider nicht geklappt. Bitte versuch es noch einmal." }, { status: 500 });
     }
   }
@@ -76,6 +78,8 @@ export async function POST(request: Request) {
 
   if (error) {
     const limited = error.code === "over_email_send_rate_limit" || error.status === 429;
+    // Das Mail-Limit ist erwartbar und kein Fehler im System
+    if (!limited) await logError(error, "API /api/auth/magic-link (Link senden)");
     return NextResponse.json(
       {
         error: limited

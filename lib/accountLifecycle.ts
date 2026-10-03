@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { logError } from "@/lib/errorLog";
 
 // Soft-Delete nach DSGVO: Ein gelöschtes Konto wird gesperrt und bleibt 30 Tage für den Support
 // sichtbar. Danach wird es endgültig entfernt (Konto, Profil, Antworten, Wünsche, Fotos).
@@ -43,6 +44,7 @@ export async function purgeAccount(db: SupabaseClient, userId: string): Promise<
       .remove(files.data.map((f: { name: string }) => `${userId}/${f.name}`));
   }
   const { error } = await db.auth.admin.deleteUser(userId);
+  if (error) await logError(error, "accountLifecycle (Konto endgültig löschen)");
   return !error;
 }
 

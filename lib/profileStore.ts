@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { OnboardingAnswers } from "@/lib/onboarding";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
+import { logError } from "@/lib/errorLog";
 
 // Schreibt die Antworten als Profil des eingeloggten Nutzers. Der Nutzer schreibt mit seiner
 // eigenen Sitzung, die RLS-Regeln erlauben nur die eigene Zeile.
@@ -34,7 +35,10 @@ export async function saveProfile(
     },
     { onConflict: "user_id" },
   );
-  if (error) return false;
+  if (error) {
+    await logError(error, "saveProfile (user_profiles)");
+    return false;
+  }
 
   if (wishes) {
     // Dieselbe Idee nicht doppelt ablegen, wenn jemand den Chat erneut durchläuft

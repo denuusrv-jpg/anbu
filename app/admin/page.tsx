@@ -7,6 +7,8 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import { COPILOT_EXAMPLES } from "@/lib/adminCopilot";
 import { computeKpis, loadAdminData, type AdminData } from "@/lib/adminData";
 import { purgeExpired } from "@/lib/accountLifecycle";
+import ErrorsPanel from "@/components/admin/ErrorsPanel";
+import { loadSystemErrors, type SystemError } from "@/lib/systemErrors";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { ArrowRightIcon, BoltIcon, EyeIcon } from "@/components/Icons";
 
@@ -25,12 +27,15 @@ export default async function Admin() {
   // gleich mit aufgeräumt - zusätzlich zum täglichen Job.
   let data: AdminData | null = null;
   let dataError = "";
+  let systemErrors: SystemError[] | null = null;
   const connected = isServiceRoleConfigured();
   if (connected) {
     try {
       const db = getServiceClient();
       await purgeExpired(db).catch(() => 0);
       data = await loadAdminData(db);
+      // Fehler-Tracking: fehlt die Tabelle noch, bleibt der Rest des Dashboards trotzdem nutzbar
+      systemErrors = await loadSystemErrors(db).catch(() => null);
     } catch {
       dataError =
         "Die Daten konnten nicht geladen werden. Sind die Tabellen angelegt (supabase/schema.sql)?";
@@ -94,6 +99,23 @@ export default async function Admin() {
             <ArrowRightIcon className="h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-gold" />
           </Link>
         </div>
+
+        {/* Fehler-Tracking */}
+        {connected && (
+          <>
+            <h2 className="mt-12 text-xs font-semibold tracking-wide text-zinc-500 uppercase">Systemstatus</h2>
+            <div className="mt-3">
+              {systemErrors ? (
+                <ErrorsPanel initial={systemErrors} />
+              ) : (
+                <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-relaxed text-zinc-400 backdrop-blur-xl">
+                  Das Fehler-Tracking ist noch nicht eingerichtet (Tabelle <code>system_errors</code>, siehe
+                  supabase/schema.sql).
+                </p>
+              )}
+            </div>
+          </>
+        )}
 
         {/* Warteliste & Nutzer */}
         <h2 className="mt-12 text-xs font-semibold tracking-wide text-zinc-500 uppercase">

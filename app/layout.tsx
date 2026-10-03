@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/lib/LanguageContext";
 import PageTransition from "@/components/PageTransition";
 import AdminGate from "@/components/AdminGate";
 import LoginGate from "@/components/LoginGate";
+import ErrorReporter from "@/components/ErrorReporter";
 
 export const metadata: Metadata = {
   title: "DSpora — Finde deine Crew in DACH",
@@ -23,6 +24,7 @@ export default function RootLayout({
           <PageTransition>{children}</PageTransition>
           <AdminGate />
           <LoginGate />
+          <ErrorReporter />
         </LanguageProvider>
       </body>
     </html>

@@ -4,6 +4,7 @@ import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
 import { Invalid, choice, followUps, oneOf, validateBusiness } from "@/lib/onboardingValidation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
+import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,9 @@ export async function PATCH(request: Request) {
   }
 
   const { error } = await supabase.from("user_profiles").update(update).eq("user_id", data.user.id);
-  if (error) return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
+  if (error) {
+    await logError(error, "API /api/profile (Speichern)");
+    return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
