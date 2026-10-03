@@ -27,7 +27,12 @@ export default function WaitlistCapture() {
   return (
     <div className="mx-auto w-full max-w-md">
       <form onSubmit={handleSubmit}>
-        <div className="relative isolate overflow-hidden rounded-full border border-white/10 bg-white/5 backdrop-blur-xl">
+        <div className="relative isolate overflow-hidden rounded-full border border-white/15 bg-gradient-to-b from-white/[0.12] to-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_-1px_0_rgba(255,255,255,0.04),0_10px_30px_-10px_rgba(0,0,0,0.7)] backdrop-blur-2xl">
+          {/* Glas-Glanz: heller Schimmer in der oberen Hälfte, liegt auch über der Gold-Füllung */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-3 top-0 z-10 h-1/2 rounded-full bg-gradient-to-b from-white/[0.14] to-transparent"
+          />
           <motion.div
             className="absolute inset-y-0 left-0 -z-10 bg-gradient-to-r from-gold to-gold-light"
             initial={{ width: "0%" }}
