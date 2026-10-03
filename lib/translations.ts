@@ -62,8 +62,6 @@ export type Translation = {
   waitlistCapture: {
     placeholder: string;
     button: string;
-    slideLabel: string;
-    sending: string;
     success: string;
   };
 };
@@ -166,8 +164,6 @@ export const translations: Record<Language, Translation> = {
     waitlistCapture: {
       placeholder: "deine@mail.com",
       button: "Beitreten",
-      slideLabel: "Zum Beitreten schieben",
-      sending: "Wird gesendet …",
       success: "Fast geschafft! Prüfe dein Postfach",
     },
   },
@@ -266,8 +262,6 @@ export const translations: Record<Language, Translation> = {
     waitlistCapture: {
       placeholder: "your@mail.com",
       button: "Join",
-      slideLabel: "Slide to join",
-      sending: "Sending …",
       success: "Almost there! Check your inbox",
     },
   },
@@ -369,8 +363,6 @@ export const translations: Record<Language, Translation> = {
     waitlistCapture: {
       placeholder: "மின்னஞ்சல் முகவரி",
       button: "சேரவும்",
-      slideLabel: "இழுத்து சேரவும்",
-      sending: "அனுப்பப்படுகிறது…",
       success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
     },
   },
