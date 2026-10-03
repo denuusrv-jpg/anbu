@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// Amber-Wand: steigt von unten auf und verdeckt alles, die neue Seite entsteht
+// Farbwand (Hero-Farben): steigt von unten auf und verdeckt alles, die neue Seite entsteht
 // dahinter, danach zieht die Wand nach oben weiter ab und gibt sie frei.
 type Phase = "idle" | "cover" | "reveal";
 
@@ -121,8 +121,9 @@ export default function PageTransition({
           willChange: phase === "idle" ? undefined : "transform",
         }}
       >
-        {/* Wand: tiefes Amber mit Verlauf */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#f7bd7e] via-gold to-[#c9772a]" />
+        {/* Wand: statischer Verlauf in den Farben des Hero-Hintergrunds (Orange → Rot → Violett), ohne pulsierende Punkte */}
+        <div className="absolute inset-0 bg-[linear-gradient(170deg,#f5a623_0%,#f2701a_22%,#e11d3f_58%,#6b1e74_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_0%,rgba(245,197,24,0.35),transparent_55%)]" />
         {/* Glasiger Schimmer: diagonales Licht und weiche Aufhellung oben */}
         <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,rgba(255,255,255,0.28)_46%,rgba(255,255,255,0.06)_54%,transparent_70%)]" />
         <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/25 to-transparent" />
@@ -130,11 +131,11 @@ export default function PageTransition({
 
         {/* Glas-Lippen: weicher Blur-Saum an Ober- und Unterkante der Wand */}
         <div
-          className="absolute inset-x-0 bottom-full h-[120px] bg-gradient-to-t from-gold/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_top,black,transparent)]"
+          className="absolute inset-x-0 bottom-full h-[120px] bg-gradient-to-t from-[#f2701a]/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_top,black,transparent)]"
           style={{ WebkitBackdropFilter: "blur(10px)" }}
         />
         <div
-          className="absolute inset-x-0 top-full h-[120px] bg-gradient-to-b from-[#c9772a]/35 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]"
+          className="absolute inset-x-0 top-full h-[120px] bg-gradient-to-b from-[#6b1e74]/40 to-transparent backdrop-blur-md [mask-image:linear-gradient(to_bottom,black,transparent)]"
           style={{ WebkitBackdropFilter: "blur(10px)" }}
         />
       </div>
