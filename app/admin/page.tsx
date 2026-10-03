@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import AdminLogoutButton from "@/components/AdminLogoutButton";
-import AdminTable, { type ProfileRow, type WaitlistRow } from "@/components/AdminTable";
+import AdminTable, { type DraftRow, type ProfileRow, type WaitlistRow } from "@/components/AdminTable";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { ArrowRightIcon, BoltIcon } from "@/components/Icons";
 
@@ -21,12 +21,13 @@ export default async function Admin() {
   // Daten der Warteliste und der Nutzerprofile (nur serverseitig mit dem Service-Role-Key)
   let waitlist: WaitlistRow[] = [];
   let profiles: ProfileRow[] = [];
+  let drafts: DraftRow[] = [];
   let dataError = "";
   const connected = isServiceRoleConfigured();
   if (connected) {
     try {
       const db = getServiceClient();
-      const [wl, pr, users] = await Promise.all([
+      const [wl, pr, users, dr] = await Promise.all([
         db
           .from("waitlist")
           .select("id, email, status, created_at")
@@ -34,12 +35,18 @@ export default async function Admin() {
           .limit(1000),
         db
           .from("user_profiles")
-          .select("user_id, region, city, mode, status, created_at, interests")
+          .select("user_id, region, city, mode, status, created_at, interests, vibes, profile, extras")
           .order("created_at", { ascending: false })
           .limit(1000),
         db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+        db
+          .from("onboarding_drafts")
+          .select("email, answers, created_at")
+          .order("created_at", { ascending: false })
+          .limit(1000),
       ]);
-      if (wl.error || pr.error) throw new Error("query failed");
+      if (wl.error || pr.error || dr.error) throw new Error("query failed");
+      drafts = (dr.data ?? []) as DraftRow[];
       const emailById = new Map(users.data?.users.map((u) => [u.id, u.email ?? ""]) ?? []);
       waitlist = (wl.data ?? []) as WaitlistRow[];
       profiles = (pr.data ?? []).map((p) => ({
@@ -108,7 +115,7 @@ export default async function Admin() {
               {dataError}
             </p>
           ) : (
-            <AdminTable waitlist={waitlist} profiles={profiles} />
+            <AdminTable waitlist={waitlist} profiles={profiles} drafts={drafts} />
           )}
         </div>
       </div>

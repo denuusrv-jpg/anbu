@@ -11,7 +11,6 @@ export const REGIONS: Option[] = [
   { id: "hamburg-nord", label: "Hamburg & Nord" },
   { id: "schweiz", label: "Schweiz" },
   { id: "oesterreich", label: "Österreich" },
-  { id: "anderswo", label: "Woanders" },
 ];
 
 export const INTERESTS: Option[] = [
@@ -40,46 +39,12 @@ export const VIBES: Option[] = [
   { id: "bodenstaendig", label: "Bodenständig" },
 ];
 
-// Bonus-Fragen (nach den vier Kernfragen)
-export const FRIEND_STYLES: Option[] = [
-  { id: "ruhig", label: "Ruhig & beobachtend" },
-  { id: "gespraechig", label: "Gesprächig" },
-  { id: "organisator", label: "Der/die Organisator:in" },
-  { id: "spassvogel", label: "Der/die Spaßvogel" },
-  { id: "zuhoerer", label: "Zuhörer:in" },
-  { id: "motivator", label: "Motivator:in" },
-];
-
-export const GROUP_SIZES: Option[] = [
-  { id: "duo", label: "Duo" },
-  { id: "crew", label: "Crew (4)" },
-  { id: "squad", label: "Squad (6+)" },
-  { id: "egal", label: "Egal" },
-];
-
-export const FREQUENCIES: Option[] = [
-  { id: "woechentlich", label: "Jede Woche" },
-  { id: "zweiwoechentlich", label: "Alle 2 Wochen" },
-  { id: "monatlich", label: "Einmal im Monat" },
-  { id: "spontan", label: "Spontan" },
-];
-
 export const LANGUAGES: Option[] = [
   { id: "tamil", label: "Tamil" },
   { id: "deutsch", label: "Deutsch" },
   { id: "englisch", label: "Englisch" },
   { id: "franzoesisch", label: "Französisch" },
   { id: "mix", label: "Mix aus allem" },
-];
-
-export const WISHES: Option[] = [
-  { id: "freundschaft", label: "Echte Freundschaften" },
-  { id: "gym-buddy", label: "Gym-Buddy" },
-  { id: "gaming-squad", label: "Gaming-Squad" },
-  { id: "ausgehen", label: "Gemeinsam ausgehen" },
-  { id: "tradition", label: "Kultur & Tradition leben" },
-  { id: "netzwerk", label: "Karriere-Netzwerk" },
-  { id: "deep-talks", label: "Tiefe Gespräche" },
 ];
 
 // Profil
@@ -105,30 +70,28 @@ export type Choice = { ids: string[]; custom: string[] };
 export type ProfileData = {
   displayName: string;
   age?: number;
-  bio?: string;
   hobbies: string[];
-  languages: string[];
-  phase?: string;
+  languages: Choice;
+  phase?: string; // Id aus PHASES oder eigener Text
   funFact?: string;
   askMeAbout?: string;
   visibility: string;
   photoCount: number;
 };
 
+export type FollowUp = { question: string; answer: string };
+
 export type OnboardingAnswers = {
-  region: string;
+  region: string; // Id aus REGIONS oder eigener Text
   city?: string;
   interests: Choice;
   vibes: Choice;
   mode: (typeof PROFILE_MODES)[number];
   profile?: ProfileData;
   extras?: {
-    friendStyle?: Choice;
-    groupSize?: string;
-    frequency?: string;
-    languagesTogether?: string[];
-    wishes?: Choice;
-    more?: string;
+    freeText?: string; // freier Text aus dem Pfad "Profil anlegen"
+    followUps?: FollowUp[]; // 1-2 Folgefragen samt Antworten
+    wishes?: string; // Wünsche und Ideen für DSpora (Finale)
   };
 };
 
@@ -137,12 +100,20 @@ export type OnboardingAnswers = {
 export const NAME_PATTERN = new RegExp("^[\\p{L}\\p{N}\\p{M} _.-]{2,24}$", "u");
 export const CUSTOM_PATTERN = new RegExp("^[\\p{L}\\p{N}\\p{M} &+'._-]{2,30}$", "u");
 
+export const FREE_TEXT_MAX = 1500;
+export const FOLLOW_UP_ANSWER_MAX = 600;
+export const WISHES_MAX = 1500;
 export const MAX_CHOICES = 8;
 export const MAX_CUSTOM = 5;
 export const MIN_AGE = 18;
 export const MAX_AGE = 99;
 export const MAX_PHOTOS = 3;
 export const MAX_HOBBIES = 8;
+
+/** Beschriftung einer Id (oder bei eigenem Text der Text selbst). */
+export function labelOf(value: string, options: Option[]): string {
+  return options.find((o) => o.id === value)?.label ?? value;
+}
 
 /** Beschriftungen einer Auswahl (Vorgaben + eigene Einträge) als Liste. */
 export function choiceLabels(choice: Choice, options: Option[]): string[] {

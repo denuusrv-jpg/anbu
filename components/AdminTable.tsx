@@ -2,7 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { INTERESTS, REGIONS, choiceLabels, type Choice } from "@/lib/onboarding";
+import {
+  INTERESTS,
+  LANGUAGES,
+  PHASES,
+  REGIONS,
+  VIBES,
+  VISIBILITIES,
+  choiceLabels,
+  labelOf,
+  type Choice,
+  type OnboardingAnswers,
+  type ProfileData,
+} from "@/lib/onboarding";
 
 export type WaitlistRow = { id: string; email: string; status: string; created_at: string };
 export type ProfileRow = {
@@ -14,9 +26,13 @@ export type ProfileRow = {
   status: string;
   created_at: string;
   interests: Choice;
+  vibes: Choice;
+  profile: ProfileData | null;
+  extras: OnboardingAnswers["extras"] | null;
 };
+export type DraftRow = { email: string; created_at: string; answers: OnboardingAnswers };
 
-type Tab = "waitlist" | "profiles";
+type Tab = "waitlist" | "profiles" | "drafts";
 
 const date = (value: string) =>
   new Date(value).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
@@ -35,12 +51,122 @@ function Badge({ children, tone = "neutral" }: { children: React.ReactNode; tone
   );
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border-t border-white/10 pt-4">
+      <h3 className="text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">{title}</h3>
+      <div className="mt-2 space-y-1.5 text-sm leading-relaxed text-zinc-200">{children}</div>
+    </div>
+  );
+}
+
+function Line({ label, value }: { label: string; value?: React.ReactNode }) {
+  if (value === undefined || value === null || value === "") return null;
+  return (
+    <p>
+      <span className="text-zinc-500">{label}: </span>
+      {value}
+    </p>
+  );
+}
+
+// Alle Antworten einer Person (Profil oder Entwurf) im Detail
+function Detail({
+  email,
+  answers,
+  onClose,
+}: {
+  email: string;
+  answers: OnboardingAnswers;
+  onClose: () => void;
+}) {
+  const p = answers.profile;
+  const e = answers.extras;
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-md"
+      onMouseDown={(ev) => {
+        if (ev.target === ev.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Details"
+        className="max-h-full w-full max-w-lg space-y-4 overflow-y-auto rounded-3xl border border-white/10 bg-zinc-900/80 p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold tracking-wide text-gold uppercase">Antworten</p>
+            <h2 className="mt-1 text-lg font-semibold text-zinc-50">{email || "Ohne E-Mail"}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Schließen"
+            className="text-xl leading-none text-zinc-500 transition-colors hover:text-zinc-200"
+          >
+            ×
+          </button>
+        </div>
+
+        <Section title="Basis">
+          <Line label="Region" value={labelOf(answers.region, REGIONS)} />
+          <Line label="Stadt" value={answers.city} />
+          <Line label="Interessen" value={choiceLabels(answers.interests, INTERESTS).join(", ")} />
+          <Line label="Vibe" value={choiceLabels(answers.vibes, VIBES).join(", ")} />
+          <Line label="Modus" value={answers.mode === "profile" ? "Profil" : "Anonym"} />
+        </Section>
+
+        {p && (
+          <Section title="Profil">
+            <Line label="Anzeigename" value={p.displayName} />
+            <Line label="Alter" value={p.age} />
+            <Line label="Lebensphase" value={p.phase ? labelOf(p.phase, PHASES) : undefined} />
+            <Line label="Sprachen" value={choiceLabels(p.languages, LANGUAGES).join(", ")} />
+            <Line label="Hobbys" value={p.hobbies.join(", ")} />
+            <Line label="Fun Fact" value={p.funFact} />
+            <Line label="Frag mich nach" value={p.askMeAbout} />
+            <Line label="Sichtbar für" value={labelOf(p.visibility, VISIBILITIES)} />
+            <Line label="Fotos" value={p.photoCount} />
+          </Section>
+        )}
+
+        {e?.freeText && (
+          <Section title="Freitext">
+            <p className="whitespace-pre-wrap">{e.freeText}</p>
+          </Section>
+        )}
+
+        {e?.followUps && e.followUps.length > 0 && (
+          <Section title="Folgefragen">
+            {e.followUps.map((f, i) => (
+              <div key={i} className="rounded-xl border border-white/10 bg-white/5 p-3">
+                <p className="text-xs text-zinc-500">{f.question}</p>
+                <p className="mt-1 whitespace-pre-wrap">{f.answer}</p>
+              </div>
+            ))}
+          </Section>
+        )}
+
+        {e?.wishes && (
+          <Section title="Wünsche & Ideen für DSpora">
+            <p className="whitespace-pre-wrap">{e.wishes}</p>
+          </Section>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminTable({
   waitlist,
   profiles,
+  drafts = [],
 }: {
   waitlist: WaitlistRow[];
   profiles: ProfileRow[];
+  drafts?: DraftRow[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("waitlist");
@@ -48,6 +174,7 @@ export default function AdminTable({
   const [confirming, setConfirming] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [detail, setDetail] = useState<{ email: string; answers: OnboardingAnswers } | null>(null);
 
   const q = query.trim().toLowerCase();
   const waitlistRows = useMemo(
@@ -62,7 +189,12 @@ export default function AdminTable({
     [profiles, q],
   );
 
-  async function remove(kind: "waitlist" | "profile", id: string) {
+  const draftRows = useMemo(
+    () => drafts.filter((r) => !q || r.email.toLowerCase().includes(q)),
+    [drafts, q],
+  );
+
+  async function remove(kind: "waitlist" | "profile" | "draft", id: string) {
     setBusy(id);
     setError("");
     try {
@@ -83,7 +215,7 @@ export default function AdminTable({
     }
   }
 
-  function DeleteCell({ id, kind }: { id: string; kind: "waitlist" | "profile" }) {
+  function DeleteCell({ id, kind }: { id: string; kind: "waitlist" | "profile" | "draft" }) {
     if (confirming === id) {
       return (
         <span className="inline-flex items-center gap-2 text-xs">
@@ -127,6 +259,7 @@ export default function AdminTable({
             [
               { id: "waitlist", label: `Warteliste (${waitlist.length})` },
               { id: "profiles", label: `Profile (${profiles.length})` },
+              { id: "drafts", label: `Entwürfe (${drafts.length})` },
             ] as const
           ).map((t) => (
             <button
@@ -194,14 +327,15 @@ export default function AdminTable({
               )}
             </tbody>
           </table>
-        ) : (
-          <table className="w-full min-w-[760px] border-collapse">
+        ) : tab === "profiles" ? (
+          <table className="w-full min-w-[900px] border-collapse">
             <thead className="border-b border-white/10">
               <tr>
                 <th className={th}>E-Mail</th>
                 <th className={th}>Region</th>
                 <th className={th}>Interessen</th>
                 <th className={th}>Modus</th>
+                <th className={th}>Wünsche</th>
                 <th className={th}>Erstellt</th>
                 <th className={`${th} text-right`}>Aktion</th>
               </tr>
@@ -211,10 +345,10 @@ export default function AdminTable({
                 <tr key={row.user_id} className="transition-colors hover:bg-white/[0.03]">
                   <td className={td}>{row.email || "–"}</td>
                   <td className={td}>
-                    {REGIONS.find((r) => r.id === row.region)?.label ?? row.region}
+                    {labelOf(row.region, REGIONS)}
                     {row.city ? <span className="text-zinc-500"> · {row.city}</span> : null}
                   </td>
-                  <td className={`${td} max-w-[220px] truncate text-zinc-400`}>
+                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>
                     {choiceLabels(row.interests, INTERESTS).join(", ") || "–"}
                   </td>
                   <td className={td}>
@@ -222,16 +356,86 @@ export default function AdminTable({
                       {row.mode === "profile" ? "Profil" : "Anonym"}
                     </Badge>
                   </td>
+                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>{row.extras?.wishes || "–"}</td>
                   <td className={`${td} text-zinc-400`}>{date(row.created_at)}</td>
                   <td className={`${td} text-right`}>
-                    <DeleteCell id={row.user_id} kind="profile" />
+                    <span className="inline-flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDetail({
+                            email: row.email,
+                            answers: {
+                              region: row.region,
+                              city: row.city ?? undefined,
+                              interests: row.interests,
+                              vibes: row.vibes,
+                              mode: row.mode as OnboardingAnswers["mode"],
+                              profile: row.profile ?? undefined,
+                              extras: row.extras ?? undefined,
+                            },
+                          })
+                        }
+                        className="text-xs text-zinc-300 transition-colors hover:text-gold"
+                      >
+                        Details
+                      </button>
+                      <DeleteCell id={row.user_id} kind="profile" />
+                    </span>
                   </td>
                 </tr>
               ))}
               {profileRows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
+                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-zinc-500">
                     Keine Profile.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        ) : (
+          <table className="w-full min-w-[700px] border-collapse">
+            <thead className="border-b border-white/10">
+              <tr>
+                <th className={th}>E-Mail</th>
+                <th className={th}>Region</th>
+                <th className={th}>Modus</th>
+                <th className={th}>Wünsche</th>
+                <th className={th}>Eingereicht</th>
+                <th className={`${th} text-right`}>Aktion</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {draftRows.map((row) => (
+                <tr key={row.email} className="transition-colors hover:bg-white/[0.03]">
+                  <td className={td}>{row.email}</td>
+                  <td className={td}>{labelOf(row.answers.region, REGIONS)}</td>
+                  <td className={td}>
+                    <Badge tone={row.answers.mode === "profile" ? "gold" : "neutral"}>
+                      {row.answers.mode === "profile" ? "Profil" : "Anonym"}
+                    </Badge>
+                  </td>
+                  <td className={`${td} max-w-[200px] truncate text-zinc-400`}>{row.answers.extras?.wishes || "–"}</td>
+                  <td className={`${td} text-zinc-400`}>{date(row.created_at)}</td>
+                  <td className={`${td} text-right`}>
+                    <span className="inline-flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setDetail({ email: row.email, answers: row.answers })}
+                        className="text-xs text-zinc-300 transition-colors hover:text-gold"
+                      >
+                        Details
+                      </button>
+                      <DeleteCell id={row.email} kind="draft" />
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {draftRows.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-zinc-500">
+                    Keine offenen Entwürfe.
                   </td>
                 </tr>
               )}
@@ -240,8 +444,11 @@ export default function AdminTable({
         )}
       </div>
       <p className="mt-3 text-xs text-zinc-600">
-        Beim Löschen eines Profils werden der Nutzer, seine Antworten und seine Fotos endgültig entfernt.
+        {tab === "drafts"
+          ? "Entwürfe sind fertig ausgefüllte Chats, deren Anmelde-Link noch nicht angeklickt wurde. Nach 7 Tagen werden sie nicht mehr übernommen."
+          : "Beim Löschen eines Profils werden der Nutzer, seine Antworten und seine Fotos endgültig entfernt."}
       </p>
+      {detail && <Detail email={detail.email} answers={detail.answers} onClose={() => setDetail(null)} />}
     </div>
   );
 }

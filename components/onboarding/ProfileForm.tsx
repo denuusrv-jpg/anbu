@@ -13,9 +13,12 @@ import {
   NAME_PATTERN,
   PHASES,
   VISIBILITIES,
+  type Choice,
   type ProfileData,
 } from "@/lib/onboarding";
 import { Chip, ChipRow, Field, GoldButton, fieldClass } from "@/components/onboarding/ui";
+import { ChoiceChips } from "@/components/onboarding/ChoiceSelect";
+import SingleChoice from "@/components/onboarding/SingleChoice";
 
 export type ProfileResult = { profile: ProfileData; photos: Blob[] };
 
@@ -30,10 +33,9 @@ export default function ProfileForm({
   const [photoError, setPhotoError] = useState("");
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
-  const [bio, setBio] = useState("");
   const [hobbies, setHobbies] = useState<string[]>([]);
   const [hobbyDraft, setHobbyDraft] = useState("");
-  const [languages, setLanguages] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<Choice>({ ids: [], custom: [] });
   const [phase, setPhase] = useState<string | undefined>();
   const [funFact, setFunFact] = useState("");
   const [askMe, setAskMe] = useState("");
@@ -91,10 +93,6 @@ export default function ProfileForm({
     setErrors((e) => ({ ...e, hobby: "" }));
   }
 
-  function toggleLanguage(id: string) {
-    setLanguages((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
-  }
-
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const next: Record<string, string> = {};
@@ -116,7 +114,6 @@ export default function ProfileForm({
       profile: {
         displayName: trimmedName,
         age: ageNumber,
-        bio: bio.trim() || undefined,
         hobbies,
         languages,
         phase,
@@ -209,16 +206,6 @@ export default function ProfileForm({
         </Field>
       </div>
 
-      <Field label="Über mich" hint={`${bio.length}/280`}>
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value.slice(0, 280))}
-          rows={3}
-          placeholder="Ein paar Sätze über dich: Was macht dich aus?"
-          className={`${fieldClass} resize-none`}
-        />
-      </Field>
-
       <Field label="Hobbys" hint={`${hobbies.length}/${MAX_HOBBIES}`}>
         <div className="flex gap-2">
           <input
@@ -259,23 +246,21 @@ export default function ProfileForm({
       </Field>
 
       <Field label="Sprachen, die du gern sprichst">
-        <ChipRow>
-          {LANGUAGES.map((l) => (
-            <Chip key={l.id} selected={languages.includes(l.id)} onClick={() => toggleLanguage(l.id)}>
-              {l.label}
-            </Chip>
-          ))}
-        </ChipRow>
+        <ChoiceChips
+          options={LANGUAGES}
+          value={languages}
+          onChange={setLanguages}
+          customPlaceholder="Andere Sprache hinzufügen"
+        />
       </Field>
 
       <Field label="Wo stehst du gerade?">
-        <ChipRow>
-          {PHASES.map((p) => (
-            <Chip key={p.id} selected={phase === p.id} onClick={() => setPhase(phase === p.id ? undefined : p.id)}>
-              {p.label}
-            </Chip>
-          ))}
-        </ChipRow>
+        <SingleChoice
+          options={PHASES}
+          value={phase}
+          onSelect={(v) => setPhase(v || undefined)}
+          customPlaceholder="Etwas anderes? Eigene Angabe"
+        />
       </Field>
 
       <Field label="Fun Fact über dich" hint={`${funFact.length}/100`}>

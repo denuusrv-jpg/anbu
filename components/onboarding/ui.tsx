@@ -146,3 +146,81 @@ export function Field({
     </div>
   );
 }
+
+// Textfeld für längere Antworten (Freitext, Folgefragen, Wünsche)
+export function LongTextAnswer({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+  maxLength,
+  minLength = 0,
+  skipLabel = "Überspringen",
+  onSkip,
+  submitLabel = "Senden",
+  error,
+  rows = 4,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder: string;
+  maxLength: number;
+  minLength?: number;
+  skipLabel?: string;
+  onSkip?: () => void;
+  submitLabel?: string;
+  error?: string;
+  rows?: number;
+}) {
+  const length = value.trim().length;
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (length >= minLength) onSubmit();
+      }}
+      className="space-y-2.5"
+    >
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && length >= minLength) {
+            e.preventDefault();
+            onSubmit();
+          }
+        }}
+        rows={rows}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        autoFocus
+        className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
+      />
+      {error && (
+        <p role="alert" className="px-1 text-xs text-rose">
+          {error}
+        </p>
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs text-zinc-500">
+          {value.length}/{maxLength}
+        </span>
+        <div className="flex items-center gap-3">
+          {onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+            >
+              {skipLabel}
+            </button>
+          )}
+          <GoldButton type="submit" disabled={length < minLength}>
+            {submitLabel}
+          </GoldButton>
+        </div>
+      </div>
+    </form>
+  );
+}

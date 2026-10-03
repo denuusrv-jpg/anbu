@@ -6,20 +6,21 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
+import SingleChoice from "@/components/onboarding/SingleChoice";
+import { Chip, ChipRow, LongTextAnswer, TextAnswer } from "@/components/onboarding/ui";
 import { getBrowserClient } from "@/lib/supabase/client";
-import { Chip, ChipRow, TextAnswer } from "@/components/onboarding/ui";
+import { stashPhotos } from "@/lib/draftPhotos";
+import { pickFollowUps } from "@/lib/followups";
 import {
-  FREQUENCIES,
-  FRIEND_STYLES,
-  GROUP_SIZES,
+  FOLLOW_UP_ANSWER_MAX,
+  FREE_TEXT_MAX,
   INTERESTS,
-  LANGUAGES,
   REGIONS,
   VIBES,
-  WISHES,
+  WISHES_MAX,
+  choiceLabels,
   type Choice,
   type OnboardingAnswers,
-  type Option,
 } from "@/lib/onboarding";
 
 type Step =
@@ -29,41 +30,36 @@ type Step =
   | "interests"
   | "vibes"
   | "mode"
+  | "freeText"
+  | "followUp"
   | "profile"
-  | "more"
-  | "friendStyle"
-  | "groupSize"
-  | "frequency"
-  | "languages"
   | "wishes"
-  | "notes"
-  | "saving"
+  | "login"
+  | "sent"
   | "retry";
 
 type Message = { id: number; from: "bot" | "user"; text: string };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const EMPTY: Choice = { ids: [], custom: [] };
-const EXTRA_STEPS: Step[] = ["friendStyle", "groupSize", "frequency", "languages", "wishes", "notes"];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RESEND_SECONDS = 30;
 
-// Fortschritt der vier Kernfragen (Anzeige oben)
+// Fortschritt der Kernfragen (Anzeige oben); danach "Profil" und "Finale"
 const STEP_NUMBER: Partial<Record<Step, number>> = {
   region: 1,
   city: 1,
   interests: 2,
   vibes: 3,
   mode: 4,
-  profile: 4,
 };
+const PROFILE_STEPS: Step[] = ["freeText", "followUp", "profile"];
+const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
 
-function labelsOf(choice: Choice, options: Option[]) {
-  return [
-    ...choice.ids.map((id) => options.find((o) => o.id === id)?.label ?? id),
-    ...choice.custom,
-  ].join(", ");
-}
+// guest: noch nicht angemeldet, Anmeldung per Link am Ende | live: angemeldet, speichert direkt
+// test: Admin-Testlauf, nichts wird gespeichert | preview: Supabase noch nicht verbunden
+export type ChatMode = "guest" | "live" | "test" | "preview";
 
 // Ersetzt die bisherigen Fotos des Nutzers durch die neuen (Ordner = eigene Nutzer-ID)
 async function uploadPhotos(userId: string, blobs: Blob[]): Promise<boolean> {
@@ -86,9 +82,6 @@ async function uploadPhotos(userId: string, blobs: Blob[]): Promise<boolean> {
   }
 }
 
-// live: speichert in Supabase | test: Admin-Testlauf, nichts wird gespeichert | preview: Supabase noch nicht verbunden
-export type ChatMode = "live" | "test" | "preview";
-
 export default function OnboardingChat({
   mode = "preview",
   userId,
@@ -103,20 +96,29 @@ export default function OnboardingChat({
   const [step, setStep] = useState<Step>("intro");
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState("");
+  const [chosenRegion, setChosenRegion] = useState<string | undefined>();
+  const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
+  const [followQuestion, setFollowQuestion] = useState("");
 
   // Auswahlen, die in den Panels live bearbeitet werden
   const [interests, setInterests] = useState<Choice>(EMPTY);
   const [vibes, setVibes] = useState<Choice>(EMPTY);
-  const [friendStyle, setFriendStyle] = useState<Choice>(EMPTY);
-  const [wishes, setWishes] = useState<Choice>(EMPTY);
-  const [languages, setLanguages] = useState<Choice>(EMPTY);
+
+  // Anmeldung am Ende
+  const [email, setEmail] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [sending, setSending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
   const answers = useRef<Partial<OnboardingAnswers>>({});
   const photos = useRef<Blob[]>([]);
-  const token = useRef<string | undefined>(undefined);
+  const followQueue = useRef<string[]>([]);
+  const followAnswers = useRef<{ question: string; answer: string }[]>([]);
   const nextId = useRef(0);
   const alive = useRef(true);
   const started = useRef(false);
+  const shownAt = useRef(0);
+  const honeypot = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,22 +128,22 @@ export default function OnboardingChat({
     };
   }, []);
 
-  // Optionaler Token aus der Warteliste (…/onboarding?token=…)
-  useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("token");
-    if (t) token.current = t;
-  }, []);
-
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, typing, step, busy]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
 
   // Bot-Nachrichten nacheinander einblenden, mit Tipp-Anzeige davor
   async function bot(texts: string[]) {
     setBusy(true);
     for (const message of texts) {
       setTyping(true);
-      await sleep(650 + Math.min(message.length * 9, 800));
+      await sleep(650 + Math.min(message.length * 8, 850));
       if (!alive.current) return;
       setTyping(false);
       setMessages((m) => [...m, { id: nextId.current++, from: "bot", text: message }]);
@@ -169,18 +171,23 @@ export default function OnboardingChat({
     ask(
       [
         "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
-        "Vier kurze Fragen, dann bist du durch. Wo bist du zu Hause?",
+        "Ein paar kurze Fragen, dann bist du durch. Wo bist du zu Hause?",
       ],
       "region",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ——— Die vier Kernfragen ———
+  // ——— Basis-Flow: Region, Interessen, Vibe ———
 
-  function pickRegion(option: Option) {
-    answers.current.region = option.id;
-    user(option.label);
+  function pickRegion(value: string, label: string) {
+    if (!value) {
+      setChosenRegion(undefined);
+      return;
+    }
+    answers.current.region = value;
+    setChosenRegion(value);
+    user(label);
     ask(["Und in welcher Stadt? So finden wir Leute in deiner Nähe. Du kannst auch überspringen."], "city");
   }
 
@@ -193,47 +200,100 @@ export default function OnboardingChat({
     answers.current.city = skip || !value ? undefined : value;
     user(skip || !value ? "Überspringen" : value);
     ask(
-      [
-        "Was begeistert dich? Such dir aus, was passt – und wenn etwas fehlt, trag einfach dein eigenes ein.",
-      ],
+      ["Was begeistert dich? Such dir aus, was passt – und wenn etwas fehlt, trag einfach dein eigenes ein."],
       "interests",
     );
   }
 
   function confirmInterests() {
     answers.current.interests = interests;
-    user(labelsOf(interests, INTERESTS));
-    ask(
-      [
-        "Und welcher Vibe beschreibt dich am besten? Wähle gern mehrere oder schreib deinen eigenen.",
-      ],
-      "vibes",
-    );
+    user(choiceLabels(interests, INTERESTS).join(", "));
+    ask(["Und welcher Vibe beschreibt dich am besten? Wähle gern mehrere oder schreib deinen eigenen."], "vibes");
   }
 
   function confirmVibes() {
     answers.current.vibes = vibes;
-    user(labelsOf(vibes, VIBES));
+    user(choiceLabels(vibes, VIBES).join(", "));
     ask(
       [
-        "Letzte der vier Fragen: Möchtest du komplett anonym bleiben – oder ein Profil mit Fotos, Beschreibung und mehr anlegen? Beides ist völlig okay.",
+        "Jetzt die große Frage: Möchtest du ganz anonym starten – oder ein Profil mit deiner Geschichte anlegen? Beides ist völlig okay, und du kannst es später im Hub ändern.",
       ],
       "mode",
     );
   }
 
-  function pickMode(mode: "anonymous" | "profile") {
-    answers.current.mode = mode;
-    if (mode === "anonymous") {
-      user("Komplett anonym");
-      askMore();
+  // ——— Die große Weiche ———
+
+  function pickMode(next: "anonymous" | "profile") {
+    answers.current.mode = next;
+    setPath(next);
+    if (next === "anonymous") {
+      user("Anonym starten");
+      ask(
+        [
+          "Sehr gut, so bleibst du absolut anonym: Niemand sieht deinen Namen oder deine E-Mail-Adresse.",
+          "Die Anmeldung läuft über einen sicheren Link per E-Mail, einen sogenannten Magic Link. Du brauchst kein Passwort und musst dir nichts merken.",
+          "Zum Abschluss habe ich noch eine Bitte an dich: Was wünschst du dir von DSpora? Welche Features oder Ideen sollten wir unbedingt einbauen?",
+        ],
+        "wishes",
+      );
       return;
     }
     user("Profil anlegen");
     ask(
-      [
-        "Sehr schön! Erzähl ein bisschen von dir. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf.",
-      ],
+      ["Wunderbar! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"],
+      "freeText",
+    );
+  }
+
+  // ——— Pfad B: Freitext, Folgefragen, Profil ———
+
+  function extras() {
+    answers.current.extras = answers.current.extras ?? {};
+    return answers.current.extras;
+  }
+
+  function submitFreeText(skip = false) {
+    const value = text.trim();
+    extras().freeText = skip || !value ? undefined : value;
+    user(skip || !value ? "Überspringen" : value);
+    followAnswers.current = [];
+
+    followQueue.current = skip || !value ? [] : pickFollowUps(value, 2).map((f) => f.question);
+    if (followQueue.current.length === 0) {
+      goToProfileForm();
+      return;
+    }
+    askNextFollowUp(["Danke, das erzählt schon viel über dich. Dazu habe ich noch eine Frage:"]);
+  }
+
+  function askNextFollowUp(intro: string[] = []) {
+    const question = followQueue.current.shift();
+    if (!question) {
+      goToProfileForm();
+      return;
+    }
+    setFollowQuestion(question);
+    ask([...intro, question], "followUp");
+  }
+
+  function submitFollowUp(skip = false) {
+    const value = text.trim();
+    if (!skip && value) {
+      followAnswers.current.push({ question: followQuestion, answer: value });
+      extras().followUps = followAnswers.current.slice();
+    }
+    user(skip || !value ? "Überspringen" : value);
+    if (followQueue.current.length > 0) {
+      askNextFollowUp(["Und noch eine Frage:"]);
+    } else {
+      goToProfileForm();
+    }
+  }
+
+  function goToProfileForm() {
+    ask(
+      ["Noch ein paar Details für dein Profil. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf."],
       "profile",
     );
   }
@@ -246,78 +306,44 @@ export default function OnboardingChat({
         blobs.length > 0 ? ` · ${blobs.length} ${blobs.length === 1 ? "Foto" : "Fotos"}` : ""
       }`,
     );
-    askMore();
-  }
-
-  // ——— Bonus: weiter chatten für bessere Ergebnisse ———
-
-  function askMore() {
     ask(
       [
-        "Das waren die vier Fragen – danke dir! Wenn du Lust hast, chatten wir noch ein bisschen weiter: Je mehr ich über dich weiß, desto besser werden deine Matches. Wie sieht's aus?",
+        "Danke, das Profil steht! Zum Abschluss habe ich noch eine Bitte an dich: Was wünschst du dir von DSpora? Welche Features oder Ideen sollten wir unbedingt einbauen?",
       ],
-      "more",
+      "wishes",
     );
   }
 
-  function extras() {
-    answers.current.extras = answers.current.extras ?? {};
-    return answers.current.extras;
-  }
+  // ——— Finale: Wünsche, dann Anmeldung/Speichern ———
 
-  function startBonus() {
-    user("Ja, gern");
-    ask(["Wie bist du im Freundeskreis? Such dir aus, was passt, oder schreib's selbst."], "friendStyle");
-  }
-
-  function confirmFriendStyle() {
-    extras().friendStyle = friendStyle;
-    user(labelsOf(friendStyle, FRIEND_STYLES) || "Überspringen");
-    ask(["Wie groß darf deine Gruppe sein?"], "groupSize");
-  }
-
-  function pickGroupSize(option?: Option) {
-    if (option) extras().groupSize = option.id;
-    user(option?.label ?? "Überspringen");
-    ask(["Wie oft möchtest du dich mit deiner Gruppe treffen?"], "frequency");
-  }
-
-  function pickFrequency(option?: Option) {
-    if (option) extras().frequency = option.id;
-    user(option?.label ?? "Überspringen");
-    ask(["In welchen Sprachen unterhältst du dich am liebsten?"], "languages");
-  }
-
-  function confirmLanguages() {
-    extras().languagesTogether = languages.ids;
-    user(labelsOf(languages, LANGUAGES) || "Überspringen");
-    ask(["Was wünschst du dir von neuen Verbindungen?"], "wishes");
-  }
-
-  function confirmWishes() {
-    extras().wishes = wishes;
-    user(labelsOf(wishes, WISHES) || "Überspringen");
-    ask(["Letzte Bonusfrage: Gibt es noch etwas, das wir über dich wissen sollten?"], "notes");
-  }
-
-  function submitNotes(skip = false) {
+  function submitWishes(skip = false) {
     const value = text.trim();
-    if (!skip && value.length > 300) {
-      setInputError("Maximal 300 Zeichen.");
+    extras().wishes = skip || !value ? undefined : value;
+    user(skip || !value ? "Überspringen" : value);
+    toAuth();
+  }
+
+  function toAuth() {
+    if (mode === "guest") {
+      shownAt.current = Date.now();
+      ask(
+        [
+          path === "anonymous"
+            ? "Fast geschafft! Zum Schluss bestätigst du deine E-Mail-Adresse. Ich schicke dir einen Link, mit dem du dich anonym anmeldest."
+            : "Fast geschafft! Zum Schluss bestätigst du deine E-Mail-Adresse. Ich schicke dir einen Link, mit dem du dich anmeldest und dein Profil gespeichert wird.",
+        ],
+        "login",
+      );
       return;
     }
-    if (!skip && value) extras().more = value;
-    user(skip || !value ? "Überspringen" : value);
-    finish();
+    finishSave();
   }
 
-  // ——— Abschluss ———
-
-  async function finish() {
+  // Angemeldet (live), Admin-Test oder Vorschau: Antworten direkt senden
+  async function finishSave() {
     setStep("intro");
     await bot(["Perfekt, danke dir! Einen Moment, ich lege dein Profil an …"]);
     if (!alive.current) return;
-    setStep("saving");
     setBusy(true);
     setTyping(true);
     try {
@@ -325,17 +351,12 @@ export default function OnboardingChat({
         fetch("/api/onboarding", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...answers.current,
-            token: token.current,
-            test: mode === "test" ? true : undefined,
-          }),
+          body: JSON.stringify({ ...answers.current, test: mode === "test" ? true : undefined }),
         }),
         sleep(900),
       ]);
       if (!res.ok) throw new Error("save failed");
 
-      // Profilfotos in den privaten Speicher des Nutzers hochladen
       let photosFailed = false;
       if (mode === "live" && userId && photos.current.length > 0) {
         photosFailed = !(await uploadPhotos(userId, photos.current));
@@ -354,10 +375,56 @@ export default function OnboardingChat({
     }
   }
 
+  // Gast: Link anfordern. Die Antworten gehen als Entwurf mit und werden nach dem Klick übernommen.
+  async function sendLink(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (sending) return;
+    const value = email.trim().toLowerCase();
+    if (!EMAIL.test(value)) {
+      setLoginError("Bitte gib eine gültige E-Mail-Adresse ein.");
+      return;
+    }
+    setLoginError("");
+    setSending(true);
+    try {
+      const res = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: value,
+          website: honeypot.current?.value ?? "",
+          elapsed: Date.now() - shownAt.current,
+          draft: answers.current,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setLoginError(data?.error ?? "Das hat leider nicht geklappt. Bitte versuch es noch einmal.");
+        return;
+      }
+      await stashPhotos(photos.current);
+      user(value);
+      setCooldown(RESEND_SECONDS);
+      await ask(
+        [
+          `Check dein Postfach: Ich habe dir einen Link an ${value} geschickt. Mit einem Klick bist du drin, ganz ohne Passwort.`,
+          "Schau auch im Spam-Ordner nach, falls nichts ankommt.",
+        ],
+        "sent",
+      );
+    } catch {
+      setLoginError("Keine Verbindung. Bitte versuch es noch einmal.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   const stepNumber = STEP_NUMBER[step];
-  const isBonus = EXTRA_STEPS.includes(step) || step === "more";
-  const showPanel = !busy && step !== "intro" && step !== "saving";
-  const progress = isBonus ? 1 : (stepNumber ?? 0) / 4;
+  const inProfile = PROFILE_STEPS.includes(step);
+  const inFinale = FINALE_STEPS.includes(step);
+  const showPanel = !busy && step !== "intro";
+  const progress = inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / 4;
+  const headerLabel = inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / 4` : "";
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 sm:p-6">
@@ -381,9 +448,7 @@ export default function OnboardingChat({
               </span>
             )}
           </div>
-          <span className="w-14 text-right text-xs text-zinc-500">
-            {isBonus ? "Bonus" : stepNumber ? `${stepNumber} / 4` : ""}
-          </span>
+          <span className="w-14 text-right text-xs text-zinc-500">{headerLabel}</span>
           <div className="absolute inset-x-0 bottom-0 h-px bg-white/5">
             <motion.div
               className="h-full bg-gold/70"
@@ -415,7 +480,7 @@ export default function OnboardingChat({
                   className={
                     message.from === "bot"
                       ? "max-w-[85%] rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.06] px-4 py-2.5 text-sm leading-relaxed text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_26px_-12px_rgba(242,166,90,0.45)] backdrop-blur-xl"
-                      : "max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-b from-gold-light to-gold px-4 py-2.5 text-sm leading-relaxed font-medium text-zinc-950 shadow-[0_8px_20px_-10px_rgba(242,166,90,0.5)]"
+                      : "max-w-[85%] rounded-2xl rounded-br-md bg-gradient-to-b from-gold-light to-gold px-4 py-2.5 text-sm leading-relaxed font-medium break-words text-zinc-950 shadow-[0_8px_20px_-10px_rgba(242,166,90,0.5)]"
                   }
                 >
                   {message.text}
@@ -466,13 +531,12 @@ export default function OnboardingChat({
                 transition={{ duration: 0.3, ease: EASE }}
               >
                 {step === "region" && (
-                  <ChipRow>
-                    {REGIONS.map((r) => (
-                      <Chip key={r.id} onClick={() => pickRegion(r)}>
-                        {r.label}
-                      </Chip>
-                    ))}
-                  </ChipRow>
+                  <SingleChoice
+                    options={REGIONS}
+                    value={chosenRegion}
+                    onSelect={pickRegion}
+                    customPlaceholder="Woanders? Schreib deine Region oder dein Land"
+                  />
                 )}
 
                 {step === "city" && (
@@ -515,125 +579,126 @@ export default function OnboardingChat({
 
                 {step === "mode" && (
                   <ChipRow>
-                    <Chip onClick={() => pickMode("anonymous")}>Komplett anonym</Chip>
+                    <Chip onClick={() => pickMode("anonymous")}>Anonym starten</Chip>
                     <Chip onClick={() => pickMode("profile")}>Profil anlegen</Chip>
                   </ChipRow>
                 )}
 
+                {step === "freeText" && (
+                  <LongTextAnswer
+                    value={text}
+                    onChange={setText}
+                    onSubmit={() => submitFreeText()}
+                    placeholder="Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"
+                    maxLength={FREE_TEXT_MAX}
+                    minLength={10}
+                    rows={5}
+                    onSkip={() => submitFreeText(true)}
+                  />
+                )}
+
+                {step === "followUp" && (
+                  <LongTextAnswer
+                    value={text}
+                    onChange={setText}
+                    onSubmit={() => submitFollowUp()}
+                    placeholder="Deine Antwort …"
+                    maxLength={FOLLOW_UP_ANSWER_MAX}
+                    minLength={2}
+                    onSkip={() => submitFollowUp(true)}
+                  />
+                )}
+
                 {step === "profile" && <ProfileForm onSubmit={submitProfile} />}
 
-                {step === "more" && (
+                {step === "wishes" && (
+                  <LongTextAnswer
+                    value={text}
+                    onChange={setText}
+                    onSubmit={() => submitWishes()}
+                    placeholder="Meine Wünsche und Ideen für DSpora …"
+                    maxLength={WISHES_MAX}
+                    minLength={3}
+                    rows={5}
+                    onSkip={() => submitWishes(true)}
+                  />
+                )}
+
+                {step === "login" && (
+                  <form onSubmit={sendLink} className="space-y-2.5">
+                    <input
+                      ref={honeypot}
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      className="pointer-events-none absolute h-0 w-0 opacity-0"
+                    />
+                    <label htmlFor="chat-email" className="sr-only">
+                      E-Mail-Adresse
+                    </label>
+                    <input
+                      id="chat-email"
+                      name="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoFocus
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        setLoginError("");
+                      }}
+                      placeholder="deine@mail.com"
+                      aria-invalid={loginError ? true : undefined}
+                      className="w-full rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-center text-sm text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
+                    />
+                    {loginError && (
+                      <p role="alert" className="px-1 text-center text-xs text-rose">
+                        {loginError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={sending || !email.trim()}
+                      className="cta-premium w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-3 text-sm font-semibold text-zinc-950 transition-opacity disabled:opacity-50"
+                    >
+                      {sending
+                        ? "Sende …"
+                        : path === "anonymous"
+                          ? "Jetzt anonym anmelden"
+                          : "Jetzt anmelden & Profil speichern"}
+                    </button>
+                    <p className="px-2 text-center text-[11px] leading-relaxed text-zinc-500">
+                      Kein Passwort nötig. Deine E-Mail-Adresse bleibt für andere unsichtbar.
+                    </p>
+                  </form>
+                )}
+
+                {step === "sent" && (
                   <ChipRow>
-                    <Chip onClick={startBonus}>Ja, gern</Chip>
                     <Chip
                       onClick={() => {
-                        user("Reicht mir, fertig");
-                        finish();
+                        setStep("login");
+                        shownAt.current = Date.now() - 2000;
                       }}
+                      subtle={cooldown > 0}
                     >
-                      Reicht mir, fertig
+                      {cooldown > 0
+                        ? `Andere Adresse oder erneut senden (in ${cooldown} s)`
+                        : "Link erneut senden / andere Adresse"}
                     </Chip>
                   </ChipRow>
-                )}
-
-                {step === "friendStyle" && (
-                  <ChoiceSelect
-                    options={FRIEND_STYLES}
-                    value={friendStyle}
-                    onChange={setFriendStyle}
-                    onConfirm={confirmFriendStyle}
-                    customPlaceholder="Eigenes hinzufügen"
-                    minTotal={0}
-                  />
-                )}
-
-                {step === "groupSize" && (
-                  <ChipRow>
-                    {GROUP_SIZES.map((g) => (
-                      <Chip key={g.id} onClick={() => pickGroupSize(g)}>
-                        {g.label}
-                      </Chip>
-                    ))}
-                    <Chip subtle onClick={() => pickGroupSize()}>
-                      Überspringen
-                    </Chip>
-                  </ChipRow>
-                )}
-
-                {step === "frequency" && (
-                  <ChipRow>
-                    {FREQUENCIES.map((f) => (
-                      <Chip key={f.id} onClick={() => pickFrequency(f)}>
-                        {f.label}
-                      </Chip>
-                    ))}
-                    <Chip subtle onClick={() => pickFrequency()}>
-                      Überspringen
-                    </Chip>
-                  </ChipRow>
-                )}
-
-                {step === "languages" && (
-                  <ChoiceSelect
-                    options={LANGUAGES}
-                    value={languages}
-                    onChange={setLanguages}
-                    onConfirm={confirmLanguages}
-                    customPlaceholder=""
-                    allowCustom={false}
-                    minTotal={0}
-                  />
-                )}
-
-                {step === "wishes" && (
-                  <ChoiceSelect
-                    options={WISHES}
-                    value={wishes}
-                    onChange={setWishes}
-                    onConfirm={confirmWishes}
-                    customPlaceholder="Eigenen Wunsch hinzufügen"
-                    minTotal={0}
-                  />
-                )}
-
-                {step === "notes" && (
-                  <TextAnswer
-                    value={text}
-                    onChange={(v) => {
-                      setText(v);
-                      setInputError("");
-                    }}
-                    onSubmit={() => submitNotes()}
-                    placeholder="Dein Gedanke (optional)"
-                    maxLength={300}
-                    error={inputError}
-                    extra={
-                      <Chip onClick={() => submitNotes(true)} subtle>
-                        Überspringen
-                      </Chip>
-                    }
-                  />
                 )}
 
                 {step === "retry" && (
                   <ChipRow>
-                    <Chip onClick={() => finish()}>Erneut versuchen</Chip>
+                    <Chip onClick={() => finishSave()}>Erneut versuchen</Chip>
                   </ChipRow>
-                )}
-
-                {EXTRA_STEPS.includes(step) && (
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        user("Jetzt abschließen");
-                        finish();
-                      }}
-                      className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
-                    >
-                      Jetzt abschließen
-                    </button>
-                  </div>
                 )}
               </motion.div>
             )}

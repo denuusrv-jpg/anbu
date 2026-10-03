@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
+import { saveProfile } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
-import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_CHARS = 10000;
+const MAX_BODY_CHARS = 20000;
 
+// Speichern der Antworten für einen bereits angemeldeten Nutzer.
+// (Gäste schicken ihre Antworten über /api/auth/magic-link, sie werden nach der Anmeldung übernommen.)
 export async function POST(request: Request) {
   const raw = await request.text();
   if (raw.length > MAX_BODY_CHARS) {
@@ -49,36 +51,12 @@ export async function POST(request: Request) {
 
   const supabase = await getServerClient();
   const { data } = await supabase.auth.getUser();
-  const user = data.user;
-  if (!user) {
+  if (!data.user) {
     return NextResponse.json({ error: "Bitte melde dich zuerst an." }, { status: 401 });
   }
 
-  // Der Nutzer schreibt mit seiner eigenen Sitzung - die RLS-Regeln erlauben nur die eigene Zeile.
-  const { error } = await supabase.from("user_profiles").upsert(
-    {
-      user_id: user.id,
-      region: answers.region,
-      city: answers.city ?? null,
-      interests: answers.interests,
-      vibes: answers.vibes,
-      mode: answers.mode,
-      profile: answers.profile ?? null,
-      extras: answers.extras ?? null,
-    },
-    { onConflict: "user_id" },
-  );
-  if (error) {
+  if (!(await saveProfile(supabase, data.user, answers))) {
     return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
   }
-
-  // Wartelisten-Eintrag als "onboarded" markieren (nicht kritisch, daher ohne Fehlerabbruch)
-  if (user.email && isServiceRoleConfigured()) {
-    await getServiceClient()
-      .from("waitlist")
-      .update({ status: "onboarded" })
-      .eq("email", user.email.toLowerCase());
-  }
-
   return NextResponse.json({ ok: true, stored: true });
 }

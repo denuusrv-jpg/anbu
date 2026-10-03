@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
-import Link from "next/link";
 import OnboardingChat from "@/components/OnboardingChat";
-import LoginCard from "@/components/LoginCard";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -33,16 +31,11 @@ export default async function Onboarding({
 
   const supabase = await getServerClient();
   const { data } = await supabase.auth.getUser();
-  if (!data.user) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 py-16">
-        <LoginCard next="/onboarding" />
-        <Link href="/" className="mt-8 text-sm text-zinc-500 hover:text-zinc-300">
-          ← Zurück zur Startseite
-        </Link>
-      </main>
-    );
-  }
 
-  return <OnboardingChat mode="live" userId={data.user.id} />;
+  // Angemeldet: speichert direkt. Gast: Anmeldung per Link am Ende des Chats.
+  return data.user ? (
+    <OnboardingChat mode="live" userId={data.user.id} />
+  ) : (
+    <OnboardingChat mode="guest" />
+  );
 }

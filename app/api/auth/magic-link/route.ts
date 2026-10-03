@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cleanEmail, looksLikeBot, rateLimited } from "@/lib/botGuard";
+import { Invalid, validateAnswers } from "@/lib/onboardingValidation";
+import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured, safeNextPath, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/config";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +40,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Die Anmeldung ist noch nicht eingerichtet." }, { status: 503 });
   }
 
-  const next = safeNextPath(typeof body.next === "string" ? body.next : null);
+  let next = safeNextPath(typeof body.next === "string" ? body.next : null);
+
+  // Gast aus dem Onboarding-Chat: Antworten als Entwurf zur E-Mail-Adresse ablegen.
+  // Nach der Anmeldung per Link werden sie als Profil übernommen (auch auf einem anderen Gerät).
+  if (body.draft !== undefined) {
+    if (!isServiceRoleConfigured()) {
+      return NextResponse.json({ error: "Die Anmeldung ist noch nicht eingerichtet." }, { status: 503 });
+    }
+    try {
+      const { answers } = validateAnswers(body.draft);
+      const { error: draftError } = await getServiceClient()
+        .from("onboarding_drafts")
+        .upsert({ email, answers, created_at: new Date().toISOString() }, { onConflict: "email" });
+      if (draftError) throw new Error("draft failed");
+      next = "/onboarding/save";
+    } catch (error) {
+      if (error instanceof Invalid) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      return NextResponse.json({ error: "Das hat leider nicht geklappt. Bitte versuch es noch einmal." }, { status: 500 });
+    }
+  }
+
   const anon = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

@@ -23,11 +23,21 @@ export async function DELETE(request: Request) {
   } catch {
     return NextResponse.json({ error: "Ungültige Anfrage." }, { status: 400 });
   }
+  const db = getServiceClient();
+
+  // Entwürfe sind über die E-Mail-Adresse gekennzeichnet
+  if (body.kind === "draft") {
+    if (typeof body.id !== "string" || body.id.length > 254 || !body.id.includes("@")) {
+      return NextResponse.json({ error: "Ungültige ID." }, { status: 400 });
+    }
+    const { error } = await db.from("onboarding_drafts").delete().eq("email", body.id.toLowerCase());
+    if (error) return NextResponse.json({ error: "Löschen hat nicht geklappt." }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   if (typeof body.id !== "string" || !UUID.test(body.id)) {
     return NextResponse.json({ error: "Ungültige ID." }, { status: 400 });
   }
-
-  const db = getServiceClient();
 
   if (body.kind === "waitlist") {
     const { error } = await db.from("waitlist").delete().eq("id", body.id);

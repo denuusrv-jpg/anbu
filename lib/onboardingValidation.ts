@@ -1,9 +1,8 @@
 import "server-only";
 import {
   CUSTOM_PATTERN,
-  FREQUENCIES,
-  FRIEND_STYLES,
-  GROUP_SIZES,
+  FOLLOW_UP_ANSWER_MAX,
+  FREE_TEXT_MAX,
   INTERESTS,
   LANGUAGES,
   MAX_AGE,
@@ -18,8 +17,9 @@ import {
   REGIONS,
   VIBES,
   VISIBILITIES,
-  WISHES,
+  WISHES_MAX,
   type Choice,
+  type FollowUp,
   type OnboardingAnswers,
   type Option,
   type ProfileData,
@@ -37,7 +37,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function stringOf(value: unknown, field: string, maxLength: number, required = false) {
+export function stringOf(value: unknown, field: string, maxLength: number, required = false) {
   if (value === undefined || value === null || value === "") {
     if (required) fail(`${field} fehlt.`);
     return undefined;
@@ -59,7 +59,20 @@ export function oneOf(value: unknown, options: Option[], field: string, required
   return value as string;
 }
 
-function manyOf(value: unknown, options: Option[], field: string, max = MAX_CHOICES) {
+/** Eine Id aus der Liste ODER ein eigener, kurzer Text (z. B. eigene Region). */
+export function idOrCustom(value: unknown, options: Option[], field: string, required = false) {
+  if (value === undefined || value === null || value === "") {
+    if (required) fail(`${field} fehlt.`);
+    return undefined;
+  }
+  if (typeof value !== "string") fail(`${field} ist ungültig.`);
+  const text = (value as string).trim();
+  if (ids(options).includes(text)) return text;
+  if (!CUSTOM_PATTERN.test(text)) fail(`${field} ist ungültig.`);
+  return text;
+}
+
+export function manyOf(value: unknown, options: Option[], field: string, max = MAX_CHOICES) {
   if (value === undefined || value === null) return [];
   if (!Array.isArray(value) || value.length > max) fail(`${field} ist ungültig.`);
   const allowed = ids(options);
@@ -138,15 +151,25 @@ function profile(value: unknown): ProfileData {
   return {
     displayName,
     age,
-    bio: stringOf(p.bio, "Beschreibung", 280),
     hobbies,
-    languages: manyOf(p.languages, LANGUAGES, "Sprachen"),
-    phase: oneOf(p.phase, PHASES, "Lebensphase"),
+    languages: choice(p.languages ?? { ids: [], custom: [] }, LANGUAGES, "Sprachen", 0),
+    phase: idOrCustom(p.phase, PHASES, "Lebensphase"),
     funFact: stringOf(p.funFact, "Fun Fact", 100),
     askMeAbout: stringOf(p.askMeAbout, "Frag mich nach", 60),
     visibility: oneOf(p.visibility, VISIBILITIES, "Sichtbarkeit", true) as string,
     photoCount: photoCount as number,
   };
+}
+
+function followUps(value: unknown): FollowUp[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value) || value.length > 2) fail("Folgefragen sind ungültig.");
+  return (value as unknown[]).map((item) => {
+    if (!isObject(item)) fail("Folgefragen sind ungültig.");
+    const question = stringOf(item.question, "Folgefrage", 300, true) as string;
+    const answer = stringOf(item.answer, "Antwort", FOLLOW_UP_ANSWER_MAX, true) as string;
+    return { question, answer };
+  });
 }
 
 export function validateAnswers(body: unknown): { answers: OnboardingAnswers; token?: string } {
@@ -167,25 +190,18 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   }
 
   let extras: OnboardingAnswers["extras"];
-  if (b.extras !== undefined) {
-    if (!isObject(b.extras)) fail("Bonus-Antworten sind ungültig.");
+  if (b.extras !== undefined && b.extras !== null) {
+    if (!isObject(b.extras)) fail("Zusatzangaben sind ungültig.");
     const e = b.extras as Record<string, unknown>;
     extras = {
-      friendStyle:
-        e.friendStyle === undefined ? undefined : choice(e.friendStyle, FRIEND_STYLES, "Freundeskreis", 0),
-      groupSize: oneOf(e.groupSize, GROUP_SIZES, "Gruppengröße"),
-      frequency: oneOf(e.frequency, FREQUENCIES, "Treffen"),
-      languagesTogether:
-        e.languagesTogether === undefined
-          ? undefined
-          : manyOf(e.languagesTogether, LANGUAGES, "Sprachen"),
-      wishes: e.wishes === undefined ? undefined : choice(e.wishes, WISHES, "Wünsche", 0),
-      more: stringOf(e.more, "Freitext", 300),
+      freeText: stringOf(e.freeText, "Freitext", FREE_TEXT_MAX),
+      followUps: followUps(e.followUps),
+      wishes: stringOf(e.wishes, "Wünsche", WISHES_MAX),
     };
   }
 
   const answers: OnboardingAnswers = {
-    region: oneOf(b.region, REGIONS, "Region", true) as string,
+    region: idOrCustom(b.region, REGIONS, "Region", true) as string,
     city: stringOf(b.city, "Stadt", 60),
     interests: choice(b.interests, INTERESTS, "Interessen", 1),
     vibes: choice(b.vibes, VIBES, "Vibe", 1),
@@ -195,4 +211,3 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   };
   return { answers, token };
 }
-

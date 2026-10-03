@@ -94,3 +94,16 @@ drop policy if exists "Eigene Fotos löschen" on storage.objects;
 create policy "Eigene Fotos löschen" on storage.objects
   for delete to authenticated
   using (bucket_id = 'profile-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ─────────────────────────────────────────────────────────────
+-- 4) Entwürfe: Antworten aus dem Chat, bevor die Anmeldung per Link bestätigt ist
+--    (damit der Link auch auf einem anderen Gerät funktioniert). Nur der Server liest/schreibt.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.onboarding_drafts (
+  email      text primary key,                -- immer kleingeschrieben
+  answers    jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.onboarding_drafts enable row level security;
+-- bewusst KEINE Policies: Browser-Nutzer haben hier keinen Zugriff.
