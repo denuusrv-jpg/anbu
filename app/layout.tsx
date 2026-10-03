@@ -3,6 +3,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/lib/LanguageContext";
 import PageTransition from "@/components/PageTransition";
 import TestButton from "@/components/TestButton";
+import AdminGate from "@/components/AdminGate";
 
 export const metadata: Metadata = {
   title: "DSpora — Finde deine Crew in DACH",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <LanguageProvider>
           <PageTransition>{children}</PageTransition>
           <TestButton />
+          <AdminGate />
         </LanguageProvider>
       </body>
     </html>

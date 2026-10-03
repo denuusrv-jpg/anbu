@@ -26,6 +26,7 @@ export type Translation = {
   waitlist: {
     login: string;
     register: string;
+    comingSoon: string;
   };
   share: {
     text: string;
@@ -81,6 +82,7 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "Anmelden",
       register: "Registrieren",
+      comingSoon: "Bald verfügbar",
     },
     share: {
       text: "Teile den Link – so wird dein Hub schneller freigeschaltet",
@@ -181,6 +183,7 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "Sign in",
       register: "Register",
+      comingSoon: "Coming soon",
     },
     share: {
       text: "Share the link – it unlocks your hub faster",
@@ -279,6 +282,7 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "உள்நுழையுங்கள்",
       register: "பதிவு செய்யுங்கள்",
+      comingSoon: "விரைவில் வருகிறது",
     },
     share: {
       text: "இணைப்பைப் பகிரவும் – உங்கள் மையம் விரைவில் திறக்கும்",
