@@ -30,7 +30,7 @@ export default function MissionCard({
         className="pointer-events-none absolute top-14 left-14 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl sm:top-16 sm:left-16"
         style={{ backgroundColor: glowColors[color] }}
         initial={{ opacity: 0 }}
-        whileInView={{ opacity: highlight ? 0.35 : 0.22 }}
+        whileInView={{ opacity: highlight ? 0.55 : 0.4 }}
         viewport={{ once: false, amount: 0.55 }}
         transition={{
           duration: 2.2,
