@@ -52,19 +52,12 @@ export default function HubsAndCrews() {
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+          <p className="mx-auto max-w-2xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
             <Translated text={t.hubs.infoText} />
           </p>
-        </motion.div>
-
-        <motion.div
-          className="mt-6"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-        >
-          <WaitlistCapture />
+          <div className="mt-6">
+            <WaitlistCapture />
+          </div>
         </motion.div>
 
         {/* Teil 2: Gruppengrößen */}

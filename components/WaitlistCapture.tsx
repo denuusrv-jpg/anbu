@@ -27,7 +27,7 @@ export default function WaitlistCapture() {
   return (
     <div className="mx-auto w-full max-w-md">
       <form onSubmit={handleSubmit}>
-        <div className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
+        <div className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50">
           <motion.div
             className="absolute inset-y-0 left-0 -z-10 bg-gradient-to-r from-gold to-gold-light"
             initial={{ width: "0%" }}
@@ -98,9 +98,6 @@ export default function WaitlistCapture() {
           </AnimatePresence>
         </div>
       </form>
-      <p className="mt-3 w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-medium text-zinc-300 backdrop-blur-xl">
-        <Translated text={t.waitlist.note} />
-      </p>
     </div>
   );
 }

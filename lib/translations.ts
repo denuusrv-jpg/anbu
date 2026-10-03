@@ -26,7 +26,6 @@ export type Translation = {
   waitlist: {
     login: string;
     register: string;
-    note: string;
   };
   share: {
     text: string;
@@ -82,7 +81,6 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "Anmelden",
       register: "Registrieren",
-      note: "Kein Spam. Ab 100 Anmeldungen startet deine Region.",
     },
     share: {
       text: "Teile den Link – so wird dein Hub schneller freigeschaltet",
@@ -102,7 +100,7 @@ export const translations: Record<Language, Translation> = {
       ],
       badgeActive: "Warteliste aktiv",
       infoText:
-        "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym.",
+        "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam.",
     },
     groups: {
       heading: "Gemeinschaft nach Maß",
@@ -183,7 +181,6 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "Sign in",
       register: "Register",
-      note: "No spam. Your region unlocks at 100 sign-ups.",
     },
     share: {
       text: "Share the link – it unlocks your hub faster",
@@ -203,7 +200,7 @@ export const translations: Record<Language, Translation> = {
       ],
       badgeActive: "Waitlist active",
       infoText:
-        "As soon as 100 people in a region sign up, the hub unlocks. The first step: you'll get an email with the link to our AI personality check, which finds your ideal match. It all stays completely anonymous at first.",
+        "As soon as 100 people in a region sign up, the hub unlocks. The first step: you'll get an email with the link to our AI personality check, which finds your ideal match. It all stays completely anonymous at first, and completely spam-free.",
     },
     groups: {
       heading: "Community, your size",
@@ -282,7 +279,6 @@ export const translations: Record<Language, Translation> = {
     waitlist: {
       login: "உள்நுழையுங்கள்",
       register: "பதிவு செய்யுங்கள்",
-      note: "ஸ்பேம் இல்லை. 100 பதிவுகள் நிறைந்தவுடன் உங்கள் பகுதி தொடங்கும்.",
     },
     share: {
       text: "இணைப்பைப் பகிரவும் – உங்கள் மையம் விரைவில் திறக்கும்",
@@ -302,7 +298,7 @@ export const translations: Record<Language, Translation> = {
       ],
       badgeActive: "காத்திருப்பு பட்டியல் செயலில்",
       infoText:
-        "ஒரு பகுதியில் 100 பேர் பதிவு செய்தவுடன், அந்த மையம் திறக்கப்படும். முதல் படி: எங்கள் AI ஆளுமை சோதனைக்கான இணைப்புடன் ஒரு மின்னஞ்சல் உங்களுக்கு வரும், இது உங்கள் சரியான பொருத்தத்தைக் கண்டறியும். இது ஆரம்பத்தில் முற்றிலும் அநாமதேயமாகவே இருக்கும்.",
+        "ஒரு பகுதியில் 100 பேர் பதிவு செய்தவுடன், அந்த மையம் திறக்கப்படும். முதல் படி: எங்கள் AI ஆளுமை சோதனைக்கான இணைப்புடன் ஒரு மின்னஞ்சல் உங்களுக்கு வரும், இது உங்கள் சரியான பொருத்தத்தைக் கண்டறியும். இது ஆரம்பத்தில் முற்றிலும் அநாமதேயமாகவும், ஸ்பேம் இல்லாமலும் இருக்கும்.",
     },
     groups: {
       heading: "உங்களுக்கேற்ற குழு அளவு",
