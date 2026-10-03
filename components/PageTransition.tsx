@@ -3,13 +3,14 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-// macOS-Fensterwechsel: die alte Seite blendet aus und schrumpft leicht (100 → 98 %),
-// die neue kommt leicht vergrößert (102 %) und setzt sich auf 100 % zurück.
+// Glass-Blur-Crossfade: Glas-Karten bleiben stehen, nur ihr Inhalt blendet über
+// (Regeln in globals.css, Attribut data-page-transition), und ein Blur-Schleier
+// über der ganzen Seite zieht für einen Moment an (Schärfentiefe-Effekt).
 type Phase = "idle" | "exit" | "enter-start" | "enter";
 
-const DURATION_MS = 350;
+const DURATION_MS = 300;
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const TRANSITION = `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`;
+const BLUR_PX = 6;
 
 export default function PageTransition({
   children,
@@ -19,14 +20,8 @@ export default function PageTransition({
   const pathname = usePathname();
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
-  const [origin, setOrigin] = useState("50% 50%");
   const prevPathname = useRef(pathname);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  // Skaliert um die Mitte des sichtbaren Ausschnitts, nicht um die Mitte der ganzen Seite
-  function viewportOrigin() {
-    return `50% ${window.scrollY + window.innerHeight / 2}px`;
-  }
 
   function later(fn: () => void, ms: number) {
     timers.current.push(setTimeout(fn, ms));
@@ -65,7 +60,6 @@ export default function PageTransition({
 
       clearTimers();
       document.documentElement.style.overflowX = "clip";
-      setOrigin(viewportOrigin());
       setPhase("exit");
 
       later(() => router.push(url.pathname + url.search + url.hash), DURATION_MS);
@@ -78,16 +72,15 @@ export default function PageTransition({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  // Neue Seite ist da: von 102 % auf 100 % einblenden (Layout-Effect, damit kein Frame in voller Deckkraft aufblitzt)
+  // Neue Seite ist da: Inhalt blendet ein, Blur löst sich (Layout-Effect, damit kein Frame in voller Deckkraft aufblitzt)
   useLayoutEffect(() => {
     if (prevPathname.current === pathname) return;
     prevPathname.current = pathname;
 
     clearTimers();
     document.documentElement.style.overflowX = "clip";
-    setOrigin(viewportOrigin());
     setPhase("enter-start");
-    // kurz warten, damit der Startzustand (102 %, unsichtbar) gerendert ist
+    // kurz warten, damit der Startzustand (Inhalt unsichtbar, Blur voll) gerendert ist
     later(() => setPhase("enter"), 30);
     later(finish, 30 + DURATION_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,48 +88,30 @@ export default function PageTransition({
 
   useEffect(() => clearTimers, []);
 
-  let style: React.CSSProperties | undefined;
-  switch (phase) {
-    case "exit":
-      style = {
-        opacity: 0,
-        transform: "scale(0.98)",
-        transition: TRANSITION,
-        pointerEvents: "none",
-      };
-      break;
-    case "enter-start":
-      style = {
-        opacity: 0,
-        transform: "scale(1.02)",
-        transition: "none",
-        pointerEvents: "none",
-      };
-      break;
-    case "enter":
-      style = {
-        opacity: 1,
-        transform: "scale(1)",
-        transition: TRANSITION,
-      };
-      break;
-    default:
-      // Im Ruhezustand keine Transform-Eigenschaft, damit nichts einen eigenen Stacking-Kontext bekommt
-      style = undefined;
-  }
+  const blur =
+    phase === "idle" ? "none" : `blur(${phase === "enter" ? 0 : BLUR_PX}px)`;
+  const overlayStyle: React.CSSProperties = {
+    backdropFilter: blur,
+    WebkitBackdropFilter: blur,
+    transition:
+      phase === "exit" || phase === "enter"
+        ? `backdrop-filter ${DURATION_MS}ms ${EASE}, -webkit-backdrop-filter ${DURATION_MS}ms ${EASE}`
+        : "none",
+  };
 
   return (
-    <div
-      data-page-transition={phase}
-      style={
-        style && {
-          ...style,
-          transformOrigin: origin,
-          willChange: "opacity, transform",
-        }
-      }
-    >
-      {children}
-    </div>
+    <>
+      <div
+        data-page-transition={phase}
+        style={phase === "exit" ? { pointerEvents: "none" } : undefined}
+      >
+        {children}
+      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-[100]"
+        style={overlayStyle}
+      />
+    </>
   );
 }
