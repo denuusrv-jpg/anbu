@@ -4,14 +4,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRightIcon, CheckIcon } from "@/components/Icons";
+import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
+import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
+import { Chip, ChipRow, TextAnswer } from "@/components/onboarding/ui";
 import {
-  ALIAS_PATTERN,
+  FREQUENCIES,
+  FRIEND_STYLES,
+  GROUP_SIZES,
   INTERESTS,
-  MAX_INTERESTS,
+  LANGUAGES,
   REGIONS,
   VIBES,
+  WISHES,
+  type Choice,
   type OnboardingAnswers,
+  type Option,
 } from "@/lib/onboarding";
 
 type Step =
@@ -19,9 +26,16 @@ type Step =
   | "region"
   | "city"
   | "interests"
-  | "vibe"
+  | "vibes"
   | "mode"
-  | "alias"
+  | "profile"
+  | "more"
+  | "friendStyle"
+  | "groupSize"
+  | "frequency"
+  | "languages"
+  | "wishes"
+  | "notes"
   | "saving"
   | "retry";
 
@@ -30,17 +44,27 @@ type Message = { id: number; from: "bot" | "user"; text: string };
 const EASE = [0.16, 1, 0.3, 1] as const;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Fortschritt der vier Fragen (für die Anzeige oben)
+const EMPTY: Choice = { ids: [], custom: [] };
+const EXTRA_STEPS: Step[] = ["friendStyle", "groupSize", "frequency", "languages", "wishes", "notes"];
+
+// Fortschritt der vier Kernfragen (Anzeige oben)
 const STEP_NUMBER: Partial<Record<Step, number>> = {
   region: 1,
   city: 1,
   interests: 2,
-  vibe: 3,
+  vibes: 3,
   mode: 4,
-  alias: 4,
-  saving: 4,
-  retry: 4,
+  profile: 4,
 };
+
+function labelsOf(choice: Choice, options: Option[]) {
+  return [
+    ...choice.ids.map((id) => options.find((o) => o.id === id)?.label ?? id),
+    ...choice.custom,
+  ].join(", ");
+}
+
+const labelOf = (id: string, options: Option[]) => options.find((o) => o.id === id)?.label ?? id;
 
 export default function OnboardingChat() {
   const router = useRouter();
@@ -48,17 +72,23 @@ export default function OnboardingChat() {
   const [typing, setTyping] = useState(false);
   const [busy, setBusy] = useState(true);
   const [step, setStep] = useState<Step>("intro");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState("");
 
+  // Auswahlen, die in den Panels live bearbeitet werden
+  const [interests, setInterests] = useState<Choice>(EMPTY);
+  const [vibes, setVibes] = useState<Choice>(EMPTY);
+  const [friendStyle, setFriendStyle] = useState<Choice>(EMPTY);
+  const [wishes, setWishes] = useState<Choice>(EMPTY);
+  const [languages, setLanguages] = useState<Choice>(EMPTY);
+
   const answers = useRef<Partial<OnboardingAnswers>>({});
+  const photos = useRef<Blob[]>([]);
   const token = useRef<string | undefined>(undefined);
   const nextId = useRef(0);
   const alive = useRef(true);
   const started = useRef(false);
   const endRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     alive.current = true;
@@ -82,7 +112,7 @@ export default function OnboardingChat() {
     setBusy(true);
     for (const message of texts) {
       setTyping(true);
-      await sleep(650 + Math.min(message.length * 9, 750));
+      await sleep(650 + Math.min(message.length * 9, 800));
       if (!alive.current) return;
       setTyping(false);
       setMessages((m) => [...m, { id: nextId.current++, from: "bot", text: message }]);
@@ -95,30 +125,37 @@ export default function OnboardingChat() {
     setMessages((m) => [...m, { id: nextId.current++, from: "user", text: message }]);
   }
 
+  // Bot spricht, danach erscheint das Antwort-Panel des nächsten Schritts
+  async function ask(texts: string[], next: Step) {
+    setStep("intro");
+    setText("");
+    setInputError("");
+    await bot(texts);
+    if (alive.current) setStep(next);
+  }
+
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    (async () => {
-      await bot([
+    ask(
+      [
         "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
         "Vier kurze Fragen, dann bist du durch. Wo bist du zu Hause?",
-      ]);
-      if (alive.current) setStep("region");
-    })();
+      ],
+      "region",
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function pickRegion(id: string, label: string) {
-    answers.current.region = id;
-    user(label);
-    setStep("intro");
-    await bot([
-      "Und in welcher Stadt? So finden wir Leute in deiner Nähe. Du kannst auch überspringen.",
-    ]);
-    setStep("city");
+  // ——— Die vier Kernfragen ———
+
+  function pickRegion(option: Option) {
+    answers.current.region = option.id;
+    user(option.label);
+    ask(["Und in welcher Stadt? So finden wir Leute in deiner Nähe. Du kannst auch überspringen."], "city");
   }
 
-  async function submitCity(skip = false) {
+  function submitCity(skip = false) {
     const value = text.trim();
     if (!skip && value.length > 60) {
       setInputError("Maximal 60 Zeichen.");
@@ -126,75 +163,129 @@ export default function OnboardingChat() {
     }
     answers.current.city = skip || !value ? undefined : value;
     user(skip || !value ? "Überspringen" : value);
-    setText("");
-    setInputError("");
-    setStep("intro");
-    await bot(["Was begeistert dich? Such dir aus, was passt – gern mehrere."]);
-    setStep("interests");
-  }
-
-  function toggleInterest(id: string) {
-    setSelectedInterests((current) => {
-      if (current.includes(id)) return current.filter((i) => i !== id);
-      if (current.length >= MAX_INTERESTS) return current;
-      return [...current, id];
-    });
-  }
-
-  async function confirmInterests() {
-    if (selectedInterests.length === 0) return;
-    answers.current.interests = selectedInterests;
-    user(
-      selectedInterests
-        .map((id) => INTERESTS.find((i) => i.id === id)?.label ?? id)
-        .join(", "),
+    ask(
+      [
+        "Was begeistert dich? Such dir aus, was passt – und wenn etwas fehlt, trag einfach dein eigenes ein.",
+      ],
+      "interests",
     );
-    setStep("intro");
-    await bot(["Und welcher Vibe beschreibt dich am besten?"]);
-    setStep("vibe");
   }
 
-  async function pickVibe(id: string, label: string) {
-    answers.current.vibe = id;
-    user(label);
-    setStep("intro");
-    await bot([
-      "Letzte Frage: Möchtest du komplett anonym bleiben oder mit einem Pseudonym starten?",
-    ]);
-    setStep("mode");
+  function confirmInterests() {
+    answers.current.interests = interests;
+    user(labelsOf(interests, INTERESTS));
+    ask(
+      [
+        "Und welcher Vibe beschreibt dich am besten? Wähle gern mehrere oder schreib deinen eigenen.",
+      ],
+      "vibes",
+    );
   }
 
-  async function pickMode(mode: "anonymous" | "pseudonym") {
+  function confirmVibes() {
+    answers.current.vibes = vibes;
+    user(labelsOf(vibes, VIBES));
+    ask(
+      [
+        "Letzte der vier Fragen: Möchtest du komplett anonym bleiben – oder ein Profil mit Fotos, Beschreibung und mehr anlegen? Beides ist völlig okay.",
+      ],
+      "mode",
+    );
+  }
+
+  function pickMode(mode: "anonymous" | "profile") {
     answers.current.mode = mode;
     if (mode === "anonymous") {
       user("Komplett anonym");
-      setStep("intro");
-      await finish();
+      askMore();
       return;
     }
-    user("Mit Pseudonym");
-    setStep("intro");
-    await bot([
-      "Wie sollen dich die anderen nennen? Ein echter Name ist nicht nötig.",
-    ]);
-    setStep("alias");
+    user("Profil anlegen");
+    ask(
+      [
+        "Sehr schön! Erzähl ein bisschen von dir. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf.",
+      ],
+      "profile",
+    );
   }
 
-  async function submitAlias() {
+  function submitProfile({ profile, photos: blobs }: ProfileResult) {
+    answers.current.profile = profile;
+    photos.current = blobs;
+    user(
+      `Profil angelegt: ${profile.displayName}${
+        blobs.length > 0 ? ` · ${blobs.length} ${blobs.length === 1 ? "Foto" : "Fotos"}` : ""
+      }`,
+    );
+    askMore();
+  }
+
+  // ——— Bonus: weiter chatten für bessere Ergebnisse ———
+
+  function askMore() {
+    ask(
+      [
+        "Das waren die vier Fragen – danke dir! Wenn du Lust hast, chatten wir noch ein bisschen weiter: Je mehr ich über dich weiß, desto besser werden deine Matches. Wie sieht's aus?",
+      ],
+      "more",
+    );
+  }
+
+  function extras() {
+    answers.current.extras = answers.current.extras ?? {};
+    return answers.current.extras;
+  }
+
+  function startBonus() {
+    user("Ja, gern");
+    ask(["Wie bist du im Freundeskreis? Such dir aus, was passt, oder schreib's selbst."], "friendStyle");
+  }
+
+  function confirmFriendStyle() {
+    extras().friendStyle = friendStyle;
+    user(labelsOf(friendStyle, FRIEND_STYLES) || "Überspringen");
+    ask(["Wie groß darf deine Gruppe sein?"], "groupSize");
+  }
+
+  function pickGroupSize(option?: Option) {
+    if (option) extras().groupSize = option.id;
+    user(option?.label ?? "Überspringen");
+    ask(["Wie oft möchtest du dich mit deiner Gruppe treffen?"], "frequency");
+  }
+
+  function pickFrequency(option?: Option) {
+    if (option) extras().frequency = option.id;
+    user(option?.label ?? "Überspringen");
+    ask(["In welchen Sprachen unterhältst du dich am liebsten?"], "languages");
+  }
+
+  function confirmLanguages() {
+    extras().languagesTogether = languages.ids;
+    user(labelsOf(languages, LANGUAGES) || "Überspringen");
+    ask(["Was wünschst du dir von neuen Verbindungen?"], "wishes");
+  }
+
+  function confirmWishes() {
+    extras().wishes = wishes;
+    user(labelsOf(wishes, WISHES) || "Überspringen");
+    ask(["Letzte Bonusfrage: Gibt es noch etwas, das wir über dich wissen sollten?"], "notes");
+  }
+
+  function submitNotes(skip = false) {
     const value = text.trim();
-    if (!ALIAS_PATTERN.test(value)) {
-      setInputError("2 bis 24 Zeichen: Buchstaben, Zahlen, Leerzeichen, _ . -");
+    if (!skip && value.length > 300) {
+      setInputError("Maximal 300 Zeichen.");
       return;
     }
-    answers.current.alias = value;
-    user(value);
-    setText("");
-    setInputError("");
-    setStep("intro");
-    await finish();
+    if (!skip && value) extras().more = value;
+    user(skip || !value ? "Überspringen" : value);
+    finish();
   }
+
+  // ——— Abschluss ———
 
   async function finish() {
+    setStep("intro");
     await bot(["Perfekt, danke dir! Einen Moment, ich lege dein Profil an …"]);
     if (!alive.current) return;
     setStep("saving");
@@ -222,7 +313,9 @@ export default function OnboardingChat() {
   }
 
   const stepNumber = STEP_NUMBER[step];
+  const isBonus = EXTRA_STEPS.includes(step) || step === "more";
   const showPanel = !busy && step !== "intro" && step !== "saving";
+  const progress = isBonus ? 1 : (stepNumber ?? 0) / 4;
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 sm:p-6">
@@ -242,13 +335,13 @@ export default function OnboardingChat() {
             DSpora
           </div>
           <span className="w-14 text-right text-xs text-zinc-500">
-            {stepNumber ? `${Math.min(stepNumber, 4)} / 4` : ""}
+            {isBonus ? "Bonus" : stepNumber ? `${stepNumber} / 4` : ""}
           </span>
           <div className="absolute inset-x-0 bottom-0 h-px bg-white/5">
             <motion.div
               className="h-full bg-gold/70"
               initial={false}
-              animate={{ width: `${((stepNumber ?? 0) / 4) * 100}%` }}
+              animate={{ width: `${progress * 100}%` }}
               transition={{ duration: 0.5, ease: EASE }}
             />
           </div>
@@ -315,7 +408,7 @@ export default function OnboardingChat() {
         </div>
 
         {/* Antwortbereich */}
-        <div className="relative min-h-[88px] border-t border-white/10 bg-zinc-950/30 px-4 py-4 sm:px-6">
+        <div className="relative max-h-[62%] min-h-[88px] overflow-y-auto border-t border-white/10 bg-zinc-950/30 px-4 py-4 sm:px-6">
           <AnimatePresence mode="wait" initial={false}>
             {showPanel && (
               <motion.div
@@ -328,7 +421,7 @@ export default function OnboardingChat() {
                 {step === "region" && (
                   <ChipRow>
                     {REGIONS.map((r) => (
-                      <Chip key={r.id} onClick={() => pickRegion(r.id, r.label)}>
+                      <Chip key={r.id} onClick={() => pickRegion(r)}>
                         {r.label}
                       </Chip>
                     ))}
@@ -337,7 +430,6 @@ export default function OnboardingChat() {
 
                 {step === "city" && (
                   <TextAnswer
-                    inputRef={inputRef}
                     value={text}
                     onChange={(v) => {
                       setText(v);
@@ -355,65 +447,124 @@ export default function OnboardingChat() {
                 )}
 
                 {step === "interests" && (
-                  <div className="space-y-3">
-                    <ChipRow>
-                      {INTERESTS.map((i) => (
-                        <Chip
-                          key={i.id}
-                          selected={selectedInterests.includes(i.id)}
-                          onClick={() => toggleInterest(i.id)}
-                        >
-                          {i.label}
-                        </Chip>
-                      ))}
-                    </ChipRow>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-xs text-zinc-500">
-                        {selectedInterests.length === 0
-                          ? "Wähle mindestens eins"
-                          : `${selectedInterests.length} gewählt`}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={confirmInterests}
-                        disabled={selectedInterests.length === 0}
-                        className="cta-premium inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2.5 text-sm font-semibold text-zinc-950 transition-opacity disabled:opacity-40"
-                      >
-                        Weiter
-                        <ArrowRightIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+                  <ChoiceSelect
+                    options={INTERESTS}
+                    value={interests}
+                    onChange={setInterests}
+                    onConfirm={confirmInterests}
+                    customPlaceholder="Etwas anderes? Eigenes hinzufügen"
+                  />
                 )}
 
-                {step === "vibe" && (
-                  <ChipRow>
-                    {VIBES.map((v) => (
-                      <Chip key={v.id} onClick={() => pickVibe(v.id, v.label)}>
-                        {v.label}
-                      </Chip>
-                    ))}
-                  </ChipRow>
+                {step === "vibes" && (
+                  <ChoiceSelect
+                    options={VIBES}
+                    value={vibes}
+                    onChange={setVibes}
+                    onConfirm={confirmVibes}
+                    customPlaceholder="Dein eigener Vibe"
+                  />
                 )}
 
                 {step === "mode" && (
                   <ChipRow>
                     <Chip onClick={() => pickMode("anonymous")}>Komplett anonym</Chip>
-                    <Chip onClick={() => pickMode("pseudonym")}>Mit Pseudonym</Chip>
+                    <Chip onClick={() => pickMode("profile")}>Profil anlegen</Chip>
                   </ChipRow>
                 )}
 
-                {step === "alias" && (
+                {step === "profile" && <ProfileForm onSubmit={submitProfile} />}
+
+                {step === "more" && (
+                  <ChipRow>
+                    <Chip onClick={startBonus}>Ja, gern</Chip>
+                    <Chip
+                      onClick={() => {
+                        user("Reicht mir, fertig");
+                        finish();
+                      }}
+                    >
+                      Reicht mir, fertig
+                    </Chip>
+                  </ChipRow>
+                )}
+
+                {step === "friendStyle" && (
+                  <ChoiceSelect
+                    options={FRIEND_STYLES}
+                    value={friendStyle}
+                    onChange={setFriendStyle}
+                    onConfirm={confirmFriendStyle}
+                    customPlaceholder="Eigenes hinzufügen"
+                    minTotal={0}
+                  />
+                )}
+
+                {step === "groupSize" && (
+                  <ChipRow>
+                    {GROUP_SIZES.map((g) => (
+                      <Chip key={g.id} onClick={() => pickGroupSize(g)}>
+                        {g.label}
+                      </Chip>
+                    ))}
+                    <Chip subtle onClick={() => pickGroupSize()}>
+                      Überspringen
+                    </Chip>
+                  </ChipRow>
+                )}
+
+                {step === "frequency" && (
+                  <ChipRow>
+                    {FREQUENCIES.map((f) => (
+                      <Chip key={f.id} onClick={() => pickFrequency(f)}>
+                        {f.label}
+                      </Chip>
+                    ))}
+                    <Chip subtle onClick={() => pickFrequency()}>
+                      Überspringen
+                    </Chip>
+                  </ChipRow>
+                )}
+
+                {step === "languages" && (
+                  <ChoiceSelect
+                    options={LANGUAGES}
+                    value={languages}
+                    onChange={setLanguages}
+                    onConfirm={confirmLanguages}
+                    customPlaceholder=""
+                    allowCustom={false}
+                    minTotal={0}
+                  />
+                )}
+
+                {step === "wishes" && (
+                  <ChoiceSelect
+                    options={WISHES}
+                    value={wishes}
+                    onChange={setWishes}
+                    onConfirm={confirmWishes}
+                    customPlaceholder="Eigenen Wunsch hinzufügen"
+                    minTotal={0}
+                  />
+                )}
+
+                {step === "notes" && (
                   <TextAnswer
-                    inputRef={inputRef}
                     value={text}
                     onChange={(v) => {
                       setText(v);
                       setInputError("");
                     }}
-                    onSubmit={submitAlias}
-                    placeholder="Dein Pseudonym"
+                    onSubmit={() => submitNotes()}
+                    placeholder="Dein Gedanke (optional)"
+                    maxLength={300}
                     error={inputError}
+                    extra={
+                      <Chip onClick={() => submitNotes(true)} subtle>
+                        Überspringen
+                      </Chip>
+                    }
                   />
                 )}
 
@@ -422,101 +573,26 @@ export default function OnboardingChat() {
                     <Chip onClick={() => finish()}>Erneut versuchen</Chip>
                   </ChipRow>
                 )}
+
+                {EXTRA_STEPS.includes(step) && (
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        user("Jetzt abschließen");
+                        finish();
+                      }}
+                      className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+                    >
+                      Jetzt abschließen
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
     </div>
-  );
-}
-
-function ChipRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-wrap gap-2">{children}</div>;
-}
-
-function Chip({
-  children,
-  onClick,
-  selected = false,
-  subtle = false,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  selected?: boolean;
-  subtle?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-[border-color,background-color,color,transform] duration-300 active:scale-95 ${
-        selected
-          ? "border-gold/60 bg-gold/15 text-gold"
-          : subtle
-            ? "border-transparent bg-transparent text-zinc-500 hover:text-zinc-300"
-            : "border-white/10 bg-white/5 text-zinc-200 hover:border-gold/50 hover:text-gold"
-      }`}
-    >
-      {selected && <CheckIcon className="h-3.5 w-3.5" />}
-      {children}
-    </button>
-  );
-}
-
-function TextAnswer({
-  inputRef,
-  value,
-  onChange,
-  onSubmit,
-  placeholder,
-  error,
-  extra,
-}: {
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
-  placeholder: string;
-  error: string;
-  extra?: React.ReactNode;
-}) {
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit();
-      }}
-      className="space-y-2"
-    >
-      <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-950/60 p-1.5 focus-within:border-gold/60">
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
-          aria-invalid={error ? true : undefined}
-          maxLength={60}
-          autoFocus
-          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none"
-        />
-        {extra}
-        <button
-          type="submit"
-          aria-label="Senden"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold text-zinc-950 transition hover:bg-gold-light active:scale-95"
-        >
-          <ArrowRightIcon className="h-4 w-4" />
-        </button>
-      </div>
-      {error && (
-        <p role="alert" className="px-1 text-xs text-rose">
-          {error}
-        </p>
-      )}
-    </form>
   );
 }

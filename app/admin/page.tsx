@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import AdminLogoutButton from "@/components/AdminLogoutButton";
+import { ArrowRightIcon, BoltIcon } from "@/components/Icons";
 
 export const metadata = {
   title: "Admin — DSpora",
@@ -31,6 +33,30 @@ export default async function Admin() {
           Du bist angemeldet. Hier entsteht später die Übersicht, zum Beispiel
           die Warteliste.
         </p>
+
+        {/* Werkzeuge für die Entwicklung */}
+        <h2 className="mt-12 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+          Werkzeuge
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Link
+            href="/onboarding"
+            className="cta-premium group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 text-left backdrop-blur-xl transition-[border-color,box-shadow] duration-300 [--sheen-alpha:0.12] hover:border-gold/50 hover:shadow-[0_0_28px_-10px_rgba(242,166,90,0.45)]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+                <BoltIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-zinc-50">Chatbot testen</p>
+                <p className="mt-0.5 text-xs text-zinc-400">
+                  Onboarding-Chat von Anfang bis Ende durchspielen
+                </p>
+              </div>
+            </div>
+            <ArrowRightIcon className="h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-gold" />
+          </Link>
+        </div>
       </div>
     </main>
   );

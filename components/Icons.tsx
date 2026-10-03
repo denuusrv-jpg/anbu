@@ -210,3 +210,37 @@ export function BoltIcon({ className = "w-4 h-4" }: { className?: string }) {
     </svg>
   );
 }
+
+export function PlusIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+export function CameraIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.1a2 2 0 0 0 1.7-1l.4-.7A2 2 0 0 1 11.4 3.3h1.2a2 2 0 0 1 1.7 1l.4.7a2 2 0 0 0 1.7 1h.1A2.5 2.5 0 0 1 19 8.5v8A2.5 2.5 0 0 1 16.5 19h-9A2.5 2.5 0 0 1 5 16.5z" transform="translate(0 .5)" />
+      <circle cx="12" cy="12.5" r="3.2" />
+    </svg>
+  );
+}
