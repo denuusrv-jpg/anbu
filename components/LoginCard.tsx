@@ -11,16 +11,7 @@ type Status = "idle" | "sending" | "sent";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const RESEND_SECONDS = 30;
-
-function friendlyError(message: string, code?: string): string {
-  if (code === "over_email_send_rate_limit" || /rate limit/i.test(message)) {
-    return "Zu viele Anfragen. Bitte warte kurz und versuch es dann erneut.";
-  }
-  if (code === "validation_failed" || /invalid/i.test(message)) {
-    return "Bitte gib eine gültige E-Mail-Adresse ein.";
-  }
-  return "Das hat leider nicht geklappt. Bitte versuch es noch einmal.";
-}
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Passwortlose Anmeldung: Magic-Link per E-Mail oder Passkey (Face ID / Touch ID / Schlüsselbund).
 export default function LoginCard({
@@ -38,6 +29,13 @@ export default function LoginCard({
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  // Bot-Schutz: unsichtbares Honeypot-Feld und Zeit seit dem Anzeigen des Formulars
+  const honeypot = useRef<HTMLInputElement>(null);
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = Date.now();
+  }, []);
 
   // Passkey-Autofill: Der Browser bietet gespeicherte Passkeys direkt im E-Mail-Feld an
   useEffect(() => {
@@ -70,26 +68,35 @@ export default function LoginCard({
     e?.preventDefault();
     if (!isSupabaseConfigured || status === "sending") return;
     const value = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+    if (!EMAIL_PATTERN.test(value)) {
       setError("Bitte gib eine gültige E-Mail-Adresse ein.");
       return;
     }
     setError("");
     setStatus("sending");
-    const { error: err } = await getBrowserClient().auth.signInWithOtp({
-      email: value,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent(target)}`,
-      },
-    });
-    if (err) {
+    try {
+      const res = await fetch("/api/auth/magic-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: value,
+          next: target,
+          website: honeypot.current?.value ?? "",
+          elapsed: Date.now() - shownAt.current,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setStatus("idle");
+        setError(data?.error ?? "Das hat leider nicht geklappt. Bitte versuch es noch einmal.");
+        return;
+      }
+      setStatus("sent");
+      setCooldown(RESEND_SECONDS);
+    } catch {
       setStatus("idle");
-      setError(friendlyError(err.message, err.code));
-      return;
+      setError("Keine Verbindung. Bitte versuch es noch einmal.");
     }
-    setStatus("sent");
-    setCooldown(RESEND_SECONDS);
   }
 
   async function signInWithPasskey() {
@@ -166,6 +173,15 @@ export default function LoginCard({
                 <label htmlFor="login-email" className="sr-only">
                   E-Mail-Adresse
                 </label>
+                <input
+                  ref={honeypot}
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-0 w-0 opacity-0"
+                />
                 <input
                   id="login-email"
                   name="email"
