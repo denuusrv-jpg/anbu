@@ -17,7 +17,7 @@ function Counter({ value }: { value: number }) {
 // Kennzahlen auf einen Blick (Apple-Stil: große Zahl, kleine Beschriftung)
 export default function KpiBar({ kpis }: { kpis: Kpis }) {
   const items = [
-    { label: "Aktive User", value: kpis.activeUsers, hint: `${kpis.loginsToday} heute eingeloggt`, glow: "bg-gold/25" },
+    { label: "Aktive User", value: kpis.activeUsers, hint: `${kpis.loginsToday} heute eingeloggt · ${kpis.businessUsers} Business`, glow: "bg-gold/25" },
     { label: "Registrierungen heute", value: kpis.registrationsToday, hint: `${kpis.waitlist} auf der Warteliste`, glow: "bg-teal/25" },
     { label: "Im Soft-Delete", value: kpis.softDeleted, hint: "30 Tage Aufbewahrung", glow: "bg-rose/25" },
     { label: "Wünsche & Ideen", value: kpis.wishes, hint: "Co-Creation", glow: "bg-gold/25" },

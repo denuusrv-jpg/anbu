@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
 import SingleChoice from "@/components/onboarding/SingleChoice";
+import { LightCvForm } from "@/components/onboarding/BusinessFields";
 import { Chip, ChipRow, LongTextAnswer, TextAnswer } from "@/components/onboarding/ui";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
@@ -14,12 +15,18 @@ import { pickFollowUps } from "@/lib/followups";
 import {
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
+  GOALS,
   INTERESTS,
   REGIONS,
+  ROLE_MAX,
+  SECTORS,
+  TRACKS,
   VIBES,
   WISHES_MAX,
   choiceLabels,
+  labelOf,
   type Choice,
+  type LightCv,
   type OnboardingAnswers,
 } from "@/lib/onboarding";
 
@@ -30,6 +37,11 @@ type Step =
   | "interests"
   | "vibes"
   | "mode"
+  | "track"
+  | "sector"
+  | "role"
+  | "goals"
+  | "cv"
   | "freeText"
   | "followUp"
   | "profile"
@@ -54,7 +66,7 @@ const STEP_NUMBER: Partial<Record<Step, number>> = {
   vibes: 3,
   mode: 4,
 };
-const PROFILE_STEPS: Step[] = ["freeText", "followUp", "profile"];
+const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "freeText", "followUp", "profile"];
 const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
 
 // guest: noch nicht angemeldet, Anmeldung per Link am Ende | live: angemeldet, speichert direkt
@@ -99,6 +111,9 @@ export default function OnboardingChat({
   const [chosenRegion, setChosenRegion] = useState<string | undefined>();
   const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
   const [followQuestion, setFollowQuestion] = useState("");
+  const [track, setTrack] = useState<"community" | "business">("community");
+  const [chosenSector, setChosenSector] = useState<string | undefined>();
+  const [goals, setGoals] = useState<Choice>(EMPTY);
 
   // Auswahlen, die in den Panels live bearbeitet werden
   const [interests, setInterests] = useState<Choice>(EMPTY);
@@ -112,6 +127,7 @@ export default function OnboardingChat({
 
   const answers = useRef<Partial<OnboardingAnswers>>({});
   const photos = useRef<Blob[]>([]);
+  const business = useRef<{ sector?: string; role?: string; goals?: Choice }>({});
   const followQueue = useRef<string[]>([]);
   const followAnswers = useRef<{ question: string; answer: string }[]>([]);
   const nextId = useRef(0);
@@ -241,9 +257,76 @@ export default function OnboardingChat({
     }
     user("Profil anlegen");
     ask(
-      ["Wunderbar! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"],
-      "freeText",
+      [
+        "Wunderbar! Wie möchtest du dich bei DSpora einbringen? Privat in der Community oder geschäftlich, zum Beispiel auf der Suche nach Co-Foundern oder Kooperationen?",
+      ],
+      "track",
     );
+  }
+
+  // ——— Modus-Weiche: Privat / Community oder Business & Co-Founding ———
+
+  function pickTrack(next: "community" | "business") {
+    answers.current.track = next;
+    setTrack(next);
+    user(labelOf(next, TRACKS));
+    if (next === "community") {
+      ask(["Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"], "freeText");
+      return;
+    }
+    ask(["Spannend! In welcher Branche oder welchem Sektor bist du unterwegs?"], "sector");
+  }
+
+  function pickSector(value: string, label: string) {
+    if (!value) {
+      setChosenSector(undefined);
+      return;
+    }
+    business.current.sector = value;
+    setChosenSector(value);
+    user(label);
+    ask(["Und was ist deine aktuelle berufliche Rolle?"], "role");
+  }
+
+  function submitRole() {
+    const value = text.trim();
+    if (value.length < 2) {
+      setInputError("Bitte gib deine Rolle an (mindestens 2 Zeichen).");
+      return;
+    }
+    business.current.role = value;
+    user(value);
+    ask(
+      ["Was ist dein Hauptziel bei DSpora? Wähle bis zu drei – oder schreib dein eigenes."],
+      "goals",
+    );
+  }
+
+  function confirmGoals() {
+    business.current.goals = goals;
+    user(choiceLabels(goals, GOALS).join(", "));
+    ask(
+      [
+        "Jetzt dein Light-CV: kein klassischer Lebenslauf, sondern ein kompakter Steckbrief. Expertise, deine Top-3-Erfolge und optional ein paar Links. Alles kann kurz bleiben.",
+      ],
+      "cv",
+    );
+  }
+
+  function submitCv(cv: LightCv) {
+    answers.current.business = {
+      sector: business.current.sector as string,
+      role: business.current.role as string,
+      goals: business.current.goals as Choice,
+      cv,
+    };
+    const parts = [
+      cv.expertise ? "Expertise" : null,
+      cv.achievements.length ? `${cv.achievements.length} Erfolg${cv.achievements.length === 1 ? "" : "e"}` : null,
+      cv.links.length ? `${cv.links.length} Link${cv.links.length === 1 ? "" : "s"}` : null,
+    ].filter(Boolean);
+    user(parts.length ? `Light-CV: ${parts.join(", ")}` : "Light-CV später ergänzen");
+    goToProfileForm();
   }
 
   // ——— Pfad B: Freitext, Folgefragen, Profil ———
@@ -293,7 +376,9 @@ export default function OnboardingChat({
 
   function goToProfileForm() {
     ask(
-      ["Noch ein paar Details für dein Profil. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf."],
+      [
+        "Noch ein paar Details für dein Profil. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf.",
+      ],
       "profile",
     );
   }
@@ -584,6 +669,52 @@ export default function OnboardingChat({
                   </ChipRow>
                 )}
 
+                {step === "track" && (
+                  <ChipRow>
+                    {TRACKS.map((t) => (
+                      <Chip key={t.id} onClick={() => pickTrack(t.id as "community" | "business")}>
+                        {t.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                )}
+
+                {step === "sector" && (
+                  <SingleChoice
+                    options={SECTORS}
+                    value={chosenSector}
+                    onSelect={pickSector}
+                    customPlaceholder="Andere Branche? Eigene Angabe"
+                  />
+                )}
+
+                {step === "role" && (
+                  <TextAnswer
+                    value={text}
+                    onChange={(v) => {
+                      setText(v);
+                      setInputError("");
+                    }}
+                    onSubmit={submitRole}
+                    placeholder="z. B. Gründerin, Product Manager, Entwickler"
+                    maxLength={ROLE_MAX}
+                    error={inputError}
+                  />
+                )}
+
+                {step === "goals" && (
+                  <ChoiceSelect
+                    options={GOALS}
+                    value={goals}
+                    onChange={setGoals}
+                    onConfirm={confirmGoals}
+                    customPlaceholder="Ein anderes Ziel? Eigenes hinzufügen"
+                    maxTotal={3}
+                  />
+                )}
+
+                {step === "cv" && <LightCvForm onSubmit={submitCv} />}
+
                 {step === "freeText" && (
                   <LongTextAnswer
                     value={text}
@@ -609,7 +740,7 @@ export default function OnboardingChat({
                   />
                 )}
 
-                {step === "profile" && <ProfileForm onSubmit={submitProfile} />}
+                {step === "profile" && <ProfileForm onSubmit={submitProfile} track={track} />}
 
                 {step === "wishes" && (
                   <LongTextAnswer

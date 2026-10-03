@@ -1,6 +1,14 @@
 import "server-only";
 import {
+  ACHIEVEMENT_MAX,
   CUSTOM_PATTERN,
+  EXPERTISE_MAX,
+  GOALS,
+  MAX_ACHIEVEMENTS,
+  MAX_LINKS,
+  ROLE_MAX,
+  SECTORS,
+  TRACKS,
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
   INTERESTS,
@@ -18,6 +26,7 @@ import {
   VIBES,
   VISIBILITIES,
   WISHES_MAX,
+  type BusinessData,
   type Choice,
   type FollowUp,
   type OnboardingAnswers,
@@ -161,6 +170,61 @@ function profile(value: unknown): ProfileData {
   };
 }
 
+function link(value: unknown): string {
+  if (typeof value !== "string" || value.trim().length > 200) fail("Link ist ungültig.");
+  const text = (value as string).trim();
+  let parsed: URL;
+  try {
+    parsed = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    fail("Link ist ungültig.");
+  }
+  // Nur echte Web-Adressen (kein javascript:, data: usw.)
+  if (!["http:", "https:"].includes(parsed.protocol) || !parsed.hostname.includes(".")) {
+    fail("Link ist ungültig.");
+  }
+  return parsed.toString();
+}
+
+/** Business-Angaben samt Light-CV prüfen. */
+export function validateBusiness(value: unknown): BusinessData {
+  if (!isObject(value)) fail("Business-Angaben fehlen.");
+  const b = value as Record<string, unknown>;
+
+  const sector = idOrCustom(b.sector, SECTORS, "Branche", true) as string;
+  const role = stringOf(b.role, "Rolle", ROLE_MAX, true) as string;
+  if (role.length < 2) fail("Rolle ist ungültig.");
+  const goals = choice(b.goals, GOALS, "Ziele", 1);
+  if (goals.ids.length + goals.custom.length > 3) fail("Ziele: Bitte höchstens drei.");
+
+  const cvRaw = isObject(b.cv) ? (b.cv as Record<string, unknown>) : {};
+  const achievementsRaw = cvRaw.achievements ?? [];
+  if (!Array.isArray(achievementsRaw) || achievementsRaw.length > MAX_ACHIEVEMENTS) {
+    fail("Erfolge sind ungültig.");
+  }
+  const achievements = (achievementsRaw as unknown[])
+    .map((a) => {
+      if (typeof a !== "string" || a.trim().length > ACHIEVEMENT_MAX) fail("Erfolge sind ungültig.");
+      return (a as string).trim();
+    })
+    .filter(Boolean);
+
+  const linksRaw = cvRaw.links ?? [];
+  if (!Array.isArray(linksRaw) || linksRaw.length > MAX_LINKS) fail("Links sind ungültig.");
+  const links = Array.from(new Set((linksRaw as unknown[]).filter((l) => l !== "" && l != null).map(link)));
+
+  return {
+    sector,
+    role,
+    goals,
+    cv: {
+      expertise: stringOf(cvRaw.expertise, "Expertise", EXPERTISE_MAX),
+      achievements,
+      links,
+    },
+  };
+}
+
 function followUps(value: unknown): FollowUp[] | undefined {
   if (value === undefined || value === null) return undefined;
   if (!Array.isArray(value) || value.length > 2) fail("Folgefragen sind ungültig.");
@@ -200,14 +264,24 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
     };
   }
 
+  const track = oneOf(b.track ?? "community", TRACKS, "Modus") as "community" | "business";
+  // Business-Profile sind immer Profile mit Namen, nie anonym
+  if (track === "business" && mode !== "profile") fail("Business-Profile können nicht anonym sein.");
+
   const answers: OnboardingAnswers = {
     region: idOrCustom(b.region, REGIONS, "Region", true) as string,
     city: stringOf(b.city, "Stadt", 60),
     interests: choice(b.interests, INTERESTS, "Interessen", 1),
     vibes: choice(b.vibes, VIBES, "Vibe", 1),
     mode: mode as OnboardingAnswers["mode"],
+    track,
+    business: track === "business" ? validateBusiness(b.business) : undefined,
     profile: mode === "profile" ? profile(b.profile) : undefined,
     extras,
   };
+  // "Nur für Business-Profile sichtbar" gibt es nur für Business-Profile selbst
+  if (answers.profile?.visibility === "business" && track !== "business") {
+    fail("Diese Sichtbarkeit ist nur für Business-Profile möglich.");
+  }
   return { answers, token };
 }

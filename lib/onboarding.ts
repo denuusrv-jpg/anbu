@@ -56,10 +56,39 @@ export const PHASES: Option[] = [
   { id: "sonstiges", label: "Sonstiges" },
 ];
 
+// Wer darf mein Profil sehen? (wird in der Datenbank durchgesetzt, siehe supabase/schema.sql)
 export const VISIBILITIES: Option[] = [
-  { id: "matches", label: "Nur meine Matches" },
-  { id: "crew", label: "Meine Crew" },
-  { id: "community", label: "Alle in der Community" },
+  { id: "public", label: "Öffentlich für alle registrierten DSpora-Minds" },
+  { id: "business", label: "Nur für andere Business-Profile sichtbar" },
+  { id: "stealth", label: "Stealth: nur nach gegenseitigem Match" },
+];
+
+export const TRACKS: Option[] = [
+  { id: "community", label: "Privat / Community" },
+  { id: "business", label: "Business & Co-Founding" },
+];
+
+// Business-Modus
+export const SECTORS: Option[] = [
+  { id: "tech", label: "Tech & Software" },
+  { id: "finance", label: "Finanzen & Investment" },
+  { id: "health", label: "Gesundheit & Medizin" },
+  { id: "commerce", label: "Handel & E-Commerce" },
+  { id: "media", label: "Medien & Kreatives" },
+  { id: "education", label: "Bildung & Forschung" },
+  { id: "food", label: "Gastronomie & Food" },
+  { id: "realestate", label: "Immobilien & Bau" },
+  { id: "consulting", label: "Beratung & Services" },
+  { id: "industry", label: "Industrie & Handwerk" },
+];
+
+export const GOALS: Option[] = [
+  { id: "cofounder", label: "Co-Founder finden" },
+  { id: "investors", label: "Investoren-Austausch" },
+  { id: "collab", label: "Projekt-Kollaboration" },
+  { id: "mentoring", label: "Mentoring" },
+  { id: "partners", label: "Kunden & Partner finden" },
+  { id: "network", label: "Netzwerk aufbauen" },
 ];
 
 export const PROFILE_MODES = ["anonymous", "profile"] as const;
@@ -79,6 +108,20 @@ export type ProfileData = {
   photoCount: number;
 };
 
+// Light-CV: kompakter beruflicher Steckbrief
+export type LightCv = {
+  expertise?: string;
+  achievements: string[]; // Top-3-Erfolge oder Meilensteine
+  links: string[]; // Portfolio / GitHub / Website
+};
+
+export type BusinessData = {
+  sector: string; // Id aus SECTORS oder eigener Text
+  role: string; // aktuelle berufliche Rolle
+  goals: Choice;
+  cv: LightCv;
+};
+
 export type FollowUp = { question: string; answer: string };
 
 export type OnboardingAnswers = {
@@ -87,6 +130,8 @@ export type OnboardingAnswers = {
   interests: Choice;
   vibes: Choice;
   mode: (typeof PROFILE_MODES)[number];
+  track?: "community" | "business";
+  business?: BusinessData;
   profile?: ProfileData;
   extras?: {
     freeText?: string; // freier Text aus dem Pfad "Profil anlegen"
@@ -109,6 +154,11 @@ export const MIN_AGE = 18;
 export const MAX_AGE = 99;
 export const MAX_PHOTOS = 3;
 export const MAX_HOBBIES = 8;
+export const MAX_ACHIEVEMENTS = 3;
+export const MAX_LINKS = 3;
+export const ACHIEVEMENT_MAX = 200;
+export const EXPERTISE_MAX = 100;
+export const ROLE_MAX = 60;
 
 /** Beschriftung einer Id (oder bei eigenem Text der Text selbst). */
 export function labelOf(value: string, options: Option[]): string {

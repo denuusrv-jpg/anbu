@@ -22,7 +22,11 @@ export async function saveProfile(
       interests: answers.interests,
       vibes: answers.vibes,
       mode: answers.mode,
-      profile: answers.profile ?? null,
+      track: answers.track ?? "community",
+      business: answers.business ?? null,
+      // Sichtbarkeit liegt als eigene Spalte (wird von der Datenbank durchgesetzt), nicht im Profil-JSON
+      visibility: answers.profile?.visibility ?? "stealth",
+      profile: answers.profile ? { ...answers.profile, visibility: undefined } : null,
       extras,
       deleted_at: null,
     },

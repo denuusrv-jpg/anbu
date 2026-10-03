@@ -79,19 +79,21 @@ export function ChoiceChips({
   onChange,
   customPlaceholder,
   allowCustom = true,
+  maxTotal = MAX_CHOICES,
 }: {
   options: Option[];
   value: Choice;
   onChange: (next: Choice) => void;
   customPlaceholder: string;
   allowCustom?: boolean;
+  maxTotal?: number;
 }) {
   const total = value.ids.length + value.custom.length;
 
   function toggle(id: string) {
     if (value.ids.includes(id)) {
       onChange({ ...value, ids: value.ids.filter((i) => i !== id) });
-    } else if (total < MAX_CHOICES) {
+    } else if (total < maxTotal) {
       onChange({ ...value, ids: [...value.ids, id] });
     }
   }
@@ -100,14 +102,14 @@ export function ChoiceChips({
     if (!CUSTOM_PATTERN.test(text)) return INVALID;
     const known = options.find((o) => o.label.toLowerCase() === text.toLowerCase());
     if (known) {
-      if (!value.ids.includes(known.id) && total < MAX_CHOICES) {
+      if (!value.ids.includes(known.id) && total < maxTotal) {
         onChange({ ...value, ids: [...value.ids, known.id] });
       }
       return null;
     }
     if (value.custom.some((c) => c.toLowerCase() === text.toLowerCase())) return null;
     if (value.custom.length >= MAX_CUSTOM) return `Maximal ${MAX_CUSTOM} eigene Einträge.`;
-    if (total >= MAX_CHOICES) return `Maximal ${MAX_CHOICES} Einträge insgesamt.`;
+    if (total >= maxTotal) return `Maximal ${maxTotal} Einträge insgesamt.`;
     onChange({ ...value, custom: [...value.custom, text] });
     return null;
   }
@@ -147,6 +149,7 @@ export default function ChoiceSelect({
   confirmLabel = "Weiter",
   extra,
   allowCustom = true,
+  maxTotal,
 }: {
   options: Option[];
   value: Choice;
@@ -157,6 +160,7 @@ export default function ChoiceSelect({
   confirmLabel?: string;
   extra?: React.ReactNode;
   allowCustom?: boolean;
+  maxTotal?: number;
 }) {
   const total = value.ids.length + value.custom.length;
 
@@ -168,6 +172,7 @@ export default function ChoiceSelect({
         onChange={onChange}
         customPlaceholder={customPlaceholder}
         allowCustom={allowCustom}
+        maxTotal={maxTotal}
       />
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">

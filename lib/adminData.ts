@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Choice, OnboardingAnswers, ProfileData } from "@/lib/onboarding";
+import type { BusinessData, Choice, OnboardingAnswers, ProfileData } from "@/lib/onboarding";
 
 export type AdminProfile = {
   user_id: string;
@@ -16,6 +16,9 @@ export type AdminProfile = {
   vibes: Choice;
   profile: ProfileData | null;
   extras: OnboardingAnswers["extras"] | null;
+  track: "community" | "business";
+  business: BusinessData | null;
+  visibility: "public" | "business" | "stealth";
 };
 export type AdminWish = { id: string; user_id: string; wish: string; created_at: string; email: string; name: string };
 export type AdminWaitlist = { id: string; email: string; status: string; created_at: string };
@@ -32,6 +35,7 @@ export type Kpis = {
   activeUsers: number;
   registrationsToday: number;
   loginsToday: number;
+  businessUsers: number;
   softDeleted: number;
   waitlist: number;
   wishes: number;
@@ -58,7 +62,7 @@ export async function loadAdminData(db: SupabaseClient): Promise<AdminData> {
   const [pr, users, wl, dr, ws] = await Promise.all([
     db
       .from("user_profiles")
-      .select("user_id, region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras")
+      .select("user_id, region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras, track, business, visibility")
       .order("created_at", { ascending: false })
       .limit(2000),
     db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
@@ -116,6 +120,7 @@ export function computeKpis(data: AdminData, now = new Date()): Kpis {
     activeUsers: active.length,
     registrationsToday: active.filter((p) => new Date(p.created_at).getTime() >= start).length,
     loginsToday: active.filter((p) => p.last_sign_in_at && new Date(p.last_sign_in_at).getTime() >= start).length,
+    businessUsers: active.filter((p) => p.track === "business").length,
     softDeleted: data.profiles.length - active.length,
     waitlist: data.waitlist.length,
     wishes: data.wishes.length,

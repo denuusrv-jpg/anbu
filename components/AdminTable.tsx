@@ -3,14 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
+  GOALS,
   INTERESTS,
   LANGUAGES,
   PHASES,
   REGIONS,
+  SECTORS,
   VIBES,
   VISIBILITIES,
   choiceLabels,
   labelOf,
+  type BusinessData,
   type OnboardingAnswers,
 } from "@/lib/onboarding";
 import type { AdminDraft, AdminProfile, AdminWaitlist, AdminWish } from "@/lib/adminData";
@@ -62,11 +65,13 @@ function Detail({
   email,
   answers,
   wishes,
+  visibility,
   onClose,
 }: {
   email: string;
   answers: OnboardingAnswers;
   wishes: string[];
+  visibility?: string;
   onClose: () => void;
 }) {
   const p = answers.profile;
@@ -106,7 +111,26 @@ function Detail({
           <Line label="Interessen" value={choiceLabels(answers.interests, INTERESTS).join(", ")} />
           <Line label="Vibe" value={choiceLabels(answers.vibes, VIBES).join(", ")} />
           <Line label="Modus" value={answers.mode === "profile" ? "Profil" : "Anonym"} />
+          <Line label="Art" value={answers.track === "business" ? "Business & Co-Founding" : "Privat / Community"} />
+          <Line label="Sichtbarkeit" value={visibility ? labelOf(visibility, VISIBILITIES) : undefined} />
         </Section>
+
+        {answers.business && (
+          <Section title="Business & Light-CV">
+            <Line label="Branche" value={labelOf(answers.business.sector, SECTORS)} />
+            <Line label="Rolle" value={answers.business.role} />
+            <Line label="Ziele" value={choiceLabels(answers.business.goals, GOALS).join(", ")} />
+            <Line label="Expertise" value={answers.business.cv.expertise} />
+            {answers.business.cv.achievements.length > 0 && (
+              <ul className="list-disc space-y-1 pl-5">
+                {answers.business.cv.achievements.map((a, i) => (
+                  <li key={i}>{a}</li>
+                ))}
+              </ul>
+            )}
+            <Line label="Links" value={answers.business.cv.links.join(", ")} />
+          </Section>
+        )}
 
         {p && (
           <Section title="Profil">
@@ -117,7 +141,6 @@ function Detail({
             <Line label="Hobbys" value={p.hobbies.join(", ")} />
             <Line label="Fun Fact" value={p.funFact} />
             <Line label="Frag mich nach" value={p.askMeAbout} />
-            <Line label="Sichtbar für" value={labelOf(p.visibility, VISIBILITIES)} />
             <Line label="Fotos" value={p.photoCount} />
           </Section>
         )}
@@ -160,6 +183,8 @@ function answersOf(row: AdminProfile): OnboardingAnswers {
     interests: row.interests,
     vibes: row.vibes,
     mode: row.mode as OnboardingAnswers["mode"],
+    track: row.track,
+    business: (row.business as BusinessData | null) ?? undefined,
     profile: row.profile ?? undefined,
     extras: row.extras ?? undefined,
   };
@@ -182,7 +207,7 @@ export default function AdminTable({
   const [confirming, setConfirming] = useState<Confirm>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [detail, setDetail] = useState<{ email: string; answers: OnboardingAnswers; wishes: string[] } | null>(null);
+  const [detail, setDetail] = useState<{ email: string; answers: OnboardingAnswers; wishes: string[]; visibility?: string } | null>(null);
 
   const active = useMemo(() => profiles.filter((p) => !p.deleted_at), [profiles]);
   const deleted = useMemo(
@@ -208,6 +233,7 @@ export default function AdminTable({
       email: row.email,
       answers: answersOf(row),
       wishes: wishes.filter((w) => w.user_id === row.user_id).map((w) => w.wish),
+      visibility: row.visibility,
     });
   }
 
@@ -337,6 +363,7 @@ export default function AdminTable({
                     <span className="inline-flex items-center gap-1.5">
                       <Badge tone="gold">Aktiv</Badge>
                       <Badge>{row.mode === "profile" ? "Profil" : "Anonym"}</Badge>
+                      {row.track === "business" && <Badge tone="gold">Business</Badge>}
                     </span>
                   </td>
                   <td className={`${td} text-zinc-400`}>{row.last_sign_in_at ? date(row.last_sign_in_at) : "–"}</td>
@@ -520,7 +547,13 @@ export default function AdminTable({
               : ""}
       </p>
       {detail && (
-        <Detail email={detail.email} answers={detail.answers} wishes={detail.wishes} onClose={() => setDetail(null)} />
+        <Detail
+          email={detail.email}
+          answers={detail.answers}
+          wishes={detail.wishes}
+          visibility={detail.visibility}
+          onClose={() => setDetail(null)}
+        />
       )}
     </div>
   );

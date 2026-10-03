@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import BusinessEditor from "@/components/BusinessEditor";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
@@ -12,7 +13,9 @@ import {
   INTERESTS,
   REGIONS,
   VIBES,
+  VISIBILITIES,
   choiceLabels,
+  type BusinessData,
   type Choice,
 } from "@/lib/onboarding";
 
@@ -24,6 +27,9 @@ export type HubProfile = {
   mode: "anonymous" | "profile";
   profile: { displayName?: string } | null;
   status: "preparing" | "matched";
+  track: "community" | "business";
+  business: BusinessData | null;
+  visibility: "public" | "business" | "stealth";
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -104,6 +110,20 @@ export default function HubDashboard({
       setProfile((p) => ({ ...p, [editing]: draft }));
       setEditing(null);
     }
+  }
+
+  async function changeVisibility(next: HubProfile["visibility"]) {
+    if (next === profile.visibility) return;
+    if (await patch({ visibility: next })) setProfile((p) => ({ ...p, visibility: next }));
+  }
+
+  async function saveBusiness(next: BusinessData): Promise<string | null> {
+    const ok = await patch({ business: next });
+    if (ok) {
+      setProfile((p) => ({ ...p, business: next }));
+      return null;
+    }
+    return "Speichern hat nicht geklappt.";
   }
 
   async function toggleAnonymous() {
@@ -283,6 +303,9 @@ export default function HubDashboard({
                   ? "Andere sehen nur deine Interessen, nie deinen Namen oder deine Fotos."
                   : "Dein Profil mit Anzeigename ist für die gewählte Gruppe sichtbar."}
               </p>
+              {profile.track === "business" && (
+                <p className="mt-1.5 text-xs text-zinc-400">Business-Profile sind immer mit Namen sichtbar.</p>
+              )}
               {!hasProfile && (
                 <p className="mt-1.5 text-xs text-zinc-400">
                   Du hast noch kein Profil angelegt.{" "}
@@ -297,7 +320,7 @@ export default function HubDashboard({
               role="switch"
               aria-checked={anonymous}
               aria-label="Anonym bleiben"
-              disabled={saving || (!hasProfile && anonymous)}
+              disabled={saving || (!hasProfile && anonymous) || profile.track === "business"}
               onClick={toggleAnonymous}
               className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors duration-300 disabled:opacity-40 ${
                 anonymous ? "border-gold/60 bg-gold/30" : "border-white/15 bg-white/10"
@@ -310,6 +333,39 @@ export default function HubDashboard({
               />
             </button>
           </div>
+
+          {/* Sichtbarkeit */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <p className="text-sm font-medium text-zinc-100">Wer darf mein Profil sehen?</p>
+            <div className="mt-3 space-y-2" role="radiogroup" aria-label="Sichtbarkeit">
+              {VISIBILITIES.filter((v) => v.id !== "business" || profile.track === "business").map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={profile.visibility === v.id}
+                  disabled={saving}
+                  onClick={() => changeVisibility(v.id as HubProfile["visibility"])}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors disabled:opacity-60 ${
+                    profile.visibility === v.id
+                      ? "border-gold/60 bg-gold/10 text-gold"
+                      : "border-white/10 bg-white/5 text-zinc-200 hover:border-gold/40"
+                  }`}
+                >
+                  <span
+                    className={`h-3.5 w-3.5 shrink-0 rounded-full border ${
+                      profile.visibility === v.id ? "border-gold bg-gold" : "border-white/30"
+                    }`}
+                  />
+                  {v.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {profile.track === "business" && profile.business && (
+            <BusinessEditor business={profile.business} onSave={saveBusiness} />
+          )}
 
           {/* Interessen & Vibes */}
           {(

@@ -141,3 +141,105 @@ create policy "Eigene Wünsche anlegen" on public.user_wishes
 drop policy if exists "Eigene Wünsche löschen" on public.user_wishes;
 create policy "Eigene Wünsche löschen" on public.user_wishes
   for delete to authenticated using (auth.uid() = user_id);
+
+-- ─────────────────────────────────────────────────────────────
+-- 7) Business-Modus, Light-CV und Sichtbarkeit
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists track text not null default 'community';
+alter table public.user_profiles add column if not exists business jsonb;       -- Branche, Rolle, Ziele, Light-CV
+alter table public.user_profiles add column if not exists visibility text not null default 'stealth';
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_track_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_track_check check (track in ('community', 'business'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_visibility_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_visibility_check check (visibility in ('public', 'business', 'stealth'));
+  end if;
+  -- "Nur für Business-Profile sichtbar" gibt es nur für Business-Profile selbst
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_visibility_business_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_visibility_business_check check (visibility <> 'business' or track = 'business');
+  end if;
+  -- Business-Profile sind immer Profile mit Namen (nicht anonym)
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_business_mode_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_business_mode_check check (track <> 'business' or mode = 'profile');
+  end if;
+end
+$$;
+
+-- Gegenseitige Matches (später von der Matching-Engine geschrieben, nur der Server schreibt)
+create table if not exists public.matches (
+  user_a     uuid not null references auth.users (id) on delete cascade,
+  user_b     uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_a, user_b),
+  check (user_a <> user_b)
+);
+
+alter table public.matches enable row level security;
+
+drop policy if exists "Eigene Matches lesen" on public.matches;
+create policy "Eigene Matches lesen" on public.matches
+  for select to authenticated using (auth.uid() in (user_a, user_b));
+
+-- Setzt die Sichtbarkeit in der Datenbank durch: Wer darf wessen Profil sehen?
+--   public   -> alle angemeldeten Nutzer
+--   business -> nur Nutzer mit Business-Profil
+--   stealth  -> nur bei gegenseitigem Match
+-- Anonyme Profile zeigen weder Namen noch Stadt noch Business-Angaben.
+create or replace function public.discoverable_profiles()
+returns table (
+  user_id      uuid,
+  display_name text,
+  region       text,
+  city         text,
+  interests    jsonb,
+  vibes        jsonb,
+  track        text,
+  business     jsonb
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    p.user_id,
+    case when p.mode = 'profile' then p.profile ->> 'displayName' end,
+    p.region,
+    case when p.mode = 'profile' then p.city end,
+    p.interests,
+    p.vibes,
+    p.track,
+    case when p.mode = 'profile' then p.business end
+  from public.user_profiles p
+  where auth.uid() is not null
+    and p.deleted_at is null
+    and p.user_id <> auth.uid()
+    and (
+      p.visibility = 'public'
+      or (
+        p.visibility = 'business'
+        and exists (
+          select 1 from public.user_profiles me
+          where me.user_id = auth.uid() and me.track = 'business' and me.deleted_at is null
+        )
+      )
+      or (
+        p.visibility = 'stealth'
+        and exists (
+          select 1 from public.matches m
+          where (m.user_a = auth.uid() and m.user_b = p.user_id)
+             or (m.user_b = auth.uid() and m.user_a = p.user_id)
+        )
+      )
+    );
+$$;
+
+revoke all on function public.discoverable_profiles() from public, anon;
+grant execute on function public.discoverable_profiles() to authenticated;

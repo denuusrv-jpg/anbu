@@ -26,8 +26,10 @@ type Photo = { blob: Blob; url: string };
 
 export default function ProfileForm({
   onSubmit,
+  track = "community",
 }: {
   onSubmit: (result: ProfileResult) => void;
+  track?: "community" | "business";
 }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photoError, setPhotoError] = useState("");
@@ -39,7 +41,7 @@ export default function ProfileForm({
   const [phase, setPhase] = useState<string | undefined>();
   const [funFact, setFunFact] = useState("");
   const [askMe, setAskMe] = useState("");
-  const [visibility, setVisibility] = useState("matches");
+  const [visibility, setVisibility] = useState("stealth");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
   const photosRef = useRef<Photo[]>([]);
@@ -282,13 +284,29 @@ export default function ProfileForm({
       </Field>
 
       <Field label="Wer darf dein Profil sehen?">
-        <ChipRow>
-          {VISIBILITIES.map((v) => (
-            <Chip key={v.id} selected={visibility === v.id} onClick={() => setVisibility(v.id)}>
+        <div className="space-y-2" role="radiogroup" aria-label="Sichtbarkeit">
+          {VISIBILITIES.filter((v) => v.id !== "business" || track === "business").map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              role="radio"
+              aria-checked={visibility === v.id}
+              onClick={() => setVisibility(v.id)}
+              className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors ${
+                visibility === v.id
+                  ? "border-gold/60 bg-gold/10 text-gold"
+                  : "border-white/10 bg-white/5 text-zinc-200 hover:border-gold/40"
+              }`}
+            >
+              <span
+                className={`h-3.5 w-3.5 shrink-0 rounded-full border ${
+                  visibility === v.id ? "border-gold bg-gold" : "border-white/30"
+                }`}
+              />
               {v.label}
-            </Chip>
+            </button>
           ))}
-        </ChipRow>
+        </div>
       </Field>
 
       <div className="flex justify-end pt-1">

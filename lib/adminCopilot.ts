@@ -1,7 +1,7 @@
 import "server-only";
 import { daysLeft } from "@/lib/accountLifecycle";
 import { computeKpis, startOfTodayBerlin, type AdminData, type AdminProfile } from "@/lib/adminData";
-import { INTERESTS, LANGUAGES, REGIONS, VIBES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
+import { GOALS, INTERESTS, LANGUAGES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
 
 // Admin-Copilot: beantwortet Fragen zu den Nutzerdaten in natürlicher Sprache.
 // Regelbasiert (Stichwörter), ohne externe KI. Die Funktion lässt sich später durch einen
@@ -78,6 +78,57 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
           : "Es gibt noch keine Wünsche.",
       items: list.map((w) => ({ label: `${w.name || "Anonym"}${w.email ? ` (${w.email})` : ""}`, value: `${w.wish}  ·  ${when(w.created_at)}` })),
     };
+  }
+
+  // Business-Profile
+  const business = active.filter((p) => p.track === "business" && p.business);
+  const bizWords = has("business", "branche", "sektor", "co-founder", "cofounder", "co founder", "gründ", "gruend", "investor", "light-cv", "lightcv", "portfolio", "github", "rolle", "berufl", "kollabor");
+  if (bizWords) {
+    if (has("branche", "sektor")) {
+      const counts = tally(business, (p) => (p.business ? [labelOf(p.business.sector, SECTORS)] : []));
+      return counts.size
+        ? { answer: "Branchen der Business-Profile, stärkste zuerst:", items: top(counts, 10) }
+        : { answer: "Es gibt noch keine Business-Profile mit Branchenangabe." };
+    }
+    if (has("co-founder", "cofounder", "co founder", "gründ", "gruend", "investor", "ziel", "kollabor")) {
+      const wanted = has("investor") ? "investors" : has("kollabor") ? "collab" : has("ziel") ? "" : "cofounder";
+      if (wanted) {
+        const hits = business.filter((p) => p.business?.goals.ids.includes(wanted));
+        const goal = labelOf(wanted, GOALS);
+        return {
+          answer: hits.length ? `${hits.length} Business-Profil(e) mit dem Ziel „${goal}“:` : `Niemand hat „${goal}“ als Ziel angegeben.`,
+          items: hits.slice(0, 15).map((p) => ({ label: who(p), value: `${labelOf(p.business!.sector, SECTORS)} · ${p.business!.role}` })),
+        };
+      }
+      const counts = tally(business, (p) => (p.business ? choiceLabels(p.business.goals, GOALS) : []));
+      return counts.size ? { answer: "Ziele der Business-Profile:", items: top(counts) } : { answer: "Noch keine Ziele vorhanden." };
+    }
+    if (has("rolle", "berufl")) {
+      const counts = tally(business, (p) => (p.business ? [p.business.role] : []));
+      return counts.size ? { answer: "Berufliche Rollen:", items: top(counts, 10) } : { answer: "Noch keine Rollen vorhanden." };
+    }
+    if (has("link", "portfolio", "github", "light-cv", "lightcv")) {
+      const withLinks = business.filter((p) => p.business && p.business.cv.links.length > 0);
+      const withCv = business.filter((p) => p.business && (p.business.cv.expertise || p.business.cv.achievements.length > 0));
+      return {
+        answer: `${withCv.length} von ${business.length} Business-Profilen haben ein Light-CV ausgefüllt, ${withLinks.length} haben Links hinterlegt.`,
+        items: withLinks.slice(0, 10).map((p) => ({ label: who(p), value: p.business!.cv.links.join(", ") })),
+      };
+    }
+    return {
+      answer: business.length
+        ? `${business.length} Business-Profil${business.length === 1 ? "" : "e"} (von ${active.length} aktiven Nutzern):`
+        : "Es gibt noch keine Business-Profile.",
+      items: business.slice(0, 15).map((p) => ({ label: who(p), value: `${labelOf(p.business!.sector, SECTORS)} · ${p.business!.role}` })),
+    };
+  }
+
+  // Sichtbarkeit / Privatsphäre
+  if (has("sichtbar", "stealth", "öffentlich", "oeffentlich", "privatsphäre", "privatsphaere")) {
+    const counts = tally(active, (p) => [labelOf(p.visibility, VISIBILITIES)]);
+    return counts.size
+      ? { answer: "Verteilung der Sichtbarkeits-Einstellungen:", items: top(counts) }
+      : { answer: "Noch keine Profile vorhanden." };
   }
 
   if (has("interess", "leidenschaft", "hobby", "hobbys")) {
@@ -175,6 +226,7 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
       answer: "Überblick:",
       items: [
         { label: "Aktive User", value: String(k.activeUsers) },
+        { label: "davon Business-Profile", value: String(k.businessUsers) },
         { label: "Registrierungen heute", value: String(k.registrationsToday) },
         { label: "Heute eingeloggt", value: String(k.loginsToday) },
         { label: "Im Soft-Delete", value: String(k.softDeleted) },
@@ -205,4 +257,8 @@ export const COPILOT_EXAMPLES = [
   "Gibt es Wünsche zu Events?",
   "Wie viele stehen auf der Warteliste?",
   "Gib mir einen Überblick",
+  "Welche Branchen sind bei uns am stärksten vertreten?",
+  "Wer sucht einen Co-Founder?",
+  "Wie viele Business-Profile gibt es?",
+  "Wie ist die Sichtbarkeit verteilt?",
 ];
