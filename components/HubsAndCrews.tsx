@@ -46,7 +46,7 @@ export default function HubsAndCrews() {
         </div>
 
         <motion.div
-          className="glass-soft mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl"
+          className="glass-soft mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl transition-[border-color,box-shadow,background-color] duration-500 hover:border-gold/35 hover:bg-white/[0.07] hover:shadow-[0_0_32px_-10px_rgba(242,166,90,0.4)]"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
