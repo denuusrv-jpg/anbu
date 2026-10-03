@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRightIcon, CheckIcon, RetryIcon } from "@/components/Icons";
 import { useLanguage } from "@/lib/LanguageContext";
@@ -12,16 +12,60 @@ export default function WaitlistCapture() {
   const [status, setStatus] = useState<Status>("idle");
   const [email, setEmail] = useState("");
   const [sheenKey, setSheenKey] = useState(0);
+  const [error, setError] = useState("");
   const { t, language } = useLanguage();
+
+  // Bot-Schutz: Honeypot-Feld und Zeit seit dem Laden des Formulars
+  const honeypot = useRef<HTMLInputElement>(null);
+  const shownAt = useRef(0);
+  const request = useRef<Promise<string | null> | null>(null);
+  useEffect(() => {
+    shownAt.current = Date.now();
+  }, []);
+
+  // Liefert null bei Erfolg, sonst eine Fehlermeldung
+  async function send(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          website: honeypot.current?.value ?? "",
+          elapsed: Date.now() - shownAt.current,
+        }),
+      });
+      if (res.ok) return null;
+      const data = await res.json().catch(() => null);
+      return data?.error ?? t.waitlistCapture.error;
+    } catch {
+      return t.waitlistCapture.error;
+    }
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (status !== "idle") return;
+    setError("");
+    request.current = send();
     setStatus("loading");
+  }
+
+  // Die Amber-Füllung ist fertig: Erfolg erst zeigen, wenn auch der Server geantwortet hat
+  async function onFillComplete() {
+    if (status !== "loading") return;
+    const result = await request.current;
+    if (result === null) {
+      setStatus("success");
+    } else {
+      setError(result);
+      setStatus("idle");
+    }
   }
 
   function handleRetry() {
     setEmail("");
+    setError("");
     setStatus("idle");
   }
 
@@ -45,9 +89,7 @@ export default function WaitlistCapture() {
             initial={{ width: "0%" }}
             animate={{ width: status === "idle" ? "0%" : "100%" }}
             transition={{ duration: 0.7, ease: [0.65, 0, 0.35, 1] }}
-            onAnimationComplete={() => {
-              if (status === "loading") setStatus("success");
-            }}
+            onAnimationComplete={onFillComplete}
           />
 
           <AnimatePresence mode="wait" initial={false}>
@@ -87,8 +129,22 @@ export default function WaitlistCapture() {
                   {t.waitlistCapture.placeholder}
                 </label>
                 <input
+                  ref={honeypot}
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute h-0 w-0 opacity-0"
+                />
+                <input
                   id="waitlist-capture-email"
+                  name="email"
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   required
                   disabled={status === "loading"}
                   value={email}
@@ -110,6 +166,11 @@ export default function WaitlistCapture() {
           </AnimatePresence>
         </div>
       </form>
+      {error && (
+        <p role="alert" className="mt-3 text-center text-xs text-rose">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
+import { getBrowserClient } from "@/lib/supabase/client";
 import { Chip, ChipRow, TextAnswer } from "@/components/onboarding/ui";
 import {
   FREQUENCIES,
@@ -64,9 +65,37 @@ function labelsOf(choice: Choice, options: Option[]) {
   ].join(", ");
 }
 
-const labelOf = (id: string, options: Option[]) => options.find((o) => o.id === id)?.label ?? id;
+// Ersetzt die bisherigen Fotos des Nutzers durch die neuen (Ordner = eigene Nutzer-ID)
+async function uploadPhotos(userId: string, blobs: Blob[]): Promise<boolean> {
+  try {
+    const storage = getBrowserClient().storage.from("profile-photos");
+    const existing = await storage.list(userId);
+    if (existing.data && existing.data.length > 0) {
+      await storage.remove(existing.data.map((f: { name: string }) => `${userId}/${f.name}`));
+    }
+    for (let i = 0; i < blobs.length; i++) {
+      const { error } = await storage.upload(`${userId}/photo-${i + 1}.jpg`, blobs[i], {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+      if (error) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
-export default function OnboardingChat() {
+// live: speichert in Supabase | test: Admin-Testlauf, nichts wird gespeichert | preview: Supabase noch nicht verbunden
+export type ChatMode = "live" | "test" | "preview";
+
+export default function OnboardingChat({
+  mode = "preview",
+  userId,
+}: {
+  mode?: ChatMode;
+  userId?: string;
+}) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [typing, setTyping] = useState(false);
@@ -296,15 +325,28 @@ export default function OnboardingChat() {
         fetch("/api/onboarding", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...answers.current, token: token.current }),
+          body: JSON.stringify({
+            ...answers.current,
+            token: token.current,
+            test: mode === "test" ? true : undefined,
+          }),
         }),
         sleep(900),
       ]);
       if (!res.ok) throw new Error("save failed");
+
+      // Profilfotos in den privaten Speicher des Nutzers hochladen
+      let photosFailed = false;
+      if (mode === "live" && userId && photos.current.length > 0) {
+        photosFailed = !(await uploadPhotos(userId, photos.current));
+      }
       setTyping(false);
+      if (photosFailed) {
+        await bot(["Deine Antworten sind gespeichert, nur die Fotos konnten leider nicht hochgeladen werden."]);
+      }
       await bot(["Du bist startklar!"]);
       await sleep(600);
-      if (alive.current) router.push("/onboarding/fertig");
+      if (alive.current) router.push(mode === "test" ? "/admin" : "/onboarding/fertig");
     } catch {
       setTyping(false);
       await bot(["Das hat leider nicht geklappt. Magst du es noch einmal versuchen?"]);
@@ -325,7 +367,7 @@ export default function OnboardingChat() {
         {/* Kopfzeile */}
         <header className="relative flex items-center justify-between border-b border-white/10 px-5 py-4">
           <Link
-            href="/"
+            href={mode === "test" ? "/admin" : "/"}
             className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
           >
             ← Zurück
@@ -333,6 +375,11 @@ export default function OnboardingChat() {
           <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-zinc-300 uppercase">
             <span className="h-1.5 w-1.5 rounded-full bg-gold shadow-[0_0_10px_rgba(242,166,90,0.9)]" />
             DSpora
+            {mode === "test" && (
+              <span className="rounded-full border border-gold/40 bg-gold/10 px-2 py-0.5 text-[10px] text-gold normal-case">
+                Testmodus
+              </span>
+            )}
           </div>
           <span className="w-14 text-right text-xs text-zinc-500">
             {isBonus ? "Bonus" : stepNumber ? `${stepNumber} / 4` : ""}

@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/LanguageContext";
 import Translated from "@/components/Translated";
 import { OPEN_ADMIN_EVENT } from "@/components/AdminGate";
+import { OPEN_LOGIN_EVENT } from "@/components/LoginGate";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 // Zeitfenster, in dem drei Klicks auf "Anmelden" den Admin-Zugang öffnen
-const TRIPLE_CLICK_MS = 600;
+const TRIPLE_CLICK_MS = 380;
 
 export default function WaitlistForm() {
   const { t } = useLanguage();
@@ -23,8 +25,8 @@ export default function WaitlistForm() {
     [],
   );
 
-  // Normaler Klick: dezenter "Bald verfügbar"-Hinweis.
-  // Dreifachklick: öffnet den geheimen Admin-Zugang (ohne Hinweis).
+  // Einzelklick: öffnet die Anmeldung (oder, solange sie nicht eingerichtet ist, den Hinweis "Bald verfügbar").
+  // Dreifachklick: öffnet den geheimen Admin-Zugang.
   function handleLogin() {
     clicks.current += 1;
     if (clickTimer.current) clearTimeout(clickTimer.current);
@@ -38,6 +40,10 @@ export default function WaitlistForm() {
 
     clickTimer.current = setTimeout(() => {
       clicks.current = 0;
+      if (isSupabaseConfigured) {
+        window.dispatchEvent(new Event(OPEN_LOGIN_EVENT));
+        return;
+      }
       setHint(true);
       if (hintTimer.current) clearTimeout(hintTimer.current);
       hintTimer.current = setTimeout(() => setHint(false), 2200);

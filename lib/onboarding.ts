@@ -143,3 +143,11 @@ export const MIN_AGE = 18;
 export const MAX_AGE = 99;
 export const MAX_PHOTOS = 3;
 export const MAX_HOBBIES = 8;
+
+/** Beschriftungen einer Auswahl (Vorgaben + eigene Einträge) als Liste. */
+export function choiceLabels(choice: Choice, options: Option[]): string[] {
+  return [
+    ...choice.ids.map((id) => options.find((o) => o.id === id)?.label ?? id),
+    ...choice.custom,
+  ];
+}

@@ -64,6 +64,7 @@ export type Translation = {
     button: string;
     success: string;
     retry: string;
+    error: string;
   };
 };
 
@@ -167,6 +168,7 @@ export const translations: Record<Language, Translation> = {
       button: "Beitreten",
       success: "Fast geschafft! Prüfe dein Postfach",
       retry: "Andere E-Mail eingeben",
+      error: "Das hat leider nicht geklappt. Bitte versuch es noch einmal.",
     },
   },
   en: {
@@ -266,6 +268,7 @@ export const translations: Record<Language, Translation> = {
       button: "Join",
       success: "Almost there! Check your inbox",
       retry: "Enter a different email",
+      error: "That didn't work. Please try again.",
     },
   },
   ta: {
@@ -368,6 +371,7 @@ export const translations: Record<Language, Translation> = {
       button: "சேரவும்",
       success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
       retry: "வேறு மின்னஞ்சலை உள்ளிடவும்",
+      error: "இது வெற்றிபெறவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
     },
   },
 };
