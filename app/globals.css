@@ -71,28 +71,116 @@ body {
   animation: amber-ring 0.95s ease-in-out both;
 }
 
-/* Icon-Badges der Feature-Texte: beim Darüberfahren leuchtet das Badge einmal
-   kurz in seiner eigenen Farbe auf (currentColor) und federt leicht nach. */
-@keyframes badge-flash {
+/* Icon-Badges der Feature-Texte: beim Darüberfahren erblüht hinter dem Badge
+   ein weicher Lichthof in der eigenen Farbe und ein feiner Ring weitet sich
+   aus und verblasst - ruhig, ohne Aufploppen. */
+@keyframes badge-halo {
   0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 transparent;
+    opacity: 0;
+    transform: scale(0.7);
   }
-  35% {
-    transform: scale(1.08);
-    background-color: color-mix(in srgb, currentColor 30%, transparent);
-    box-shadow:
-      0 0 0 1px color-mix(in srgb, currentColor 55%, transparent),
-      0 0 26px -2px color-mix(in srgb, currentColor 60%, transparent);
+  40% {
+    opacity: 0.55;
   }
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 transparent;
+    opacity: 0;
+    transform: scale(1.35);
   }
 }
 
+@keyframes badge-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes badge-tint {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  35% {
+    background-color: color-mix(in srgb, currentColor 16%, transparent);
+  }
+}
+
+.badge-flash {
+  position: relative;
+  isolation: isolate;
+}
+
+.badge-flash::before,
+.badge-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.badge-flash::before {
+  z-index: -1;
+  inset: -6px;
+  background: currentColor;
+  filter: blur(16px);
+}
+
+.badge-flash::after {
+  border: 1px solid currentColor;
+}
+
 .feature-tile:hover .badge-flash {
-  animation: badge-flash 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: badge-tint 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.feature-tile:hover .badge-flash::before {
+  animation: badge-halo 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.feature-tile:hover .badge-flash::after {
+  animation: badge-ring 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Registrieren-Button: dezenter Lichtreflex, der einmal schräg über die
+   Fläche gleitet - statt eines Leucht-Kranzes. */
+@keyframes cta-sheen {
+  from {
+    transform: translateX(-120%) skewX(-22deg);
+  }
+  to {
+    transform: translateX(420%) skewX(-22deg);
+  }
+}
+
+.cta-premium {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.cta-premium::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transform: translateX(-120%) skewX(-22deg);
+  pointer-events: none;
+}
+
+.cta-premium:hover::after {
+  animation: cta-sheen 1s cubic-bezier(0.45, 0, 0.2, 1) both;
 }
 
 /* Browser-Autofill (gespeicherte E-Mail-Adressen) soll Eingabefelder nicht
