@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   GOALS,
   GROUP_SIZES,
+  MEET_FREQUENCIES,
   INTERESTS,
   LANGUAGES,
   PHASES,
@@ -108,7 +109,18 @@ function Detail({
 
         <Section title="Basis">
           <Line label="Gruppengröße" value={answers.groupSize ? labelOf(answers.groupSize, GROUP_SIZES) : undefined} />
-          <Line label="Region" value={labelOf(answers.region, REGIONS)} />
+          <Line
+            label="Hubs"
+            value={[answers.region, answers.secondRegion]
+              .filter((r): r is string => Boolean(r))
+              .map((r) => labelOf(r, REGIONS))
+              .join(" + ")}
+          />
+          <Line label="Grund für zwei Hubs" value={answers.extras?.hubReason} />
+          <Line
+            label="Max. Treffhäufigkeit"
+            value={answers.extras?.meetFrequency ? labelOf(answers.extras.meetFrequency, MEET_FREQUENCIES) : undefined}
+          />
           <Line label="Stadt" value={answers.city} />
           <Line label="Interessen" value={choiceLabels(answers.interests, INTERESTS).join(", ")} />
           <Line label="Vibe" value={choiceLabels(answers.vibes, VIBES).join(", ")} />
@@ -182,6 +194,7 @@ function answersOf(row: AdminProfile): OnboardingAnswers {
   return {
     groupSize: row.group_size ?? undefined,
     region: row.region,
+    secondRegion: row.second_region ?? undefined,
     city: row.city ?? undefined,
     interests: row.interests,
     vibes: row.vibes,
@@ -371,7 +384,10 @@ export default function AdminTable({
                   </td>
                   <td className={`${td} text-zinc-400`}>{row.last_sign_in_at ? date(row.last_sign_in_at) : "–"}</td>
                   <td className={td}>
-                    {labelOf(row.region, REGIONS)}
+                    {[row.region, row.second_region]
+                      .filter((r): r is string => Boolean(r))
+                      .map((r) => labelOf(r, REGIONS))
+                      .join(" + ")}
                     {row.city ? <span className="text-zinc-500"> · {row.city}</span> : null}
                   </td>
                   <td className={`${td} text-right`}>
@@ -452,7 +468,12 @@ export default function AdminTable({
               {draftRows.map((row) => (
                 <tr key={row.email} className="transition-colors hover:bg-white/[0.03]">
                   <td className={td}>{row.email}</td>
-                  <td className={td}>{labelOf(row.answers.region, REGIONS)}</td>
+                  <td className={td}>
+                    {[row.answers.region, row.answers.secondRegion]
+                      .filter((r): r is string => Boolean(r))
+                      .map((r) => labelOf(r, REGIONS))
+                      .join(" + ")}
+                  </td>
                   <td className={td}>
                     <Badge tone={row.answers.mode === "profile" ? "gold" : "neutral"}>
                       {row.answers.mode === "profile" ? "Profil" : "Anonym"}

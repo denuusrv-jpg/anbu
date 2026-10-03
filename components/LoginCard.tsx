@@ -15,7 +15,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // Passwortlose Anmeldung: Magic-Link per E-Mail oder Passkey (Face ID / Touch ID / Schlüsselbund).
 export default function LoginCard({
-  next = "/hub",
+  next = "/dashboard",
   notice,
 }: {
   next?: string;

@@ -39,7 +39,7 @@ export default function ClaimDraft() {
         }
         router.replace("/onboarding/fertig");
       } else if (data.status === "exists") {
-        router.replace("/hub");
+        router.replace("/dashboard");
       } else {
         // Kein Entwurf gefunden (z. B. abgelaufen): Chat jetzt angemeldet durchlaufen
         router.replace("/onboarding");
@@ -70,7 +70,7 @@ export default function ClaimDraft() {
         >
           Erneut versuchen
         </button>
-        <Link href="/hub" className="mt-4 block text-xs text-zinc-500 hover:text-zinc-300">
+        <Link href="/dashboard" className="mt-4 block text-xs text-zinc-500 hover:text-zinc-300">
           Zum Hub
         </Link>
       </div>

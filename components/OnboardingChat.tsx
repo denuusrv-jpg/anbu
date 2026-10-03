@@ -15,9 +15,12 @@ import { pickFollowUps } from "@/lib/followups";
 import {
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
+  HUB_REASON_MAX,
   GOALS,
   GROUP_SIZES,
   INTERESTS,
+  MAX_HUBS,
+  MEET_FREQUENCIES,
   REGIONS,
   ROLE_MAX,
   SECTORS,
@@ -35,6 +38,7 @@ type Step =
   | "intro"
   | "groupSize"
   | "region"
+  | "hubReason"
   | "city"
   | "interests"
   | "vibes"
@@ -47,6 +51,7 @@ type Step =
   | "cv"
   | "freeText"
   | "followUp"
+  | "frequency"
   | "profile"
   | "wishes"
   | "login"
@@ -66,12 +71,14 @@ const TOTAL_STEPS = 5;
 const STEP_NUMBER: Partial<Record<Step, number>> = {
   groupSize: 1,
   region: 2,
+  hubReason: 2,
   city: 2,
   interests: 3,
   vibes: 4,
   more: 5,
   freeText: 5,
   followUp: 5,
+  frequency: 5,
   mode: 5,
 };
 const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "profile"];
@@ -116,7 +123,8 @@ export default function OnboardingChat({
   const [step, setStep] = useState<Step>("intro");
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState("");
-  const [chosenRegion, setChosenRegion] = useState<string | undefined>();
+  const [hubs, setHubs] = useState<Choice>(EMPTY);
+  const [chosenFrequency, setChosenFrequency] = useState<string | undefined>();
   const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
   const [followQuestion, setFollowQuestion] = useState("");
   const [track, setTrack] = useState<"community" | "business">("community");
@@ -207,18 +215,40 @@ export default function OnboardingChat({
   function pickGroupSize(value: string, label: string) {
     answers.current.groupSize = value;
     user(label);
-    ask(["Gute Wahl! Und wo bist du zu Hause?"], "region");
+    ask(
+      [
+        "Gute Wahl! In welchen Bereichen (Hubs) wäre es für dich noch in Ordnung, mit einer Person befreundet zu sein? Du kannst maximal zwei Hubs auswählen.",
+      ],
+      "region",
+    );
   }
 
-  function pickRegion(value: string, label: string) {
-    if (!value) {
-      setChosenRegion(undefined);
+  function confirmHubs(chosen: Choice) {
+    const list = [...chosen.ids, ...chosen.custom];
+    answers.current.region = list[0];
+    answers.current.secondRegion = list[1];
+    user(choiceLabels(chosen, REGIONS).join(" + "));
+    if (list.length > 1) {
+      ask(
+        [
+          "Du hast zwei Hubs gewählt. Was steckt dahinter? Zum Beispiel Studium, Job, Familie oder Pendeln. So können wir später besser einschätzen, wie oft ihr euch sehen könntet.",
+        ],
+        "hubReason",
+      );
       return;
     }
-    answers.current.region = value;
-    setChosenRegion(value);
-    user(label);
-    ask(["Und in welcher Stadt? So finden wir Leute in deiner Nähe. Du kannst auch überspringen."], "city");
+    askCity();
+  }
+
+  function askCity() {
+    ask(["Und in welcher Stadt wohnst du? So finden wir Leute in deiner Nähe. Du kannst auch überspringen."], "city");
+  }
+
+  function submitHubReason(skip = false) {
+    const value = text.trim();
+    extras().hubReason = skip || !value ? undefined : value;
+    user(skip || !value ? "Überspringen" : value);
+    askCity();
   }
 
   function submitCity(skip = false) {
@@ -235,15 +265,15 @@ export default function OnboardingChat({
     );
   }
 
-  function confirmInterests() {
-    answers.current.interests = interests;
-    user(choiceLabels(interests, INTERESTS).join(", "));
+  function confirmInterests(chosen: Choice) {
+    answers.current.interests = chosen;
+    user(choiceLabels(chosen, INTERESTS).join(", "));
     ask(["Und welcher Vibe beschreibt dich am besten? Wähle gern mehrere oder schreib deinen eigenen."], "vibes");
   }
 
-  function confirmVibes() {
-    answers.current.vibes = vibes;
-    user(choiceLabels(vibes, VIBES).join(", "));
+  function confirmVibes(chosen: Choice) {
+    answers.current.vibes = chosen;
+    user(choiceLabels(chosen, VIBES).join(", "));
     ask(
       [
         "Möchtest du noch ein bisschen mit mir plaudern, damit ich dich besser kennenlerne? Das ist freiwillig, du kannst auch direkt weitermachen.",
@@ -260,6 +290,28 @@ export default function OnboardingChat({
     }
     user("Ja, gern");
     ask(["Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"], "freeText");
+  }
+
+  function askFrequency(intro: string[] = []) {
+    setChosenFrequency(undefined);
+    ask(
+      [
+        ...intro,
+        "Noch eine Frage, die bei einem längeren Gespräch wichtig ist: Wie oft würdest du eine Person maximal sehen wollen? Zum Beispiel nur am Wochenende.",
+      ],
+      "frequency",
+    );
+  }
+
+  function pickFrequency(value: string, label: string) {
+    if (!value) {
+      setChosenFrequency(undefined);
+      return;
+    }
+    extras().meetFrequency = value;
+    setChosenFrequency(value);
+    user(label);
+    askMode();
   }
 
   function askMode(intro: string[] = []) {
@@ -336,9 +388,9 @@ export default function OnboardingChat({
     );
   }
 
-  function confirmGoals() {
-    business.current.goals = goals;
-    user(choiceLabels(goals, GOALS).join(", "));
+  function confirmGoals(chosen: Choice) {
+    business.current.goals = chosen;
+    user(choiceLabels(chosen, GOALS).join(", "));
     ask(
       [
         "Jetzt dein Light-CV: kein klassischer Lebenslauf, sondern ein kompakter Steckbrief. Expertise, deine Top-3-Erfolge und optional ein paar Links. Alles kann kurz bleiben.",
@@ -378,7 +430,7 @@ export default function OnboardingChat({
 
     followQueue.current = skip || !value ? [] : pickFollowUps(value, 2).map((f) => f.question);
     if (followQueue.current.length === 0) {
-      askMode(skip || !value ? [] : ["Danke fürs Erzählen!"]);
+      askFrequency(skip || !value ? [] : ["Danke fürs Erzählen!"]);
       return;
     }
     askNextFollowUp(["Danke, das erzählt schon viel über dich. Dazu habe ich noch eine Frage:"]);
@@ -387,7 +439,7 @@ export default function OnboardingChat({
   function askNextFollowUp(intro: string[] = []) {
     const question = followQueue.current.shift();
     if (!question) {
-      askMode();
+      askFrequency();
       return;
     }
     setFollowQuestion(question);
@@ -404,7 +456,7 @@ export default function OnboardingChat({
     if (followQueue.current.length > 0) {
       askNextFollowUp(["Und noch eine Frage:"]);
     } else {
-      askMode(["Danke, das hilft mir sehr!"]);
+      askFrequency(["Danke, das hilft mir sehr!"]);
     }
   }
 
@@ -660,11 +712,25 @@ export default function OnboardingChat({
                 )}
 
                 {step === "region" && (
-                  <SingleChoice
+                  <ChoiceSelect
                     options={REGIONS}
-                    value={chosenRegion}
-                    onSelect={pickRegion}
+                    value={hubs}
+                    onChange={setHubs}
+                    onConfirm={confirmHubs}
+                    maxTotal={MAX_HUBS}
                     customPlaceholder="Woanders? Schreib deine Region oder dein Land"
+                  />
+                )}
+
+                {step === "hubReason" && (
+                  <LongTextAnswer
+                    value={text}
+                    onChange={setText}
+                    onSubmit={() => submitHubReason()}
+                    placeholder="z. B. Ich studiere in Köln, meine Familie lebt in Stuttgart …"
+                    maxLength={HUB_REASON_MAX}
+                    minLength={3}
+                    onSkip={() => submitHubReason(true)}
                   />
                 )}
 
@@ -790,6 +856,15 @@ export default function OnboardingChat({
                     maxLength={FOLLOW_UP_ANSWER_MAX}
                     minLength={2}
                     onSkip={() => submitFollowUp(true)}
+                  />
+                )}
+
+                {step === "frequency" && (
+                  <SingleChoice
+                    options={MEET_FREQUENCIES}
+                    value={chosenFrequency}
+                    onSelect={pickFrequency}
+                    customPlaceholder="Etwas anderes? Eigene Angabe"
                   />
                 )}
 

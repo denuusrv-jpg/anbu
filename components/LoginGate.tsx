@@ -46,7 +46,7 @@ export default function LoginGate() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm"
           >
-            <LoginCard next="/hub" />
+            <LoginCard next="/dashboard" />
           </motion.div>
         </motion.div>
       )}

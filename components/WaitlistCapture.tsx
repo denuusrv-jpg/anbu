@@ -13,12 +13,22 @@ export default function WaitlistCapture() {
   const [email, setEmail] = useState("");
   const [sheenKey, setSheenKey] = useState(0);
   const [error, setError] = useState("");
+  // Der lange Hinweistext passt erst ab Tablet-Breite ins Badge
+  const [wide, setWide] = useState(false);
   const { t, language } = useLanguage();
 
   // Bot-Schutz: Honeypot-Feld und Zeit seit dem Laden des Formulars
   const honeypot = useRef<HTMLInputElement>(null);
   const shownAt = useRef(0);
   const request = useRef<Promise<string | null> | null>(null);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 640px)");
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
   useEffect(() => {
     shownAt.current = Date.now();
   }, []);
@@ -149,7 +159,7 @@ export default function WaitlistCapture() {
                   disabled={status === "loading"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t.waitlistCapture.placeholder}
+                  placeholder={wide ? t.waitlistCapture.placeholderLong : t.waitlistCapture.placeholder}
                   key={language}
                   className="w-full bg-transparent py-3.5 pr-2 pl-6 text-sm text-white placeholder:text-white/60 focus:outline-none disabled:opacity-80"
                 />

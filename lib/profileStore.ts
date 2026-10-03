@@ -19,6 +19,7 @@ export async function saveProfile(
       user_id: user.id,
       group_size: answers.groupSize ?? null,
       region: answers.region,
+      second_region: answers.secondRegion ?? null,
       city: answers.city ?? null,
       interests: answers.interests,
       vibes: answers.vibes,

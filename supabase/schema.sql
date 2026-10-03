@@ -257,3 +257,17 @@ begin
   end if;
 end
 $$;
+
+-- ─────────────────────────────────────────────────────────────
+-- 9) Zweiter Hub (höchstens zwei Hubs pro Person)
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists second_region text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_second_region_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_second_region_check check (second_region is null or second_region <> region);
+  end if;
+end
+$$;

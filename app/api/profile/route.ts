@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GROUP_SIZES, INTERESTS, VIBES, VISIBILITIES } from "@/lib/onboarding";
+import { GROUP_SIZES, INTERESTS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
 import { Invalid, choice, oneOf, validateBusiness } from "@/lib/onboardingValidation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -27,7 +27,7 @@ export async function PATCH(request: Request) {
 
   const { data: row } = await supabase
     .from("user_profiles")
-    .select("track, mode, profile, deleted_at")
+    .select("track, mode, profile, business, visibility, deleted_at")
     .eq("user_id", data.user.id)
     .maybeSingle();
   if (!row || row.deleted_at) {
@@ -43,9 +43,32 @@ export async function PATCH(request: Request) {
       update.group_size = oneOf(body.groupSize, GROUP_SIZES, "Gruppengröße", true);
     }
 
+    // Modus-Switch: Privat / Community <-> Business & Co-Founding
+    if (body.track !== undefined) {
+      const track = oneOf(body.track, TRACKS, "Modus", true);
+      if (track === "business") {
+        // Business-Profile haben immer einen Namen, also braucht es ein angelegtes Profil
+        if (!row.profile) throw new Invalid("Lege zuerst ein Profil an (Chat erneut durchspielen).");
+        const business = body.business !== undefined ? validateBusiness(body.business) : row.business;
+        if (!business) throw new Invalid("Bitte ergänze zuerst deine Business-Angaben.");
+        update.track = "business";
+        update.mode = "profile";
+        update.business = business;
+      } else {
+        update.track = "community";
+        // "Nur für Business-Profile sichtbar" gibt es nur im Business-Modus; die Angaben bleiben gespeichert
+        if (row.visibility === "business") update.visibility = "stealth";
+      }
+    }
+
+    if (body.business !== undefined && body.track === undefined) {
+      if (row.track !== "business") throw new Invalid("Du hast kein Business-Profil.");
+      update.business = validateBusiness(body.business);
+    }
+
     if (body.mode !== undefined) {
       if (body.mode !== "anonymous" && body.mode !== "profile") throw new Invalid("Modus ist ungültig.");
-      if (body.mode === "anonymous" && row.track === "business") {
+      if (body.mode === "anonymous" && (update.track ?? row.track) === "business") {
         throw new Invalid("Business-Profile können nicht anonym sein.");
       }
       if (body.mode === "profile" && !row.profile) {
@@ -56,16 +79,12 @@ export async function PATCH(request: Request) {
 
     if (body.visibility !== undefined) {
       const visibility = oneOf(body.visibility, VISIBILITIES, "Sichtbarkeit", true);
-      if (visibility === "business" && row.track !== "business") {
+      if (visibility === "business" && (update.track ?? row.track) !== "business") {
         throw new Invalid("Diese Sichtbarkeit ist nur für Business-Profile möglich.");
       }
       update.visibility = visibility;
     }
 
-    if (body.business !== undefined) {
-      if (row.track !== "business") throw new Invalid("Du hast kein Business-Profil.");
-      update.business = validateBusiness(body.business);
-    }
   } catch (error) {
     if (error instanceof Invalid) return NextResponse.json({ error: error.message }, { status: 400 });
     throw error;

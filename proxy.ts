@@ -27,5 +27,5 @@ export async function proxy(request: NextRequest) {
 
 // Die statischen Seiten (Startseite, Mission, Kontakt …) bleiben unberührt und schnell.
 export const config = {
-  matcher: ["/hub/:path*", "/onboarding/:path*", "/auth/:path*", "/login", "/admin/:path*", "/api/:path*"],
+  matcher: ["/hub/:path*", "/dashboard/:path*", "/onboarding/:path*", "/auth/:path*", "/login", "/admin/:path*", "/api/:path*"],
 };

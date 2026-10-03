@@ -1,7 +1,7 @@
 import "server-only";
 import { daysLeft } from "@/lib/accountLifecycle";
 import { computeKpis, startOfTodayBerlin, type AdminData, type AdminProfile } from "@/lib/adminData";
-import { GOALS, GROUP_SIZES, INTERESTS, LANGUAGES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
+import { GOALS, GROUP_SIZES, INTERESTS, LANGUAGES, MEET_FREQUENCIES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
 
 // Admin-Copilot: beantwortet Fragen zu den Nutzerdaten in natürlicher Sprache.
 // Regelbasiert (Stichwörter), ohne externe KI. Die Funktion lässt sich später durch einen
@@ -165,10 +165,33 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
     return { answer: `Durchschnittsalter ${avg.toFixed(1)} Jahre (${ages.length} Angaben), jüngste:r ${Math.min(...ages)}, älteste:r ${Math.max(...ages)}.` };
   }
 
+  // Treffhäufigkeit (längere Gespräche)
+  if (has("treffen", "sehen wollen", "häufigkeit", "haeufigkeit", "wochenende")) {
+    const answered = active.filter((p) => p.extras?.meetFrequency);
+    const counts = tally(answered, (p) => [labelOf(p.extras?.meetFrequency as string, MEET_FREQUENCIES)]);
+    return counts.size
+      ? { answer: `Wie oft man sich maximal sehen möchte (${answered.length} Antworten):`, items: top(counts) }
+      : { answer: "Dazu gibt es noch keine Antworten (die Frage kommt im längeren Gespräch)." };
+  }
+
+  // Wer hat zwei Hubs gewählt und warum?
+  if (has("zwei hubs", "zweiten hub", "zwei regionen", "pendeln", "zweiter hub")) {
+    const two = active.filter((p) => p.second_region);
+    return {
+      answer: two.length
+        ? `${two.length} Nutzer:in(nen) mit zwei Hubs:`
+        : "Noch niemand hat zwei Hubs gewählt.",
+      items: two.slice(0, 15).map((p) => ({
+        label: `${who(p)}: ${labelOf(p.region, REGIONS)} + ${labelOf(p.second_region as string, REGIONS)}`,
+        value: p.extras?.hubReason ?? "kein Grund angegeben",
+      })),
+    };
+  }
+
   // Wer kommt aus <Region>?
   const regionHit = REGIONS.find((r) => q.includes(r.label.toLowerCase()) || q.includes(r.id));
   if (has("wer", "welche nutzer", "zeige") && regionHit) {
-    const hits = active.filter((p) => p.region === regionHit.id);
+    const hits = active.filter((p) => p.region === regionHit.id || p.second_region === regionHit.id);
     return {
       answer: hits.length ? `${hits.length} Nutzer:in(nen) aus ${regionHit.label}:` : `Niemand aus ${regionHit.label}.`,
       items: hits.slice(0, 15).map((p) => ({ label: who(p), value: p.city ?? undefined })),
@@ -176,7 +199,7 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
   }
 
   if (has("region", "stadt", "städte", "staedte", "bundesland", "woher")) {
-    const regions = tally(active, (p) => [labelOf(p.region, REGIONS)]);
+    const regions = tally(active, (p) => [p.region, ...(p.second_region ? [p.second_region] : [])].map((r) => labelOf(r, REGIONS)));
     const cities = tally(active, (p) => (p.city ? [p.city] : []));
     return {
       answer: regions.size ? "Nutzer nach Region:" : "Noch keine Regionen vorhanden.",
@@ -270,4 +293,6 @@ export const COPILOT_EXAMPLES = [
   "Wie viele Business-Profile gibt es?",
   "Wie ist die Sichtbarkeit verteilt?",
   "Welche Gruppengröße ist am beliebtesten?",
+  "Wer hat zwei Hubs gewählt und warum?",
+  "Wie oft wollen sich die Leute maximal treffen?",
 ];

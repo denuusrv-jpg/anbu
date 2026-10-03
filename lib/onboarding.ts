@@ -70,6 +70,15 @@ export const GROUP_SIZES: Option[] = [
   { id: "squad", label: "Squad (8er Gruppe)" },
 ];
 
+// Wie oft würde man eine Person maximal sehen wollen? (bei längeren Gesprächen)
+export const MEET_FREQUENCIES: Option[] = [
+  { id: "weekend", label: "Nur am Wochenende" },
+  { id: "monthly", label: "Ein- bis zweimal im Monat" },
+  { id: "weekly", label: "Einmal pro Woche" },
+  { id: "multi", label: "Mehrmals pro Woche" },
+  { id: "flexible", label: "Nach Lust und Laune" },
+];
+
 export const TRACKS: Option[] = [
   { id: "community", label: "Privat / Community" },
   { id: "business", label: "Business & Co-Founding" },
@@ -133,7 +142,8 @@ export type FollowUp = { question: string; answer: string };
 
 export type OnboardingAnswers = {
   groupSize?: string; // Id aus GROUP_SIZES
-  region: string; // Id aus REGIONS oder eigener Text
+  region: string; // erster gewählter Hub: Id aus REGIONS oder eigener Text
+  secondRegion?: string; // optional zweiter Hub (höchstens zwei)
   city?: string;
   interests: Choice;
   vibes: Choice;
@@ -144,6 +154,8 @@ export type OnboardingAnswers = {
   extras?: {
     freeText?: string; // freier Text aus dem Pfad "Profil anlegen"
     followUps?: FollowUp[]; // 1-2 Folgefragen samt Antworten
+    hubReason?: string; // Warum zwei Hubs? (nur bei zwei gewählten Hubs)
+    meetFrequency?: string; // Id aus MEET_FREQUENCIES oder eigener Text: wie oft man sich maximal sehen will
     wishes?: string; // Wünsche und Ideen für DSpora (Finale)
   };
 };
@@ -157,6 +169,8 @@ export const FREE_TEXT_MAX = 1500;
 export const FOLLOW_UP_ANSWER_MAX = 600;
 export const WISHES_MAX = 1500;
 export const MAX_CHOICES = 8;
+export const MAX_HUBS = 2;
+export const HUB_REASON_MAX = 300;
 export const MAX_CUSTOM = 5;
 export const MIN_AGE = 18;
 export const MAX_AGE = 99;

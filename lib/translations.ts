@@ -62,6 +62,7 @@ export type Translation = {
   };
   waitlistCapture: {
     placeholder: string;
+    placeholderLong: string;
     button: string;
     success: string;
     retry: string;
@@ -79,7 +80,7 @@ export const translations: Record<Language, Translation> = {
     hero: {
       heading: ["Deine neuen Connection", "warten in deiner Umgebung"],
       description:
-        "Echte Freundschaften, neu gedacht. Ein intelligentes KI-System bildet passgenaue Gruppen, anhand von Informationen deiner Persönlichkeit. 100 % kostenlos und anonym für die Tamil-Community im deutschsprachigen Raum.",
+        "Echte Freundschaften oder Business-Kontakte, neu gedacht. Ein intelligentes KI-System bildet passgenaue Gruppen, anhand von Informationen deiner Persönlichkeit. 100 % kostenlos und anonym für die Tamil-Community im deutschsprachigen Raum.",
     },
     waitlist: {
       login: "Anmelden",
@@ -167,7 +168,8 @@ export const translations: Record<Language, Translation> = {
       signUp: "Registriere dich jetzt",
     },
     waitlistCapture: {
-      placeholder: "deine@mail.com",
+      placeholder: "Deine E-Mail-Adresse",
+      placeholderLong: "Deine E-Mail-Adresse, z. B. deine@mail.com",
       button: "Beitreten",
       success: "Fast geschafft! Prüfe dein Postfach",
       retry: "Andere E-Mail eingeben",
@@ -183,7 +185,7 @@ export const translations: Record<Language, Translation> = {
     hero: {
       heading: ["Your new connections", "are waiting nearby"],
       description:
-        "Real friendships, reimagined. An intelligent AI system forms perfectly matched groups based on your personality. 100% free and anonymous for the Tamil community across the German-speaking region.",
+        "Real friendships or business connections, reimagined. An intelligent AI system forms perfectly matched groups based on your personality. 100% free and anonymous for the Tamil community across the German-speaking region.",
     },
     waitlist: {
       login: "Sign in",
@@ -269,7 +271,8 @@ export const translations: Record<Language, Translation> = {
       signUp: "Sign up now",
     },
     waitlistCapture: {
-      placeholder: "your@mail.com",
+      placeholder: "Your email address",
+      placeholderLong: "Your email address, e.g. your@mail.com",
       button: "Join",
       success: "Almost there! Check your inbox",
       retry: "Enter a different email",
@@ -285,7 +288,7 @@ export const translations: Record<Language, Translation> = {
     hero: {
       heading: ["உன் புதிய நட்புகள்", "உன் சுற்றுப்புறத்தில் காத்திருக்கின்றன"],
       description:
-        "உண்மையான நட்புகள், புதிய முறையில். ஒரு அறிவார்ந்த AI அமைப்பு உங்கள் ஆளுமைத் தகவல்களின் அடிப்படையில் பொருத்தமான குழுக்களை உருவாக்குகிறது. ஜெர்மன் மொழி பேசும் நாடுகளில் உள்ள தமிழ் சமூகத்திற்கு 100% இலவசமாகவும் அநாமதேயமாகவும்.",
+        "உண்மையான நட்புகள் அல்லது வணிகத் தொடர்புகள், புதிய முறையில். ஒரு அறிவார்ந்த AI அமைப்பு உங்கள் ஆளுமைத் தகவல்களின் அடிப்படையில் பொருத்தமான குழுக்களை உருவாக்குகிறது. ஜெர்மன் மொழி பேசும் நாடுகளில் உள்ள தமிழ் சமூகத்திற்கு 100% இலவசமாகவும் அநாமதேயமாகவும்.",
     },
     waitlist: {
       login: "உள்நுழையுங்கள்",
@@ -374,7 +377,8 @@ export const translations: Record<Language, Translation> = {
       signUp: "இப்போதே பதிவு செய்யுங்கள்",
     },
     waitlistCapture: {
-      placeholder: "மின்னஞ்சல் முகவரி",
+      placeholder: "உங்கள் மின்னஞ்சல் முகவரி",
+      placeholderLong: "உங்கள் மின்னஞ்சல் முகவரியை இங்கே உள்ளிடவும்",
       button: "சேரவும்",
       success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
       retry: "வேறு மின்னஞ்சலை உள்ளிடவும்",

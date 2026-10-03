@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import BusinessEditor from "@/components/BusinessEditor";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
@@ -32,6 +32,16 @@ export type HubProfile = {
   business: BusinessData | null;
   visibility: "public" | "business" | "stealth";
   group_size: string | null;
+  second_region: string | null;
+};
+
+export type HubStat = { id: string; label: string; count: number };
+
+const EMPTY_BUSINESS: BusinessData = {
+  sector: "",
+  role: "",
+  goals: { ids: [], custom: [] },
+  cv: { achievements: [], links: [] },
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -44,12 +54,16 @@ type Passkey = { id: string; friendly_name?: string | null; created_at: string }
 export default function HubDashboard({
   email,
   profile: initial,
-  regionCount,
+  hubs,
+  matchCount,
+  isAdmin,
   wishes: initialWishes,
 }: {
   email: string;
   profile: HubProfile;
-  regionCount: number | null;
+  hubs: HubStat[] | null;
+  matchCount: number;
+  isAdmin: boolean;
   wishes: HubWish[];
 }) {
   const router = useRouter();
@@ -69,7 +83,11 @@ export default function HubDashboard({
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  const regionLabel = REGIONS.find((r) => r.id === profile.region)?.label ?? profile.region;
+  const hubLabels = [profile.region, profile.second_region]
+    .filter((h): h is string => Boolean(h))
+    .map((h) => REGIONS.find((r) => r.id === h)?.label ?? h);
+  const [setupBusiness, setSetupBusiness] = useState(false);
+  const lastError = useRef("");
   const hasProfile = Boolean(profile.profile);
   const anonymous = profile.mode === "anonymous";
   const name = profile.profile?.displayName;
@@ -86,6 +104,7 @@ export default function HubDashboard({
   async function patch(update: Record<string, unknown>): Promise<boolean> {
     setSaving(true);
     setMessage("");
+    lastError.current = "";
     try {
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -94,7 +113,8 @@ export default function HubDashboard({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setMessage(data?.error ?? "Speichern hat nicht geklappt.");
+        lastError.current = data?.error ?? "Speichern hat nicht geklappt.";
+        setMessage(lastError.current);
         return false;
       }
       return true;
@@ -106,10 +126,10 @@ export default function HubDashboard({
     }
   }
 
-  async function saveEdit() {
+  async function saveEdit(chosen: Choice) {
     if (!editing) return;
-    if (await patch({ [editing]: draft })) {
-      setProfile((p) => ({ ...p, [editing]: draft }));
+    if (await patch({ [editing]: chosen })) {
+      setProfile((p) => ({ ...p, [editing]: chosen }));
       setEditing(null);
     }
   }
@@ -130,7 +150,36 @@ export default function HubDashboard({
       setProfile((p) => ({ ...p, business: next }));
       return null;
     }
-    return "Speichern hat nicht geklappt.";
+    return lastError.current || "Speichern hat nicht geklappt.";
+  }
+
+  async function switchTrack(next: HubProfile["track"]) {
+    if (next === profile.track) return;
+    setMessage("");
+    if (next === "community") {
+      if (await patch({ track: "community" })) {
+        setProfile((p) => ({ ...p, track: "community", visibility: p.visibility === "business" ? "stealth" : p.visibility }));
+        setSetupBusiness(false);
+      }
+      return;
+    }
+    if (!hasProfile) {
+      setMessage("Für den Business-Modus brauchst du ein Profil mit Namen. Lege es zuerst an.");
+      return;
+    }
+    if (!profile.business) {
+      setSetupBusiness(true);
+      return;
+    }
+    if (await patch({ track: "business" })) setProfile((p) => ({ ...p, track: "business", mode: "profile" }));
+  }
+
+  async function activateBusiness(next: BusinessData): Promise<string | null> {
+    const ok = await patch({ track: "business", business: next });
+    if (!ok) return lastError.current || "Speichern hat nicht geklappt.";
+    setProfile((p) => ({ ...p, track: "business", mode: "profile", business: next }));
+    setSetupBusiness(false);
+    return null;
   }
 
   async function toggleAnonymous() {
@@ -206,8 +255,29 @@ export default function HubDashboard({
     if (!error) setPasskeys((list) => (list ?? []).filter((p) => p.id !== id));
   }
 
-  const count = regionCount ?? 0;
-  const progress = Math.min(count / HUB_TARGET, 1);
+  const active = profile.track;
+  const intentions = [
+    {
+      id: "community" as const,
+      label: "Privat",
+      text:
+        active === "community"
+          ? matchCount > 0
+            ? `${matchCount} neue${matchCount === 1 ? "r Match" : " Matches"} verfügbar`
+            : "Dein Hub bereitet passende Verbindungen vor"
+          : "Pausiert. Wechsle oben auf „Private Community“, um sie zu aktivieren.",
+    },
+    {
+      id: "business" as const,
+      label: "Business",
+      text:
+        active === "business"
+          ? matchCount > 0
+            ? `${matchCount} neue${matchCount === 1 ? "r Match" : " Matches"} verfügbar`
+            : "Dein Hub bereitet passende Business-Verbindungen vor"
+          : "Nicht aktiv. Wechsle oben auf „Business & Co-Founding“, um sie zu aktivieren.",
+    },
+  ];
 
   const card = "rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl sm:p-7";
 
@@ -217,19 +287,29 @@ export default function HubDashboard({
         {/* Kopf */}
         <header className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-gold uppercase">DSpora Hub</p>
+            <p className="text-xs font-semibold tracking-wide text-gold uppercase">DSpora Dashboard</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
               {name ? `Hey ${name}` : "Willkommen"}
             </h1>
             <p className="mt-0.5 text-xs text-zinc-500">{email}</p>
           </div>
-          <button
-            type="button"
-            onClick={signOut}
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
-          >
-            Abmelden
-          </button>
+          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold shadow-[0_0_24px_-8px_rgba(242,166,90,0.6)] backdrop-blur-md transition-colors hover:bg-gold/20"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={signOut}
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
+            >
+              Abmelden
+            </button>
+          </div>
         </header>
 
         {/* Matching-Status */}
@@ -251,13 +331,32 @@ export default function HubDashboard({
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-gold" />
               </span>
               <h2 className="text-lg font-semibold text-zinc-50">
-                {profile.status === "matched" ? "Dein Match ist da" : "Dein Hub bereitet Matches vor"}
+                {matchCount > 0 ? "Neue Matches verfügbar" : "Dein Hub bereitet Matches vor"}
               </h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Sobald sich genug Leute in deiner Region eintragen, öffnet sich dein Hub und wir verbinden dich mit
+              Sobald sich genug Leute in deinen Hubs eintragen, öffnet sich dein Hub und wir verbinden dich mit
               passenden Menschen. Du musst nichts weiter tun.
             </p>
+
+            {/* Getrennt nach Intention */}
+            <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+              {intentions.map((i) => (
+                <div
+                  key={i.id}
+                  className={`rounded-2xl border px-4 py-3 ${
+                    active === i.id ? "border-gold/40 bg-gold/[0.07]" : "border-white/10 bg-white/[0.03]"
+                  }`}
+                >
+                  <p className={`text-xs font-semibold tracking-wide uppercase ${active === i.id ? "text-gold" : "text-zinc-500"}`}>
+                    {i.label}
+                  </p>
+                  <p className={`mt-1 text-sm leading-snug ${active === i.id ? "text-zinc-100" : "text-zinc-500"}`}>
+                    {i.text}
+                  </p>
+                </div>
+              ))}
+            </div>
 
             <ul className="mt-5 space-y-3 text-sm">
               <li className="flex items-center gap-2.5 text-zinc-200">
@@ -266,24 +365,24 @@ export default function HubDashboard({
               <li className="text-zinc-200">
                 <div className="flex items-center gap-2.5">
                   <CheckIcon className="h-4 w-4 text-gold" />
-                  Region {regionLabel}
+                  {hubLabels.length > 1 ? "Hubs" : "Hub"} {hubLabels.join(" + ")}
                   {profile.city ? ` · ${profile.city}` : ""}
                 </div>
-                {regionCount !== null && (
-                  <div className="mt-2 pl-[26px]">
+                {hubs?.map((h) => (
+                  <div key={h.id} className="mt-2 pl-[26px]">
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                       <motion.div
                         className="h-full rounded-full bg-gradient-to-r from-gold to-gold-light"
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.max(progress * 100, 4)}%` }}
+                        animate={{ width: `${Math.max(Math.min(h.count / HUB_TARGET, 1) * 100, 4)}%` }}
                         transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
                       />
                     </div>
                     <p className="mt-1.5 text-xs text-zinc-500">
-                      {count} von {HUB_TARGET} Anmeldungen in deiner Region
+                      {h.count} von {HUB_TARGET} Anmeldungen im Hub {h.label}
                     </p>
                   </div>
-                )}
+                ))}
               </li>
               <li className="flex items-center gap-2.5 text-zinc-400">
                 <span className="h-4 w-4 rounded-full border border-dashed border-zinc-600" /> Matching: in Vorbereitung
@@ -301,8 +400,63 @@ export default function HubDashboard({
         >
           <h2 className="text-lg font-semibold text-zinc-50">Dein Profil</h2>
 
+          {/* Modus-Switch */}
+          <div className="mt-5">
+            <p className="text-sm font-medium text-zinc-100">Modus</p>
+            <div
+              role="radiogroup"
+              aria-label="Modus"
+              className="relative mt-2.5 grid grid-cols-2 rounded-full border border-white/10 bg-zinc-950/60 p-1"
+            >
+              {(
+                [
+                  { id: "community", label: "Private Community" },
+                  { id: "business", label: "Business & Co-Founding" },
+                ] as const
+              ).map((m) => {
+                const on = (setupBusiness ? "business" : profile.track) === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    disabled={saving}
+                    onClick={() => switchTrack(m.id)}
+                    className={`relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 sm:text-sm ${
+                      on ? "text-zinc-950" : "text-zinc-400 hover:text-zinc-200"
+                    }`}
+                  >
+                    {on && (
+                      <motion.span
+                        layoutId="mode-pill"
+                        className="absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-gold-light to-gold shadow-[0_0_24px_-6px_rgba(242,166,90,0.7)]"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
+                    )}
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+            {setupBusiness && (
+              <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/[0.05] p-4">
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  Für den Business-Modus brauchen wir noch ein paar Angaben und dein Light-CV.
+                </p>
+                <BusinessEditor
+                  business={EMPTY_BUSINESS}
+                  onSave={activateBusiness}
+                  startEditing
+                  onCancel={() => setSetupBusiness(false)}
+                  title="Business-Profil einrichten"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Anonymität */}
-          <div className="mt-5 flex items-start justify-between gap-4">
+          <div className="mt-6 flex items-start justify-between gap-4 border-t border-white/10 pt-5">
             <div>
               <p className="text-sm font-medium text-zinc-100">Anonym bleiben</p>
               <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">

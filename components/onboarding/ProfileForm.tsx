@@ -17,7 +17,7 @@ import {
   type ProfileData,
 } from "@/lib/onboarding";
 import { Chip, ChipRow, Field, GoldButton, fieldClass } from "@/components/onboarding/ui";
-import { ChoiceChips } from "@/components/onboarding/ChoiceSelect";
+import { ChoiceChips, CustomEntry, INVALID_ENTRY, flushDraft } from "@/components/onboarding/ChoiceSelect";
 import SingleChoice from "@/components/onboarding/SingleChoice";
 
 export type ProfileResult = { profile: ProfileData; photos: Blob[] };
@@ -38,6 +38,8 @@ export default function ProfileForm({
   const [hobbies, setHobbies] = useState<string[]>([]);
   const [hobbyDraft, setHobbyDraft] = useState("");
   const [languages, setLanguages] = useState<Choice>({ ids: [], custom: [] });
+  const [languageDraft, setLanguageDraft] = useState("");
+  const [phaseDraft, setPhaseDraft] = useState("");
   const [phase, setPhase] = useState<string | undefined>();
   const [funFact, setFunFact] = useState("");
   const [askMe, setAskMe] = useState("");
@@ -77,22 +79,14 @@ export default function ProfileForm({
     });
   }
 
-  function addHobby() {
-    const text = hobbyDraft.trim();
-    if (!text) return;
-    if (!CUSTOM_PATTERN.test(text)) {
-      setErrors((e) => ({ ...e, hobby: "2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen." }));
-      return;
-    }
-    if (hobbies.length >= MAX_HOBBIES) {
-      setErrors((e) => ({ ...e, hobby: `Maximal ${MAX_HOBBIES} Hobbys.` }));
-      return;
-    }
+  // Gibt eine Fehlermeldung zurück oder null, wenn das Hobby übernommen wurde
+  function addHobby(text: string): string | null {
+    if (!CUSTOM_PATTERN.test(text)) return INVALID_ENTRY;
+    if (hobbies.length >= MAX_HOBBIES) return `Maximal ${MAX_HOBBIES} Hobbys.`;
     if (!hobbies.some((h) => h.toLowerCase() === text.toLowerCase())) {
       setHobbies((h) => [...h, text]);
     }
-    setHobbyDraft("");
-    setErrors((e) => ({ ...e, hobby: "" }));
+    return null;
   }
 
   function submit(e: React.FormEvent) {
@@ -109,6 +103,25 @@ export default function ProfileForm({
         next.age = `Bitte ${MIN_AGE} bis ${MAX_AGE}.`;
       }
     }
+
+    // Noch nicht mit Enter bestätigte Eingaben automatisch übernehmen
+    let finalHobbies = hobbies;
+    const hobbyText = hobbyDraft.trim();
+    if (hobbyText) {
+      const known = hobbies.some((h) => h.toLowerCase() === hobbyText.toLowerCase());
+      if (!CUSTOM_PATTERN.test(hobbyText)) next.hobby = INVALID_ENTRY;
+      else if (!known && hobbies.length >= MAX_HOBBIES) next.hobby = `Maximal ${MAX_HOBBIES} Hobbys.`;
+      else if (!known) finalHobbies = [...hobbies, hobbyText];
+    }
+    const flushed = flushDraft(languages, languageDraft, LANGUAGES);
+    if (flushed.error) next.language = flushed.error;
+    let finalPhase = phase;
+    const phaseText = phaseDraft.trim();
+    if (phaseText) {
+      if (!CUSTOM_PATTERN.test(phaseText)) next.phase = INVALID_ENTRY;
+      else finalPhase = PHASES.find((p) => p.label.toLowerCase() === phaseText.toLowerCase())?.id ?? phaseText;
+    }
+
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -116,9 +129,9 @@ export default function ProfileForm({
       profile: {
         displayName: trimmedName,
         age: ageNumber,
-        hobbies,
-        languages,
-        phase,
+        hobbies: finalHobbies,
+        languages: flushed.value,
+        phase: finalPhase,
         funFact: funFact.trim() || undefined,
         askMeAbout: askMe.trim() || undefined,
         visibility,
@@ -209,32 +222,16 @@ export default function ProfileForm({
       </div>
 
       <Field label="Hobbys" hint={`${hobbies.length}/${MAX_HOBBIES}`}>
-        <div className="flex gap-2">
-          <input
-            value={hobbyDraft}
-            onChange={(e) => {
-              setHobbyDraft(e.target.value);
-              setErrors((x) => ({ ...x, hobby: "" }));
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addHobby();
-              }
-            }}
-            placeholder="z. B. Bouldern, Fotografie …"
-            maxLength={30}
-            className={fieldClass}
-          />
-          <button
-            type="button"
-            onClick={addHobby}
-            disabled={!hobbyDraft.trim()}
-            className="shrink-0 rounded-xl bg-white/10 px-3.5 text-sm text-zinc-200 transition hover:bg-gold hover:text-zinc-950 disabled:opacity-40"
-          >
-            Hinzufügen
-          </button>
-        </div>
+        <CustomEntry
+          placeholder="z. B. Bouldern, Fotografie …"
+          onAdd={addHobby}
+          draft={hobbyDraft}
+          onDraftChange={(v) => {
+            setHobbyDraft(v);
+            setErrors((x) => ({ ...x, hobby: "" }));
+          }}
+          hint="Mit Enter oder Komma hinzufügen, so kannst du mehrere nacheinander eintragen."
+        />
         {errors.hobby && <p role="alert" className="text-xs text-rose">{errors.hobby}</p>}
         {hobbies.length > 0 && (
           <ChipRow>
@@ -253,7 +250,13 @@ export default function ProfileForm({
           value={languages}
           onChange={setLanguages}
           customPlaceholder="Andere Sprache hinzufügen"
+          draft={languageDraft}
+          onDraftChange={(v) => {
+            setLanguageDraft(v);
+            setErrors((x) => ({ ...x, language: "" }));
+          }}
         />
+        {errors.language && <p role="alert" className="text-xs text-rose">{errors.language}</p>}
       </Field>
 
       <Field label="Wo stehst du gerade?">
@@ -262,7 +265,13 @@ export default function ProfileForm({
           value={phase}
           onSelect={(v) => setPhase(v || undefined)}
           customPlaceholder="Etwas anderes? Eigene Angabe"
+          draft={phaseDraft}
+          onDraftChange={(v) => {
+            setPhaseDraft(v);
+            setErrors((x) => ({ ...x, phase: "" }));
+          }}
         />
+        {errors.phase && <p role="alert" className="text-xs text-rose">{errors.phase}</p>}
       </Field>
 
       <Field label="Fun Fact über dich" hint={`${funFact.length}/100`}>

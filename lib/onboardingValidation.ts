@@ -5,7 +5,9 @@ import {
   EXPERTISE_MAX,
   GOALS,
   GROUP_SIZES,
+  HUB_REASON_MAX,
   MAX_ACHIEVEMENTS,
+  MEET_FREQUENCIES,
   MAX_LINKS,
   ROLE_MAX,
   SECTORS,
@@ -261,6 +263,8 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
     extras = {
       freeText: stringOf(e.freeText, "Freitext", FREE_TEXT_MAX),
       followUps: followUps(e.followUps),
+      hubReason: stringOf(e.hubReason, "Grund für zwei Hubs", HUB_REASON_MAX),
+      meetFrequency: idOrCustom(e.meetFrequency, MEET_FREQUENCIES, "Treffhäufigkeit"),
       wishes: stringOf(e.wishes, "Wünsche", WISHES_MAX),
     };
   }
@@ -272,6 +276,7 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   const answers: OnboardingAnswers = {
     groupSize: oneOf(b.groupSize, GROUP_SIZES, "Gruppengröße"),
     region: idOrCustom(b.region, REGIONS, "Region", true) as string,
+    secondRegion: idOrCustom(b.secondRegion, REGIONS, "Zweiter Hub"),
     city: stringOf(b.city, "Stadt", 60),
     interests: choice(b.interests, INTERESTS, "Interessen", 1),
     vibes: choice(b.vibes, VIBES, "Vibe", 1),
@@ -281,6 +286,11 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
     profile: mode === "profile" ? profile(b.profile) : undefined,
     extras,
   };
+  if (answers.secondRegion && answers.secondRegion.toLowerCase() === answers.region.toLowerCase()) {
+    fail("Die beiden Hubs müssen verschieden sein.");
+  }
+  // Der Grund für zwei Hubs ergibt nur bei zwei Hubs Sinn
+  if (!answers.secondRegion && answers.extras?.hubReason) answers.extras.hubReason = undefined;
   // "Nur für Business-Profile sichtbar" gibt es nur für Business-Profile selbst
   if (answers.profile?.visibility === "business" && track !== "business") {
     fail("Diese Sichtbarkeit ist nur für Business-Profile möglich.");

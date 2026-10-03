@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ChoiceChips } from "@/components/onboarding/ChoiceSelect";
+import { ChoiceChips, INVALID_ENTRY, flushDraft } from "@/components/onboarding/ChoiceSelect";
 import SingleChoice from "@/components/onboarding/SingleChoice";
 import { LightCvFields, cleanCv } from "@/components/onboarding/BusinessFields";
 import { Chip, ChipRow, Field, GoldButton, fieldClass } from "@/components/onboarding/ui";
-import { GOALS, ROLE_MAX, SECTORS, choiceLabels, labelOf, type BusinessData } from "@/lib/onboarding";
+import { CUSTOM_PATTERN, GOALS, ROLE_MAX, SECTORS, choiceLabels, labelOf, type BusinessData } from "@/lib/onboarding";
 
 const safeHref = (link: string) => (/^https?:\/\//i.test(link) ? link : `https://${link}`);
 
@@ -14,14 +14,22 @@ const safeHref = (link: string) => (/^https?:\/\//i.test(link) ? link : `https:/
 export default function BusinessEditor({
   business,
   onSave,
+  startEditing = false,
+  onCancel,
+  title = "Business & Light-CV",
 }: {
   business: BusinessData;
   onSave: (next: BusinessData) => Promise<string | null>;
+  startEditing?: boolean;
+  onCancel?: () => void;
+  title?: string;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(business);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [goalDraft, setGoalDraft] = useState("");
+  const [sectorDraft, setSectorDraft] = useState("");
 
   async function save() {
     const result = cleanCv(draft.cv);
@@ -33,9 +41,32 @@ export default function BusinessEditor({
       setError("Bitte gib deine Rolle an.");
       return;
     }
+    // Noch nicht mit Enter bestätigte Eingaben automatisch übernehmen
+    const goals = flushDraft(draft.goals, goalDraft, GOALS, 3);
+    if (goals.error) {
+      setError(goals.error);
+      return;
+    }
+    let sector = draft.sector;
+    const sectorText = sectorDraft.trim();
+    if (sectorText) {
+      if (!CUSTOM_PATTERN.test(sectorText)) {
+        setError(INVALID_ENTRY);
+        return;
+      }
+      sector = SECTORS.find((o) => o.label.toLowerCase() === sectorText.toLowerCase())?.id ?? sectorText;
+    }
+    if (!sector) {
+      setError("Bitte wähle eine Branche.");
+      return;
+    }
+    if (goals.value.ids.length + goals.value.custom.length === 0) {
+      setError("Bitte wähle mindestens ein Ziel.");
+      return;
+    }
     setSaving(true);
     setError("");
-    const message = await onSave({ ...draft, role: draft.role.trim(), cv: result.cv });
+    const message = await onSave({ ...draft, sector, goals: goals.value, role: draft.role.trim(), cv: result.cv });
     setSaving(false);
     if (message) setError(message);
     else setEditing(false);
@@ -44,12 +75,14 @@ export default function BusinessEditor({
   return (
     <div className="mt-6 border-t border-white/10 pt-5">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-zinc-100">Business &amp; Light-CV</p>
+        <p className="text-sm font-medium text-zinc-100">{title}</p>
         {!editing && (
           <button
             type="button"
             onClick={() => {
               setDraft(business);
+              setGoalDraft("");
+              setSectorDraft("");
               setEditing(true);
               setError("");
             }}
@@ -73,8 +106,10 @@ export default function BusinessEditor({
             <Field label="Branche / Sektor">
               <SingleChoice
                 options={SECTORS}
-                value={draft.sector}
+                value={draft.sector || undefined}
                 onSelect={(v) => v && setDraft({ ...draft, sector: v })}
+                draft={sectorDraft}
+                onDraftChange={setSectorDraft}
                 customPlaceholder="Andere Branche? Eigene Angabe"
               />
             </Field>
@@ -93,6 +128,8 @@ export default function BusinessEditor({
                 onChange={(goals) => setDraft({ ...draft, goals })}
                 customPlaceholder="Ein anderes Ziel?"
                 maxTotal={3}
+                draft={goalDraft}
+                onDraftChange={setGoalDraft}
               />
             </Field>
             <LightCvFields
@@ -111,7 +148,10 @@ export default function BusinessEditor({
             <div className="flex items-center justify-end gap-4">
               <button
                 type="button"
-                onClick={() => setEditing(false)}
+                onClick={() => {
+                  setEditing(false);
+                  onCancel?.();
+                }}
                 className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
               >
                 Abbrechen

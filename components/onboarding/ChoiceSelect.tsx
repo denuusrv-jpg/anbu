@@ -1,23 +1,69 @@
 "use client";
 
 import { useState } from "react";
-import { PlusIcon } from "@/components/Icons";
 import { CUSTOM_PATTERN, MAX_CHOICES, MAX_CUSTOM, type Choice, type Option } from "@/lib/onboarding";
 import { Chip, ChipRow, GoldButton } from "@/components/onboarding/ui";
 
-// Zeile zum Hinzufügen eigener Einträge (Eingabefeld + Plus)
+export const INVALID_ENTRY = "2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.";
+
+// Eigenen Eintrag zu einer Auswahl hinzufügen (reine Funktion, gibt die neue Auswahl oder eine Fehlermeldung zurück)
+export function addCustomTo(
+  value: Choice,
+  text: string,
+  options: Option[],
+  maxTotal: number = MAX_CHOICES,
+): { value: Choice } | { error: string } {
+  const total = value.ids.length + value.custom.length;
+  if (!CUSTOM_PATTERN.test(text)) return { error: INVALID_ENTRY };
+  const known = options.find((o) => o.label.toLowerCase() === text.toLowerCase());
+  if (known) {
+    if (value.ids.includes(known.id)) return { value };
+    if (total >= maxTotal) return { error: `Maximal ${maxTotal} Einträge insgesamt.` };
+    return { value: { ...value, ids: [...value.ids, known.id] } };
+  }
+  if (value.custom.some((c) => c.toLowerCase() === text.toLowerCase())) return { value };
+  if (value.custom.length >= MAX_CUSTOM) return { error: `Maximal ${MAX_CUSTOM} eigene Einträge.` };
+  if (total >= maxTotal) return { error: `Maximal ${maxTotal} Einträge insgesamt.` };
+  return { value: { ...value, custom: [...value.custom, text] } };
+}
+
+// Noch nicht mit Enter bestätigten Text beim Weiterklicken automatisch übernehmen
+export function flushDraft(
+  value: Choice,
+  draft: string,
+  options: Option[],
+  maxTotal: number = MAX_CHOICES,
+): { value: Choice; error?: string } {
+  const text = draft.trim();
+  if (!text) return { value };
+  const result = addCustomTo(value, text, options, maxTotal);
+  return "error" in result ? { value, error: result.error } : { value: result.value };
+}
+
+// Eingabezeile für eigene Einträge: tippen, mit Enter oder Komma hinzufügen. Kein Plus-Knopf nötig,
+// der Text wird beim Weiterklicken des umgebenden Formulars automatisch übernommen.
+// Bewusst kein <form>: Das Feld steht auch innerhalb des Profil-Formulars (verschachtelte Formulare sind ungültig).
 export function CustomEntry({
   placeholder,
   onAdd,
+  draft: draftProp,
+  onDraftChange,
+  hint,
 }: {
   placeholder: string;
   /** Gibt eine Fehlermeldung zurück oder null, wenn der Eintrag übernommen wurde. */
   onAdd: (text: string) => string | null;
+  /** Optional: Eingabetext von außen steuern, damit er beim Weiterklicken übernommen werden kann. */
+  draft?: string;
+  onDraftChange?: (value: string) => void;
+  hint?: string;
 }) {
-  const [draft, setDraft] = useState("");
+  const [inner, setInner] = useState("");
   const [error, setError] = useState("");
+  const controlled = draftProp !== undefined;
+  const draft = controlled ? draftProp : inner;
+  const setDraft = (value: string) => (controlled ? onDraftChange?.(value) : setInner(value));
 
-  // Bewusst kein <form>: Das Feld steht auch innerhalb des Profil-Formulars (verschachtelte Formulare sind ungültig).
   function submit() {
     const text = draft.trim();
     if (!text) return;
@@ -32,7 +78,7 @@ export function CustomEntry({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-zinc-950/60 p-1.5 focus-within:border-gold/60">
+      <div className="rounded-2xl border border-white/10 bg-zinc-950/60 p-1.5 focus-within:border-gold/60">
         <input
           type="text"
           value={draft}
@@ -41,26 +87,19 @@ export function CustomEntry({
             setError("");
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" || e.key === ",") {
               e.preventDefault();
               submit();
             }
           }}
           placeholder={placeholder}
           aria-label={placeholder}
+          enterKeyHint="done"
           maxLength={30}
-          className="min-w-0 flex-1 bg-transparent px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
+          className="w-full bg-transparent px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
         />
-        <button
-          type="button"
-          onClick={submit}
-          aria-label="Eigenen Eintrag hinzufügen"
-          disabled={!draft.trim()}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-zinc-200 transition hover:bg-gold hover:text-zinc-950 active:scale-95 disabled:opacity-40"
-        >
-          <PlusIcon className="h-4 w-4" />
-        </button>
       </div>
+      {hint && !error && <p className="px-1 text-[11px] text-zinc-500">{hint}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {error}
@@ -70,8 +109,6 @@ export function CustomEntry({
   );
 }
 
-const INVALID = "2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.";
-
 // Mehrfachauswahl aus Vorgaben plus eigene Einträge, ohne Bestätigungsknopf (für Formulare)
 export function ChoiceChips({
   options,
@@ -80,6 +117,8 @@ export function ChoiceChips({
   customPlaceholder,
   allowCustom = true,
   maxTotal = MAX_CHOICES,
+  draft,
+  onDraftChange,
 }: {
   options: Option[];
   value: Choice;
@@ -87,6 +126,8 @@ export function ChoiceChips({
   customPlaceholder: string;
   allowCustom?: boolean;
   maxTotal?: number;
+  draft?: string;
+  onDraftChange?: (value: string) => void;
 }) {
   const total = value.ids.length + value.custom.length;
 
@@ -99,18 +140,9 @@ export function ChoiceChips({
   }
 
   function addCustom(text: string): string | null {
-    if (!CUSTOM_PATTERN.test(text)) return INVALID;
-    const known = options.find((o) => o.label.toLowerCase() === text.toLowerCase());
-    if (known) {
-      if (!value.ids.includes(known.id) && total < maxTotal) {
-        onChange({ ...value, ids: [...value.ids, known.id] });
-      }
-      return null;
-    }
-    if (value.custom.some((c) => c.toLowerCase() === text.toLowerCase())) return null;
-    if (value.custom.length >= MAX_CUSTOM) return `Maximal ${MAX_CUSTOM} eigene Einträge.`;
-    if (total >= maxTotal) return `Maximal ${maxTotal} Einträge insgesamt.`;
-    onChange({ ...value, custom: [...value.custom, text] });
+    const result = addCustomTo(value, text, options, maxTotal);
+    if ("error" in result) return result.error;
+    onChange(result.value);
     return null;
   }
 
@@ -133,7 +165,14 @@ export function ChoiceChips({
           </Chip>
         ))}
       </ChipRow>
-      {allowCustom && <CustomEntry placeholder={customPlaceholder} onAdd={addCustom} />}
+      {allowCustom && (
+        <CustomEntry
+          placeholder={customPlaceholder}
+          onAdd={addCustom}
+          draft={draft}
+          onDraftChange={onDraftChange}
+        />
+      )}
     </div>
   );
 }
@@ -154,7 +193,8 @@ export default function ChoiceSelect({
   options: Option[];
   value: Choice;
   onChange: (next: Choice) => void;
-  onConfirm: () => void;
+  /** Bekommt die endgültige Auswahl inklusive des zuletzt getippten, noch nicht bestätigten Eintrags. */
+  onConfirm: (value: Choice) => void;
   customPlaceholder: string;
   minTotal?: number;
   confirmLabel?: string;
@@ -162,7 +202,22 @@ export default function ChoiceSelect({
   allowCustom?: boolean;
   maxTotal?: number;
 }) {
-  const total = value.ids.length + value.custom.length;
+  const [draft, setDraft] = useState("");
+  const [error, setError] = useState("");
+  const pending = allowCustom && draft.trim() ? 1 : 0;
+  const total = value.ids.length + value.custom.length + pending;
+
+  function confirm() {
+    const result = flushDraft(value, allowCustom ? draft : "", options, maxTotal ?? MAX_CHOICES);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setError("");
+    setDraft("");
+    if (result.value !== value) onChange(result.value);
+    onConfirm(result.value);
+  }
 
   return (
     <div className="space-y-3">
@@ -173,7 +228,17 @@ export default function ChoiceSelect({
         customPlaceholder={customPlaceholder}
         allowCustom={allowCustom}
         maxTotal={maxTotal}
+        draft={draft}
+        onDraftChange={(v) => {
+          setDraft(v);
+          setError("");
+        }}
       />
+      {error && (
+        <p role="alert" className="px-1 text-xs text-rose">
+          {error}
+        </p>
+      )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500">
@@ -185,7 +250,7 @@ export default function ChoiceSelect({
           </span>
           {extra}
         </div>
-        <GoldButton onClick={onConfirm} disabled={total < minTotal}>
+        <GoldButton onClick={confirm} disabled={total < minTotal}>
           {confirmLabel}
         </GoldButton>
       </div>

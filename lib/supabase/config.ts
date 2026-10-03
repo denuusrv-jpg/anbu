@@ -11,7 +11,7 @@ export const supabaseAnonKey =
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 /** Nur auf Pfade innerhalb der eigenen Seite weiterleiten (kein Open Redirect). */
-export function safeNextPath(value: string | null | undefined, fallback = "/hub"): string {
+export function safeNextPath(value: string | null | undefined, fallback = "/dashboard"): string {
   if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
     return fallback;
   }

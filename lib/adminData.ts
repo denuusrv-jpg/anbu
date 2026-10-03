@@ -7,6 +7,7 @@ export type AdminProfile = {
   email: string;
   last_sign_in_at: string | null;
   region: string;
+  second_region: string | null;
   city: string | null;
   mode: string;
   status: string;
@@ -63,7 +64,7 @@ export async function loadAdminData(db: SupabaseClient): Promise<AdminData> {
   const [pr, users, wl, dr, ws] = await Promise.all([
     db
       .from("user_profiles")
-      .select("user_id, region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras, track, business, visibility, group_size")
+      .select("user_id, region, second_region, city, mode, status, created_at, deleted_at, interests, vibes, profile, extras, track, business, visibility, group_size")
       .order("created_at", { ascending: false })
       .limit(2000),
     db.auth.admin.listUsers({ page: 1, perPage: 1000 }),
