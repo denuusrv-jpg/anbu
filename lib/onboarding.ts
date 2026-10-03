@@ -63,6 +63,13 @@ export const VISIBILITIES: Option[] = [
   { id: "stealth", label: "Stealth: nur nach gegenseitigem Match" },
 ];
 
+// Gewünschte Gruppengröße (Duo, Crew, Squad wie auf der Startseite)
+export const GROUP_SIZES: Option[] = [
+  { id: "duo", label: "Duo (2er Gruppe)" },
+  { id: "crew", label: "Crew (4er Gruppe)" },
+  { id: "squad", label: "Squad (8er Gruppe)" },
+];
+
 export const TRACKS: Option[] = [
   { id: "community", label: "Privat / Community" },
   { id: "business", label: "Business & Co-Founding" },
@@ -125,6 +132,7 @@ export type BusinessData = {
 export type FollowUp = { question: string; answer: string };
 
 export type OnboardingAnswers = {
+  groupSize?: string; // Id aus GROUP_SIZES
   region: string; // Id aus REGIONS oder eigener Text
   city?: string;
   interests: Choice;

@@ -243,3 +243,17 @@ $$;
 
 revoke all on function public.discoverable_profiles() from public, anon;
 grant execute on function public.discoverable_profiles() to authenticated;
+
+-- ─────────────────────────────────────────────────────────────
+-- 8) Gewünschte Gruppengröße (Duo / Crew / Squad)
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists group_size text;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_group_size_check') then
+    alter table public.user_profiles
+      add constraint user_profiles_group_size_check check (group_size is null or group_size in ('duo', 'crew', 'squad'));
+  end if;
+end
+$$;

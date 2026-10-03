@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   GOALS,
+  GROUP_SIZES,
   INTERESTS,
   LANGUAGES,
   PHASES,
@@ -106,6 +107,7 @@ function Detail({
         </div>
 
         <Section title="Basis">
+          <Line label="Gruppengröße" value={answers.groupSize ? labelOf(answers.groupSize, GROUP_SIZES) : undefined} />
           <Line label="Region" value={labelOf(answers.region, REGIONS)} />
           <Line label="Stadt" value={answers.city} />
           <Line label="Interessen" value={choiceLabels(answers.interests, INTERESTS).join(", ")} />
@@ -178,6 +180,7 @@ function Detail({
 
 function answersOf(row: AdminProfile): OnboardingAnswers {
   return {
+    groupSize: row.group_size ?? undefined,
     region: row.region,
     city: row.city ?? undefined,
     interests: row.interests,

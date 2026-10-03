@@ -10,6 +10,7 @@ import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
 import { getBrowserClient } from "@/lib/supabase/client";
 import {
+  GROUP_SIZES,
   INTERESTS,
   REGIONS,
   VIBES,
@@ -30,6 +31,7 @@ export type HubProfile = {
   track: "community" | "business";
   business: BusinessData | null;
   visibility: "public" | "business" | "stealth";
+  group_size: string | null;
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -115,6 +117,11 @@ export default function HubDashboard({
   async function changeVisibility(next: HubProfile["visibility"]) {
     if (next === profile.visibility) return;
     if (await patch({ visibility: next })) setProfile((p) => ({ ...p, visibility: next }));
+  }
+
+  async function changeGroupSize(next: string) {
+    if (next === profile.group_size) return;
+    if (await patch({ groupSize: next })) setProfile((p) => ({ ...p, group_size: next }));
   }
 
   async function saveBusiness(next: BusinessData): Promise<string | null> {
@@ -360,6 +367,24 @@ export default function HubDashboard({
                   {v.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Gruppengröße */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <p className="text-sm font-medium text-zinc-100">Gewünschte Gruppengröße</p>
+            <div className="mt-3" role="radiogroup" aria-label="Gruppengröße">
+              <ChipRow>
+                {GROUP_SIZES.map((g) => (
+                  <Chip
+                    key={g.id}
+                    selected={profile.group_size === g.id}
+                    onClick={() => changeGroupSize(g.id)}
+                  >
+                    {g.label}
+                  </Chip>
+                ))}
+              </ChipRow>
             </div>
           </div>
 

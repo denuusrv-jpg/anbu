@@ -17,6 +17,7 @@ export async function saveProfile(
   const { error } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
+      group_size: answers.groupSize ?? null,
       region: answers.region,
       city: answers.city ?? null,
       interests: answers.interests,

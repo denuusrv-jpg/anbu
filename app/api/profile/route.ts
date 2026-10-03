@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { INTERESTS, VIBES, VISIBILITIES } from "@/lib/onboarding";
+import { GROUP_SIZES, INTERESTS, VIBES, VISIBILITIES } from "@/lib/onboarding";
 import { Invalid, choice, oneOf, validateBusiness } from "@/lib/onboardingValidation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -38,6 +38,10 @@ export async function PATCH(request: Request) {
   try {
     if (body.interests !== undefined) update.interests = choice(body.interests, INTERESTS, "Interessen", 1);
     if (body.vibes !== undefined) update.vibes = choice(body.vibes, VIBES, "Vibe", 1);
+
+    if (body.groupSize !== undefined) {
+      update.group_size = oneOf(body.groupSize, GROUP_SIZES, "Gruppengröße", true);
+    }
 
     if (body.mode !== undefined) {
       if (body.mode !== "anonymous" && body.mode !== "profile") throw new Invalid("Modus ist ungültig.");

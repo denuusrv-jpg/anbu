@@ -16,6 +16,7 @@ import {
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
   GOALS,
+  GROUP_SIZES,
   INTERESTS,
   REGIONS,
   ROLE_MAX,
@@ -32,10 +33,12 @@ import {
 
 type Step =
   | "intro"
+  | "groupSize"
   | "region"
   | "city"
   | "interests"
   | "vibes"
+  | "more"
   | "mode"
   | "track"
   | "sector"
@@ -59,14 +62,19 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_SECONDS = 30;
 
 // Fortschritt der Kernfragen (Anzeige oben); danach "Profil" und "Finale"
+const TOTAL_STEPS = 5;
 const STEP_NUMBER: Partial<Record<Step, number>> = {
-  region: 1,
-  city: 1,
-  interests: 2,
-  vibes: 3,
-  mode: 4,
+  groupSize: 1,
+  region: 2,
+  city: 2,
+  interests: 3,
+  vibes: 4,
+  more: 5,
+  freeText: 5,
+  followUp: 5,
+  mode: 5,
 };
-const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "freeText", "followUp", "profile"];
+const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "profile"];
 const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
 
 // guest: noch nicht angemeldet, Anmeldung per Link am Ende | live: angemeldet, speichert direkt
@@ -187,14 +195,20 @@ export default function OnboardingChat({
     ask(
       [
         "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
-        "Ein paar kurze Fragen, dann bist du durch. Wo bist du zu Hause?",
+        "Ein paar kurze Fragen, dann bist du durch. Zuerst: In welcher Gruppengröße möchtest du Leute treffen?",
       ],
-      "region",
+      "groupSize",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ——— Basis-Flow: Region, Interessen, Vibe ———
+  // ——— Basis-Flow: Gruppengröße, Region, Interessen, Vibe ———
+
+  function pickGroupSize(value: string, label: string) {
+    answers.current.groupSize = value;
+    user(label);
+    ask(["Gute Wahl! Und wo bist du zu Hause?"], "region");
+  }
 
   function pickRegion(value: string, label: string) {
     if (!value) {
@@ -232,6 +246,26 @@ export default function OnboardingChat({
     user(choiceLabels(vibes, VIBES).join(", "));
     ask(
       [
+        "Möchtest du noch ein bisschen mit mir plaudern, damit ich dich besser kennenlerne? Das ist freiwillig, du kannst auch direkt weitermachen.",
+      ],
+      "more",
+    );
+  }
+
+  function pickMore(wantsChat: boolean) {
+    if (!wantsChat) {
+      user("Nein, weiter");
+      askMode();
+      return;
+    }
+    user("Ja, gern");
+    ask(["Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"], "freeText");
+  }
+
+  function askMode(intro: string[] = []) {
+    ask(
+      [
+        ...intro,
         "Jetzt die große Frage: Möchtest du ganz anonym starten – oder ein Profil mit deiner Geschichte anlegen? Beides ist völlig okay, und du kannst es später im Hub ändern.",
       ],
       "mode",
@@ -271,7 +305,7 @@ export default function OnboardingChat({
     setTrack(next);
     user(labelOf(next, TRACKS));
     if (next === "community") {
-      ask(["Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"], "freeText");
+      goToProfileForm();
       return;
     }
     ask(["Spannend! In welcher Branche oder welchem Sektor bist du unterwegs?"], "sector");
@@ -329,7 +363,7 @@ export default function OnboardingChat({
     goToProfileForm();
   }
 
-  // ——— Pfad B: Freitext, Folgefragen, Profil ———
+  // ——— Freitext und Folgefragen (optional, vor der Weiche), danach das Profil ———
 
   function extras() {
     answers.current.extras = answers.current.extras ?? {};
@@ -344,7 +378,7 @@ export default function OnboardingChat({
 
     followQueue.current = skip || !value ? [] : pickFollowUps(value, 2).map((f) => f.question);
     if (followQueue.current.length === 0) {
-      goToProfileForm();
+      askMode(skip || !value ? [] : ["Danke fürs Erzählen!"]);
       return;
     }
     askNextFollowUp(["Danke, das erzählt schon viel über dich. Dazu habe ich noch eine Frage:"]);
@@ -353,7 +387,7 @@ export default function OnboardingChat({
   function askNextFollowUp(intro: string[] = []) {
     const question = followQueue.current.shift();
     if (!question) {
-      goToProfileForm();
+      askMode();
       return;
     }
     setFollowQuestion(question);
@@ -370,7 +404,7 @@ export default function OnboardingChat({
     if (followQueue.current.length > 0) {
       askNextFollowUp(["Und noch eine Frage:"]);
     } else {
-      goToProfileForm();
+      askMode(["Danke, das hilft mir sehr!"]);
     }
   }
 
@@ -508,8 +542,8 @@ export default function OnboardingChat({
   const inProfile = PROFILE_STEPS.includes(step);
   const inFinale = FINALE_STEPS.includes(step);
   const showPanel = !busy && step !== "intro";
-  const progress = inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / 4;
-  const headerLabel = inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / 4` : "";
+  const progress = inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / TOTAL_STEPS;
+  const headerLabel = inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / ${TOTAL_STEPS}` : "";
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 sm:p-6">
@@ -615,6 +649,16 @@ export default function OnboardingChat({
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.3, ease: EASE }}
               >
+                {step === "groupSize" && (
+                  <ChipRow>
+                    {GROUP_SIZES.map((g) => (
+                      <Chip key={g.id} onClick={() => pickGroupSize(g.id, g.label)}>
+                        {g.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                )}
+
                 {step === "region" && (
                   <SingleChoice
                     options={REGIONS}
@@ -660,6 +704,15 @@ export default function OnboardingChat({
                     onConfirm={confirmVibes}
                     customPlaceholder="Dein eigener Vibe"
                   />
+                )}
+
+                {step === "more" && (
+                  <ChipRow>
+                    <Chip onClick={() => pickMore(true)}>Ja, gern</Chip>
+                    <Chip onClick={() => pickMore(false)} subtle>
+                      Nein, weiter
+                    </Chip>
+                  </ChipRow>
                 )}
 
                 {step === "mode" && (

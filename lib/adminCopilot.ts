@@ -1,7 +1,7 @@
 import "server-only";
 import { daysLeft } from "@/lib/accountLifecycle";
 import { computeKpis, startOfTodayBerlin, type AdminData, type AdminProfile } from "@/lib/adminData";
-import { GOALS, INTERESTS, LANGUAGES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
+import { GOALS, GROUP_SIZES, INTERESTS, LANGUAGES, REGIONS, SECTORS, VIBES, VISIBILITIES, choiceLabels, labelOf, type Choice, type Option } from "@/lib/onboarding";
 
 // Admin-Copilot: beantwortet Fragen zu den Nutzerdaten in natürlicher Sprache.
 // Regelbasiert (Stichwörter), ohne externe KI. Die Funktion lässt sich später durch einen
@@ -121,6 +121,14 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
         : "Es gibt noch keine Business-Profile.",
       items: business.slice(0, 15).map((p) => ({ label: who(p), value: `${labelOf(p.business!.sector, SECTORS)} · ${p.business!.role}` })),
     };
+  }
+
+  // Gruppengröße (Duo, Crew, Squad)
+  if (has("gruppe", "gruppen", "duo", "crew", "squad")) {
+    const counts = tally(active.filter((p) => p.group_size), (p) => [labelOf(p.group_size as string, GROUP_SIZES)]);
+    return counts.size
+      ? { answer: "Gewünschte Gruppengrößen, beliebteste zuerst:", items: top(counts) }
+      : { answer: "Noch hat niemand eine Gruppengröße gewählt." };
   }
 
   // Sichtbarkeit / Privatsphäre
@@ -261,4 +269,5 @@ export const COPILOT_EXAMPLES = [
   "Wer sucht einen Co-Founder?",
   "Wie viele Business-Profile gibt es?",
   "Wie ist die Sichtbarkeit verteilt?",
+  "Welche Gruppengröße ist am beliebtesten?",
 ];

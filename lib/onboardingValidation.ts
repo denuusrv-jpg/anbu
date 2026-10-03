@@ -4,6 +4,7 @@ import {
   CUSTOM_PATTERN,
   EXPERTISE_MAX,
   GOALS,
+  GROUP_SIZES,
   MAX_ACHIEVEMENTS,
   MAX_LINKS,
   ROLE_MAX,
@@ -269,6 +270,7 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   if (track === "business" && mode !== "profile") fail("Business-Profile können nicht anonym sein.");
 
   const answers: OnboardingAnswers = {
+    groupSize: oneOf(b.groupSize, GROUP_SIZES, "Gruppengröße"),
     region: idOrCustom(b.region, REGIONS, "Region", true) as string,
     city: stringOf(b.city, "Stadt", 60),
     interests: choice(b.interests, INTERESTS, "Interessen", 1),
