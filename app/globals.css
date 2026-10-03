@@ -71,6 +71,30 @@ body {
   animation: amber-ring 0.95s ease-in-out both;
 }
 
+/* Icon-Badges der Feature-Texte: beim Darüberfahren leuchtet das Badge einmal
+   kurz in seiner eigenen Farbe auf (currentColor) und federt leicht nach. */
+@keyframes badge-flash {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  35% {
+    transform: scale(1.08);
+    background-color: color-mix(in srgb, currentColor 30%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, currentColor 55%, transparent),
+      0 0 26px -2px color-mix(in srgb, currentColor 60%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.feature-tile:hover .badge-flash {
+  animation: badge-flash 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Browser-Autofill (gespeicherte E-Mail-Adressen) soll Eingabefelder nicht
    blau/gelb einfärben - überall gleich aussehen. Der extrem lange
    Übergang hält die eigene Hintergrundfarbe, die Textfarbe wird erzwungen. */

@@ -81,7 +81,7 @@ export default function Home() {
               return (
                 <motion.div
                   key={feature.title}
-                  className="text-center"
+                  className="feature-tile cursor-default text-center"
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.4 }}
@@ -92,7 +92,7 @@ export default function Home() {
                   }}
                 >
                   <div
-                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-2xl ${wrap}`}
+                    className={`badge-flash mx-auto flex h-12 w-12 items-center justify-center rounded-2xl ${wrap}`}
                   >
                     <Icon />
                   </div>
