@@ -153,7 +153,7 @@ export type OnboardingAnswers = {
   profile?: ProfileData;
   extras?: {
     freeText?: string; // freier Text aus dem Pfad "Profil anlegen"
-    followUps?: FollowUp[]; // 1-2 Folgefragen samt Antworten
+    followUps?: FollowUp[]; // Fragen und Antworten aus dem längeren Gespräch
     hubReason?: string; // Warum zwei Hubs? (nur bei zwei gewählten Hubs)
     meetFrequency?: string; // Id aus MEET_FREQUENCIES oder eigener Text: wie oft man sich maximal sehen will
     wishes?: string; // Wünsche und Ideen für DSpora (Finale)
@@ -170,6 +170,7 @@ export const FOLLOW_UP_ANSWER_MAX = 600;
 export const WISHES_MAX = 1500;
 export const MAX_CHOICES = 8;
 export const MAX_HUBS = 2;
+export const MAX_FOLLOW_UPS = 100; // Fragen und Antworten aus dem längeren Gespräch (insgesamt)
 export const HUB_REASON_MAX = 300;
 export const MAX_CUSTOM = 5;
 export const MIN_AGE = 18;

@@ -11,7 +11,9 @@ import { LightCvForm } from "@/components/onboarding/BusinessFields";
 import { Chip, ChipRow, LongTextAnswer, TextAnswer } from "@/components/onboarding/ui";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
-import { pickFollowUps } from "@/lib/followups";
+import { nextQuestion } from "@/lib/followups";
+import { answerSiteQuestion, type ChatLink } from "@/lib/siteKnowledge";
+import ReadyWindow, { type ReadyKind } from "@/components/onboarding/ReadyWindow";
 import {
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
@@ -51,6 +53,7 @@ type Step =
   | "cv"
   | "freeText"
   | "followUp"
+  | "checkpoint"
   | "frequency"
   | "profile"
   | "wishes"
@@ -58,7 +61,11 @@ type Step =
   | "sent"
   | "retry";
 
-type Message = { id: number; from: "bot" | "user"; text: string };
+type Message = { id: number; from: "bot" | "user"; text: string; link?: ChatLink };
+// Eine Bot-Zeile: Text, optional mit Link darunter (z. B. zum Kontaktformular)
+type BotLine = string | { text: string; link?: ChatLink };
+
+const ACKNOWLEDGEMENTS = ["Danke dir!", "Das hilft mir sehr.", "Gut zu wissen.", "Schön, das zu hören.", "Verstehe, danke dir."];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -78,6 +85,7 @@ const STEP_NUMBER: Partial<Record<Step, number>> = {
   more: 5,
   freeText: 5,
   followUp: 5,
+  checkpoint: 5,
   frequency: 5,
   mode: 5,
 };
@@ -112,9 +120,12 @@ async function uploadPhotos(userId: string, blobs: Blob[]): Promise<boolean> {
 export default function OnboardingChat({
   mode = "preview",
   userId,
+  resume,
 }: {
   mode?: ChatMode;
   userId?: string;
+  /** Eingeloggte Person setzt das Gespräch fort: bereits Gefragtes wird nicht wiederholt */
+  resume?: { asked: string[]; context: string };
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -125,6 +136,7 @@ export default function OnboardingChat({
   const [inputError, setInputError] = useState("");
   const [hubs, setHubs] = useState<Choice>(EMPTY);
   const [chosenFrequency, setChosenFrequency] = useState<string | undefined>();
+  const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
   const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
   const [followQuestion, setFollowQuestion] = useState("");
   const [track, setTrack] = useState<"community" | "business">("community");
@@ -144,8 +156,15 @@ export default function OnboardingChat({
   const answers = useRef<Partial<OnboardingAnswers>>({});
   const photos = useRef<Blob[]>([]);
   const business = useRef<{ sector?: string; role?: string; goals?: Choice }>({});
-  const followQueue = useRef<string[]>([]);
   const followAnswers = useRef<{ question: string; answer: string }[]>([]);
+  // Längeres Gespräch: schon gestellte Fragen, alles bisher Gesagte, Zähler für Zwischenfragen
+  const askedQuestions = useRef<string[]>(resume?.asked ?? []);
+  const talkContext = useRef<string>(resume?.context ?? "");
+  const lastAnswer = useRef("");
+  const sinceCheckpoint = useRef(0);
+  const checkpointCount = useRef(0);
+  const skipsInRow = useRef(0);
+  const ackIndex = useRef(0);
   const nextId = useRef(0);
   const alive = useRef(true);
   const started = useRef(false);
@@ -171,14 +190,15 @@ export default function OnboardingChat({
   }, [cooldown]);
 
   // Bot-Nachrichten nacheinander einblenden, mit Tipp-Anzeige davor
-  async function bot(texts: string[]) {
+  async function bot(lines: BotLine[]) {
     setBusy(true);
-    for (const message of texts) {
+    for (const line of lines) {
+      const message = typeof line === "string" ? { text: line } : line;
       setTyping(true);
-      await sleep(650 + Math.min(message.length * 8, 850));
+      await sleep(650 + Math.min(message.text.length * 8, 850));
       if (!alive.current) return;
       setTyping(false);
-      setMessages((m) => [...m, { id: nextId.current++, from: "bot", text: message }]);
+      setMessages((m) => [...m, { id: nextId.current++, from: "bot", ...message }]);
       await sleep(220);
     }
     if (alive.current) setBusy(false);
@@ -189,7 +209,7 @@ export default function OnboardingChat({
   }
 
   // Bot spricht, danach erscheint das Antwort-Panel des nächsten Schritts
-  async function ask(texts: string[], next: Step) {
+  async function ask(texts: BotLine[], next: Step) {
     setStep("intro");
     setText("");
     setInputError("");
@@ -200,6 +220,10 @@ export default function OnboardingChat({
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+    if (resume) {
+      askNext(["Schön, dass du wieder da bist! Wir machen da weiter, wo wir aufgehört haben."]);
+      return;
+    }
     ask(
       [
         "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
@@ -246,6 +270,7 @@ export default function OnboardingChat({
 
   function submitHubReason(skip = false) {
     const value = text.trim();
+    if (!skip && value && tryAnswerSiteQuestion(value, "Was steckt hinter deinen zwei Hubs?", "hubReason")) return;
     extras().hubReason = skip || !value ? undefined : value;
     user(skip || !value ? "Überspringen" : value);
     askCity();
@@ -289,10 +314,15 @@ export default function OnboardingChat({
       return;
     }
     user("Ja, gern");
-    ask(["Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …"], "freeText");
+    ask(
+      [
+        "Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst. Wir können so lange reden, wie du magst, und wenn du Fragen zu DSpora hast, stell sie mir gern zwischendurch.",
+      ],
+      "freeText",
+    );
   }
 
-  function askFrequency(intro: string[] = []) {
+  function askFrequency(intro: BotLine[] = []) {
     setChosenFrequency(undefined);
     ask(
       [
@@ -314,7 +344,7 @@ export default function OnboardingChat({
     askMode();
   }
 
-  function askMode(intro: string[] = []) {
+  function askMode(intro: BotLine[] = []) {
     ask(
       [
         ...intro,
@@ -422,41 +452,128 @@ export default function OnboardingChat({
     return answers.current.extras;
   }
 
-  function submitFreeText(skip = false) {
-    const value = text.trim();
-    extras().freeText = skip || !value ? undefined : value;
-    user(skip || !value ? "Überspringen" : value);
-    followAnswers.current = [];
-
-    followQueue.current = skip || !value ? [] : pickFollowUps(value, 2).map((f) => f.question);
-    if (followQueue.current.length === 0) {
-      askFrequency(skip || !value ? [] : ["Danke fürs Erzählen!"]);
-      return;
-    }
-    askNextFollowUp(["Danke, das erzählt schon viel über dich. Dazu habe ich noch eine Frage:"]);
+  // Fragt eine Person zwischendurch etwas zu DSpora, antwortet der Chat anhand der Webseiten-Infos
+  // (nichts Erfundenes, sonst Hinweis auf das Kontaktformular) und stellt dann dieselbe Frage noch einmal.
+  function tryAnswerSiteQuestion(value: string, question: string, backTo: Step): boolean {
+    const reply = answerSiteQuestion(value);
+    if (!reply) return false;
+    user(value);
+    ask([{ text: reply.text, link: reply.link }, `Aber zurück zu dir: ${question}`], backTo);
+    return true;
   }
 
-  function askNextFollowUp(intro: string[] = []) {
-    const question = followQueue.current.shift();
-    if (!question) {
-      askFrequency();
+  function submitFreeText(skip = false) {
+    const value = text.trim();
+    if (
+      !skip &&
+      value &&
+      tryAnswerSiteQuestion(value, "Erzähl mir gern, was dir wichtig ist, wer du bist oder wonach du suchst.", "freeText")
+    ) {
       return;
     }
+    const answered = !skip && Boolean(value);
+    extras().freeText = answered ? value : undefined;
+    user(answered ? value : "Überspringen");
+    followAnswers.current = [];
+    if (answered) {
+      talkContext.current += ` ${value}`;
+      lastAnswer.current = value;
+      sinceCheckpoint.current += 1;
+    }
+    askNext(answered ? ["Danke, das erzählt schon viel über dich."] : []);
+  }
+
+  // Nächste Frage im Gespräch. Nach jeweils drei Antworten fragt der Chat, ob es weitergehen soll.
+  function askNext(intro: BotLine[] = []) {
+    if (sinceCheckpoint.current >= 3 || skipsInRow.current >= 2) {
+      sinceCheckpoint.current = 0;
+      skipsInRow.current = 0;
+      askCheckpoint(intro);
+      return;
+    }
+    const question = nextQuestion(lastAnswer.current, talkContext.current, askedQuestions.current);
+    if (!question) {
+      exitTalk([...intro, "Ich glaube, ich habe dich jetzt schon richtig gut kennengelernt. Danke dir!"]);
+      return;
+    }
+    askedQuestions.current.push(question);
     setFollowQuestion(question);
     ask([...intro, question], "followUp");
   }
 
   function submitFollowUp(skip = false) {
     const value = text.trim();
-    if (!skip && value) {
-      followAnswers.current.push({ question: followQuestion, answer: value });
-      extras().followUps = followAnswers.current.slice();
+    if (!skip && value && tryAnswerSiteQuestion(value, followQuestion, "followUp")) return;
+    if (skip || !value) {
+      user("Überspringen");
+      skipsInRow.current += 1;
+      askNext(["Kein Problem, dann etwas anderes:"]);
+      return;
     }
-    user(skip || !value ? "Überspringen" : value);
-    if (followQueue.current.length > 0) {
-      askNextFollowUp(["Und noch eine Frage:"]);
-    } else {
-      askFrequency(["Danke, das hilft mir sehr!"]);
+    skipsInRow.current = 0;
+    followAnswers.current.push({ question: followQuestion, answer: value });
+    if (!resume) extras().followUps = followAnswers.current.slice();
+    talkContext.current += ` ${value}`;
+    lastAnswer.current = value;
+    sinceCheckpoint.current += 1;
+    user(value);
+    askNext(sinceCheckpoint.current >= 3 ? [] : [ACKNOWLEDGEMENTS[ackIndex.current++ % ACKNOWLEDGEMENTS.length]]);
+  }
+
+  function askCheckpoint(intro: BotLine[] = []) {
+    const first = checkpointCount.current++ === 0;
+    ask(
+      [
+        ...intro,
+        first
+          ? "Das war schon richtig spannend! Möchtest du noch weiter erzählen, oder sollen wir das Gespräch später fortsetzen? Wir können gern noch länger reden."
+          : "Ich lerne dich gerade richtig gut kennen. Weiter erzählen, oder sollen wir später weitermachen?",
+      ],
+      "checkpoint",
+    );
+  }
+
+  function pickCheckpoint(more: boolean) {
+    if (more) {
+      user("Gern, weiter erzählen");
+      askNext(["Super, dann weiter!"]);
+      return;
+    }
+    user("Später fortsetzen");
+    exitTalk(["Alles klar, wir setzen das Gespräch später fort. Du findest es dann in deinem Dashboard."]);
+  }
+
+  // Gespräch beenden: neu angemeldet geht es mit der Treffhäufigkeit und dem Profil weiter,
+  // beim Fortsetzen werden die neuen Antworten gespeichert.
+  function exitTalk(intro: BotLine[] = []) {
+    if (resume) {
+      finishResume(intro);
+      return;
+    }
+    if (answers.current.extras?.meetFrequency) askMode(intro);
+    else askFrequency(intro);
+  }
+
+  async function finishResume(intro: BotLine[] = []) {
+    setStep("intro");
+    await bot([...intro, "Einen Moment, ich speichere deine Antworten …"]);
+    if (!alive.current) return;
+    setBusy(true);
+    setTyping(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ talk: { followUps: followAnswers.current } }),
+      });
+      if (!res.ok) throw new Error("save failed");
+      setTyping(false);
+      setBusy(false);
+      setReady({ kind: "resume" });
+    } catch {
+      setTyping(false);
+      await bot(["Das hat leider nicht geklappt. Magst du es noch einmal versuchen?"]);
+      setStep("retry");
     }
   }
 
@@ -536,9 +653,14 @@ export default function OnboardingChat({
       if (photosFailed) {
         await bot(["Deine Antworten sind gespeichert, nur die Fotos konnten leider nicht hochgeladen werden."]);
       }
-      await bot(["Du bist startklar!"]);
-      await sleep(600);
-      if (alive.current) router.push(mode === "test" ? "/admin" : "/onboarding/fertig");
+      if (mode === "test") {
+        await bot(["Du bist startklar!"]);
+        await sleep(600);
+        if (alive.current) router.push("/admin");
+        return;
+      }
+      setBusy(false);
+      if (alive.current) setReady({ kind: "member" });
     } catch {
       setTyping(false);
       await bot(["Das hat leider nicht geklappt. Magst du es noch einmal versuchen?"]);
@@ -583,6 +705,7 @@ export default function OnboardingChat({
         ],
         "sent",
       );
+      if (alive.current) setReady({ kind: "guest", email: value });
     } catch {
       setLoginError("Keine Verbindung. Bitte versuch es noch einmal.");
     } finally {
@@ -594,8 +717,8 @@ export default function OnboardingChat({
   const inProfile = PROFILE_STEPS.includes(step);
   const inFinale = FINALE_STEPS.includes(step);
   const showPanel = !busy && step !== "intro";
-  const progress = inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / TOTAL_STEPS;
-  const headerLabel = inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / ${TOTAL_STEPS}` : "";
+  const progress = resume ? 0 : inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / TOTAL_STEPS;
+  const headerLabel = resume ? "Gespräch" : inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / ${TOTAL_STEPS}` : "";
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 sm:p-6">
@@ -655,6 +778,14 @@ export default function OnboardingChat({
                   }
                 >
                   {message.text}
+                  {message.link && (
+                    <Link
+                      href={message.link.href}
+                      className="mt-2.5 inline-flex items-center rounded-full border border-gold/40 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition-colors hover:bg-gold/20"
+                    >
+                      {message.link.label}
+                    </Link>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -859,6 +990,15 @@ export default function OnboardingChat({
                   />
                 )}
 
+                {step === "checkpoint" && (
+                  <ChipRow>
+                    <Chip onClick={() => pickCheckpoint(true)}>Gern, weiter erzählen</Chip>
+                    <Chip onClick={() => pickCheckpoint(false)} subtle>
+                      Später fortsetzen
+                    </Chip>
+                  </ChipRow>
+                )}
+
                 {step === "frequency" && (
                   <SingleChoice
                     options={MEET_FREQUENCIES}
@@ -956,7 +1096,7 @@ export default function OnboardingChat({
 
                 {step === "retry" && (
                   <ChipRow>
-                    <Chip onClick={() => finishSave()}>Erneut versuchen</Chip>
+                    <Chip onClick={() => (resume ? finishResume() : finishSave())}>Erneut versuchen</Chip>
                   </ChipRow>
                 )}
               </motion.div>
@@ -964,6 +1104,22 @@ export default function OnboardingChat({
           </AnimatePresence>
         </div>
       </div>
+
+      {ready && (
+        <ReadyWindow
+          kind={ready.kind}
+          email={ready.email}
+          onResend={
+            ready.kind === "guest"
+              ? () => {
+                  setReady(null);
+                  setStep("login");
+                  shownAt.current = Date.now() - 2000;
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 }

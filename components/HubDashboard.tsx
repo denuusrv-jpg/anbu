@@ -57,6 +57,7 @@ export default function HubDashboard({
   hubs,
   matchCount,
   isAdmin,
+  preview = false,
   wishes: initialWishes,
 }: {
   email: string;
@@ -64,6 +65,8 @@ export default function HubDashboard({
   hubs: HubStat[] | null;
   matchCount: number;
   isAdmin: boolean;
+  /** Admin-Vorschau: zeigt alles wie live, schreibt aber nichts und ruft nichts auf */
+  preview?: boolean;
   wishes: HubWish[];
 }) {
   const router = useRouter();
@@ -93,7 +96,7 @@ export default function HubDashboard({
   const name = profile.profile?.displayName;
 
   useEffect(() => {
-    if (!window.PublicKeyCredential) return;
+    if (preview || !window.PublicKeyCredential) return;
     setPasskeySupported(true);
     getBrowserClient()
       .auth.passkey.list()
@@ -102,6 +105,7 @@ export default function HubDashboard({
   }, []);
 
   async function patch(update: Record<string, unknown>): Promise<boolean> {
+    if (preview) return true;
     setSaving(true);
     setMessage("");
     lastError.current = "";
@@ -189,6 +193,14 @@ export default function HubDashboard({
 
   async function submitWish(e: React.FormEvent) {
     e.preventDefault();
+    if (preview) {
+      const idea = wishText.trim();
+      if (idea.length < 3) return;
+      setWishes((list) => [{ id: String(Date.now()), wish: idea, created_at: new Date().toISOString() }, ...list]);
+      setWishText("");
+      setWishMessage("Vorschau: nichts wurde gespeichert.");
+      return;
+    }
     const text = wishText.trim();
     if (text.length < 3 || wishBusy) return;
     setWishBusy(true);
@@ -215,6 +227,10 @@ export default function HubDashboard({
   }
 
   async function deleteAccount() {
+    if (preview) {
+      setConfirmDelete(false);
+      return;
+    }
     setDeleting(true);
     setDeleteError("");
     try {
@@ -229,12 +245,14 @@ export default function HubDashboard({
   }
 
   async function signOut() {
+    if (preview) return;
     await getBrowserClient().auth.signOut();
     router.push("/");
     router.refresh();
   }
 
   async function addPasskey() {
+    if (preview) return;
     setPasskeyMessage("");
     try {
       const { error } = await getBrowserClient().auth.registerPasskey();
@@ -251,6 +269,7 @@ export default function HubDashboard({
   }
 
   async function removePasskey(id: string) {
+    if (preview) return;
     const { error } = await getBrowserClient().auth.passkey.delete({ passkeyId: id });
     if (!error) setPasskeys((list) => (list ?? []).filter((p) => p.id !== id));
   }
@@ -628,6 +647,26 @@ export default function HubDashboard({
               {message}
             </p>
           )}
+        </motion.section>
+
+        {/* Gespräch fortsetzen */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
+          className={card}
+        >
+          <h2 className="text-lg font-semibold text-zinc-50">Gespräch fortsetzen</h2>
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            Je besser wir dich kennen, desto passender werden deine Verbindungen. Setz das Gespräch mit dem Chat
+            fort, so lange und so oft du magst. Bereits Gefragtes wiederholt er nicht.
+          </p>
+          <Link
+            href={preview ? "#" : "/onboarding?talk=1"}
+            className="cta-premium mt-4 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
+          >
+            Weiter erzählen
+          </Link>
         </motion.section>
 
         {/* Ideen für DSpora (Co-Creation) */}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GROUP_SIZES, INTERESTS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
-import { Invalid, choice, oneOf, validateBusiness } from "@/lib/onboardingValidation";
+import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
+import { Invalid, choice, followUps, oneOf, validateBusiness } from "@/lib/onboardingValidation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 
@@ -27,7 +28,7 @@ export async function PATCH(request: Request) {
 
   const { data: row } = await supabase
     .from("user_profiles")
-    .select("track, mode, profile, business, visibility, deleted_at")
+    .select("track, mode, profile, business, visibility, extras, deleted_at")
     .eq("user_id", data.user.id)
     .maybeSingle();
   if (!row || row.deleted_at) {
@@ -38,6 +39,17 @@ export async function PATCH(request: Request) {
   try {
     if (body.interests !== undefined) update.interests = choice(body.interests, INTERESTS, "Interessen", 1);
     if (body.vibes !== undefined) update.vibes = choice(body.vibes, VIBES, "Vibe", 1);
+
+    // Gespräch fortsetzen: neue Fragen und Antworten werden an die bisherigen angehängt
+    if (body.talk !== undefined) {
+      const talk = body.talk as { followUps?: unknown } | null;
+      const added = followUps(talk && typeof talk === "object" ? talk.followUps : undefined) ?? [];
+      if (added.length > 0) {
+        const extras = (row.extras ?? {}) as { followUps?: unknown[] };
+        const merged = [...(extras.followUps ?? []), ...added].slice(-MAX_FOLLOW_UPS);
+        update.extras = { ...extras, followUps: merged };
+      }
+    }
 
     if (body.groupSize !== undefined) {
       update.group_size = oneOf(body.groupSize, GROUP_SIZES, "Gruppengröße", true);

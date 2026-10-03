@@ -8,7 +8,7 @@ import { COPILOT_EXAMPLES } from "@/lib/adminCopilot";
 import { computeKpis, loadAdminData, type AdminData } from "@/lib/adminData";
 import { purgeExpired } from "@/lib/accountLifecycle";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
-import { ArrowRightIcon, BoltIcon } from "@/components/Icons";
+import { ArrowRightIcon, BoltIcon, EyeIcon } from "@/components/Icons";
 
 export const metadata = {
   title: "Admin — DSpora",
@@ -71,6 +71,23 @@ export default async function Admin() {
                 <p className="text-sm font-semibold text-zinc-50">Chatbot testen</p>
                 <p className="mt-0.5 text-xs text-zinc-400">
                   Onboarding-Chat durchspielen (Testmodus, nichts wird gespeichert)
+                </p>
+              </div>
+            </div>
+            <ArrowRightIcon className="h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-gold" />
+          </Link>
+          <Link
+            href="/admin/vorschau"
+            className="cta-premium group flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 text-left backdrop-blur-xl transition-[border-color,box-shadow] duration-300 [--sheen-alpha:0.12] hover:border-gold/50 hover:shadow-[0_0_28px_-10px_rgba(242,166,90,0.45)]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+                <EyeIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-zinc-50">Profil-Vorschau</p>
+                <p className="mt-0.5 text-xs text-zinc-400">
+                  Beispiel-Ansichten aller Bereiche nach der Anmeldung (Dashboard, Business, Startklar-Fenster)
                 </p>
               </div>
             </div>

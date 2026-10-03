@@ -22,12 +22,20 @@ export default function OnboardingDone() {
             Danke für deine Antworten. Sobald sich in deiner Region genug
             Leute eintragen, öffnet sich dein Hub und wir melden uns bei dir.
           </p>
-          <Link
-            href="/"
-            className="cta-premium mt-8 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_24px_-12px_rgba(242,166,90,0.45)]"
-          >
-            Zur Startseite
-          </Link>
+          <div className="mt-8 flex flex-col gap-3">
+            <Link
+              href="/dashboard"
+              className="cta-premium inline-flex w-full items-center justify-center rounded-full bg-gradient-to-b from-gold-light to-gold px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_24px_-12px_rgba(242,166,90,0.45)]"
+            >
+              Zum Dashboard
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex w-full items-center justify-center rounded-full border border-white/10 bg-white/5 px-8 py-3 text-sm font-semibold text-zinc-200 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
+            >
+              Webseite besuchen
+            </Link>
+          </div>
         </div>
       </div>
     </main>

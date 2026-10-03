@@ -7,6 +7,7 @@ import {
   GROUP_SIZES,
   HUB_REASON_MAX,
   MAX_ACHIEVEMENTS,
+  MAX_FOLLOW_UPS,
   MEET_FREQUENCIES,
   MAX_LINKS,
   ROLE_MAX,
@@ -228,9 +229,9 @@ export function validateBusiness(value: unknown): BusinessData {
   };
 }
 
-function followUps(value: unknown): FollowUp[] | undefined {
+export function followUps(value: unknown): FollowUp[] | undefined {
   if (value === undefined || value === null) return undefined;
-  if (!Array.isArray(value) || value.length > 2) fail("Folgefragen sind ungültig.");
+  if (!Array.isArray(value) || value.length > MAX_FOLLOW_UPS) fail("Folgefragen sind ungültig.");
   return (value as unknown[]).map((item) => {
     if (!isObject(item)) fail("Folgefragen sind ungültig.");
     const question = stringOf(item.question, "Folgefrage", 300, true) as string;

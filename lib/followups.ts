@@ -85,7 +85,7 @@ const TOPICS: Topic[] = [
   },
   {
     id: "neu",
-    keywords: ["neu in", "neu hier", "umgezogen", "zugezogen", "einsam", "allein", "alleine", "keine freunde", "wenig freunde", "anschluss"],
+    keywords: ["neu in", "neu hier", "umgezogen", "zugezogen", "einsam", "keine freunde", "wenig freunde", "anschluss"],
     questions: [
       "Danke, dass du das ansprichst. Was würde dir den Start in einer neuen Umgebung am meisten erleichtern?",
       "Wie sieht für dich ein erstes Treffen aus, bei dem du dich wohlfühlst?",
@@ -117,17 +117,61 @@ const TOPICS: Topic[] = [
   },
 ];
 
-// Allgemeine Fragen, falls nichts Passendes im Text steht
+// Allgemeine Fragen für ein längeres Gespräch, falls nichts Passendes im Text steht.
+// Die Reihenfolge ist bewusst vom Leichten zum Persönlichen.
 const GENERIC = [
   "Was zeichnet für dich eine echte Freundschaft aus?",
   "Woran merkst du, dass dir jemand guttut?",
   "Was würdest du an einem freien Wochenende am liebsten mit neuen Leuten unternehmen?",
+  "Bist du eher der Typ für einen großen Freundeskreis oder für wenige enge Vertraute?",
+  "Wie verbringst du am liebsten einen ruhigen Abend?",
+  "Planst du Treffen gern langfristig, oder entscheidest du eher spontan?",
+  "Welche Rolle spielt Humor in deinen Freundschaften?",
+  "Was bringt dich in einer Gruppe zum Aufleben, und was lässt dich eher still werden?",
+  "Wie war dein letztes richtig schönes Treffen mit Freunden?",
+  "Was muss ein erstes Treffen haben, damit du dich wohlfühlst, und was wäre ein No-Go?",
+  "Welche Eigenschaft schätzt du an Menschen am meisten?",
+  "Wofür bist du in deinem Freundeskreis bekannt?",
+  "Gibt es etwas, das du schon immer mal mit anderen ausprobieren wolltest?",
+  "Wie wichtig ist dir, dass deine Freunde ebenfalls tamilische Wurzeln haben?",
+  "Welche Sprache sprichst du mit Freunden am liebsten, und wechselst du zwischen den Sprachen?",
+  "Bist du eher Frühaufsteher oder Nachteule, und wann kann man am besten mit dir etwas planen?",
+  "Wie viel Kontakt wünschst du dir: regelmäßig oder eher ab und zu?",
+  "Was erwartest du von einer Freundschaft, und was gibst du selbst am liebsten?",
+  "Wie gehst du damit um, wenn du dich mit jemandem nicht verstehst?",
+  "Würdest du dich mit jemandem treffen, der ganz andere Interessen hat, wenn die Chemie stimmt?",
+  "Wie sieht für dich ein perfektes Treffen zu zweit aus, und wie eines in der Gruppe?",
+  "Was bringt dich zur Ruhe, wenn dir alles zu viel wird?",
+  "Welche Rolle spielt für dich Verlässlichkeit unter Freunden?",
+  "Nutzt du Social Media, um Leute kennenzulernen, oder eher nicht?",
+  "Wo in deiner Region hast du dich zuletzt richtig wohlgefühlt?",
+  "Gibt es ein Thema, bei dem du dir wünschst, dass dein Gegenüber ähnlich tickt?",
+  "Was ist dir im Umgang mit Fremden wichtig, bis du dich öffnest?",
+  "Hast du ein Ziel für dieses Jahr, bei dem dir ein guter Freundeskreis helfen würde?",
+  "Was möchtest du, dass andere beim Kennenlernen als Erstes über dich wissen?",
+  "Wenn du dir deinen Freundeskreis in einem Jahr vorstellst: Was soll dann anders sein als heute?",
 ];
 
 // Als String gebaut, da das Ziel-Target das u-Flag im Literal nicht erlaubt
 const WORD = new RegExp("^[\\p{L}\\p{N}-]+", "u");
 
 export type FollowUpQuestion = { topic: string; question: string };
+
+function findKeyword(topic: Topic, text: string): { position: number; word: string } | null {
+  let best: { position: number; word: string } | null = null;
+  for (const keyword of topic.keywords) {
+    // Das Stichwort muss am Wortanfang stehen ("uni" trifft "Uni", nicht "Gesundheit")
+    const match = new RegExp(`(^|[^\\p{L}])(${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "iu").exec(text);
+    if (!match) continue;
+    const index = match.index + match[1].length;
+    // Wort vollständig übernehmen (z. B. "zocke" statt nur "zock")
+    const word = keyword.includes(" ")
+      ? text.slice(index, index + keyword.length)
+      : (text.slice(index).match(WORD)?.[0] ?? keyword);
+    if (!best || index < best.position) best = { position: index, word };
+  }
+  return best;
+}
 
 export function pickFollowUps(text: string, max = 2): FollowUpQuestion[] {
   const found: { position: number; topic: Topic; word: string }[] = [];
@@ -161,4 +205,30 @@ export function pickFollowUps(text: string, max = 2): FollowUpQuestion[] {
     result.push({ topic: "generic", question: GENERIC[g++ % GENERIC.length] });
   }
   return result;
+}
+
+
+/**
+ * Die nächste Frage für ein längeres Gespräch.
+ * 1. Themen aus der letzten Antwort aufgreifen, 2. Themen aus allem, was bisher gesagt wurde,
+ * 3. allgemeine Fragen. Schon gestellte Fragen (asked) kommen nie noch einmal. Gibt null zurück,
+ * wenn alles gefragt wurde.
+ */
+export function nextQuestion(latest: string, everything: string, asked: string[]): string | null {
+  const fresh = (list: FollowUpQuestion[]) => list.find((q) => !asked.includes(q.question))?.question ?? null;
+  const fromText = (text: string) => {
+    const all: FollowUpQuestion[] = [];
+    for (const topic of TOPICS) {
+      const match = findKeyword(topic, text);
+      if (!match) continue;
+      for (const q of topic.questions) all.push({ topic: topic.id, question: q.replace("{k}", match.word) });
+    }
+    return fresh(all);
+  };
+
+  const fromLatest = latest ? fromText(latest) : null;
+  if (fromLatest) return fromLatest;
+  const fromAll = everything ? fromText(everything) : null;
+  if (fromAll) return fromAll;
+  return GENERIC.find((q) => !asked.includes(q)) ?? null;
 }
