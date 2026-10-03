@@ -23,7 +23,7 @@ export default function ShareLinkBadge() {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/40 hover:text-gold"
+      className="glass-soft inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/40 hover:text-gold"
     >
       {copied ? (
         <>

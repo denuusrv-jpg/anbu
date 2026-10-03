@@ -11,6 +11,29 @@ body {
   background-color: #09090b;
 }
 
+/* Dezente Glas-Optik für Badges/Karten: zarter Verlauf + feine Lichtkante oben.
+   Die Kante liegt auf einem Pseudo-Element, damit Hover-Schatten/-Rahmen
+   der Karten unberührt bleiben. */
+@layer components {
+  .glass-soft {
+    position: relative;
+    background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.015)
+    );
+  }
+
+  .glass-soft::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+}
+
 /* Browser-Autofill (gespeicherte E-Mail-Adressen) soll Eingabefelder nicht
    blau/gelb einfärben - überall gleich aussehen. Der extrem lange
    Übergang hält die eigene Hintergrundfarbe, die Textfarbe wird erzwungen. */

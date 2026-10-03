@@ -46,7 +46,7 @@ export default function HubsAndCrews() {
         </div>
 
         <motion.div
-          className="mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl"
+          className="glass-soft mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
