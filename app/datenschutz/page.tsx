@@ -4,8 +4,6 @@ export const metadata = {
   title: "Datenschutz — DSpora",
 };
 
-// Entwurf: beschreibt, was die Plattform tatsächlich verarbeitet. Die Angaben zur verantwortlichen Stelle
-// (in eckigen Klammern) müssen mit echten Daten ersetzt werden, und der Text sollte juristisch geprüft werden.
 export default function Datenschutz() {
   const h2 = "font-semibold text-zinc-100";
   return (
@@ -18,11 +16,6 @@ export default function Datenschutz() {
         <h1 className="mt-6 text-3xl font-bold text-zinc-50">Datenschutzerklärung</h1>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed">
-          <p className="rounded-lg border border-gold/30 bg-gold/5 p-4 text-gold">
-            Entwurf: Die Angaben in eckigen Klammern sind noch mit echten Daten zu ersetzen, und der Text sollte vor dem
-            Start juristisch geprüft werden.
-          </p>
-
           <section>
             <h2 className={h2}>1. Verantwortliche Stelle</h2>
             <p className="mt-2">
