@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import type { RoomDetail, RoomMessage } from "@/lib/chatRooms";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -145,7 +146,12 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   }
 
   if (!detail) {
-    return <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-zinc-500">Chat wird geladen …</main>;
+    return (
+      <main className="relative isolate flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-white/80">
+        <FlowingWaveBackground pulses={false} fixed />
+        Chat wird geladen …
+      </main>
+    );
   }
 
   const others = detail.members.filter((m) => !m.isMe).map((m) => m.label);
@@ -154,8 +160,9 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   const askFeedback = !dissolved && !detail.myFeedback && !feedbackDone && userMessages >= 6;
 
   return (
-    <main className="flex h-[100dvh] flex-col bg-zinc-950">
-      <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-4 sm:px-6">
+    <main className="relative isolate flex h-[100dvh] flex-col bg-zinc-950 sm:p-6">
+      <FlowingWaveBackground pulses={false} fixed />
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col overflow-hidden bg-zinc-950/75 px-4 backdrop-blur-md sm:rounded-3xl sm:border sm:border-white/10 sm:px-6 sm:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_40px_100px_-30px_rgba(0,0,0,0.6)]">
         {/* Kopf */}
         <header className="flex items-center justify-between gap-3 py-4">
           <div className="min-w-0">
