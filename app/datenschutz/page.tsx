@@ -1,6 +1,13 @@
 import Link from "next/link";
 
+export const metadata = {
+  title: "Datenschutz — DSpora",
+};
+
+// Entwurf: beschreibt, was die Plattform tatsächlich verarbeitet. Die Angaben zur verantwortlichen Stelle
+// (in eckigen Klammern) müssen mit echten Daten ersetzt werden, und der Text sollte juristisch geprüft werden.
 export default function Datenschutz() {
+  const h2 = "font-semibold text-zinc-100";
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 text-zinc-300 sm:px-8">
       <div className="mx-auto max-w-2xl">
@@ -8,21 +15,16 @@ export default function Datenschutz() {
           ← Zurück
         </Link>
 
-        <h1 className="mt-6 text-3xl font-bold text-zinc-50">
-          Datenschutzerklärung
-        </h1>
+        <h1 className="mt-6 text-3xl font-bold text-zinc-50">Datenschutzerklärung</h1>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed">
           <p className="rounded-lg border border-gold/30 bg-gold/5 p-4 text-gold">
-            Platzhalter — diese Seite ist noch nicht vollständig. Bitte mit
-            echten Angaben (idealerweise juristisch geprüft) ersetzen, bevor
-            die Warteliste echte E-Mails sammelt.
+            Entwurf: Die Angaben in eckigen Klammern sind noch mit echten Daten zu ersetzen, und der Text sollte vor dem
+            Start juristisch geprüft werden.
           </p>
 
           <section>
-            <h2 className="font-semibold text-zinc-100">
-              1. Verantwortliche Stelle
-            </h2>
+            <h2 className={h2}>1. Verantwortliche Stelle</h2>
             <p className="mt-2">
               [Name / Firma]
               <br />
@@ -33,35 +35,107 @@ export default function Datenschutz() {
           </section>
 
           <section>
-            <h2 className="font-semibold text-zinc-100">
-              2. Welche Daten wir erheben
-            </h2>
+            <h2 className={h2}>2. Welche Daten wir verarbeiten und wofür</h2>
+            <ul className="mt-2 list-disc space-y-2 pl-5">
+              <li>
+                <strong className="text-zinc-200">Warteliste:</strong> Deine E-Mail-Adresse, damit wir dich informieren,
+                sobald dein Hub startet.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Konto und Anmeldung:</strong> Deine E-Mail-Adresse. Die Anmeldung läuft
+                über einen Link per E-Mail (ohne Passwort) oder optional über einen Passkey. Dafür setzen wir technisch
+                notwendige Cookies ein, die deine Anmeldung erhalten.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Profil und Matching:</strong> Region, Stadt, Interessen, Vibe,
+                gewünschte Gruppengröße, die gewählten Hubs und, wenn du ein Profil anlegst, Anzeigename, Alter,
+                Hobbys, Sprachen, Lebensphase, Fun Fact und Fotos. Im Business-Modus zusätzlich Branche, Rolle, Ziele
+                und dein Light-CV (Expertise, Erfolge, Links). Wer dein Profil sehen darf, stellst du selbst ein.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Geschlecht (freiwillig):</strong> Wie du dich identifizierst und mit
+                wem du dich verbinden möchtest. Die Angabe ist freiwillig und erfolgt auf Grundlage deiner Einwilligung.
+                Du kannst sie jederzeit im Dashboard ändern oder die Option „Möchte ich nicht angeben“ wählen.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Gespräch und Steckbrief:</strong> Was du im Chat erzählst, speichern wir
+                als Steckbrief, damit wir dich besser kennenlernen und passende Verbindungen vorschlagen können. Der
+                Chatverlauf wird deinem Konto zugeordnet, ist für andere Nutzer nicht sichtbar und dient dem Fortsetzen
+                des Gesprächs. Einzelne Angaben kannst du im Dashboard jederzeit entfernen.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Ideen und Wünsche:</strong> Was du uns als Idee für DSpora schickst,
+                speichern wir mit deinem Konto, damit wir die Plattform mit der Community weiterentwickeln können.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Technische Fehler:</strong> Wenn etwas schiefgeht, protokollieren wir den
+                Fehler zur Behebung. Vorher werden E-Mail-Adressen, Tokens, Passwörter, IDs und ähnliche personenbezogene
+                Angaben automatisch entfernt.
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className={h2}>3. Rechtsgrundlagen</h2>
             <p className="mt-2">
-              Wenn du dich für die Warteliste einträgst, speichern wir deine
-              E-Mail-Adresse, um dich zu kontaktieren, sobald DSpora startet.
-              [Anpassen, sobald die Warteliste technisch an eine Datenbank
-              angebunden ist.]
+              Die Verarbeitung für Konto, Profil, Gespräch und Matching erfolgt zur Erfüllung des Nutzungsverhältnisses
+              (Art. 6 Abs. 1 lit. b DSGVO). Freiwillige Angaben wie das Geschlecht beruhen auf deiner Einwilligung
+              (Art. 6 Abs. 1 lit. a, bei besonderen Kategorien Art. 9 Abs. 2 lit. a DSGVO), die du jederzeit mit Wirkung
+              für die Zukunft widerrufen kannst. Das technische Fehler-Tracking dient unserem berechtigten Interesse an
+              einem stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO).
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold text-zinc-100">
-              3. Hosting &amp; Dienstleister
-            </h2>
+            <h2 className={h2}>4. Dienstleister und Empfänger</h2>
+            <ul className="mt-2 list-disc space-y-2 pl-5">
+              <li>
+                <strong className="text-zinc-200">Vercel Inc.</strong> hostet die Website und verarbeitet dabei technische
+                Daten wie die IP-Adresse.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Supabase</strong> betreibt Datenbank, Anmeldung und Dateispeicher
+                (Serverstandort: [Region des Supabase-Projekts eintragen]).
+              </li>
+              <li>
+                <strong className="text-zinc-200">OpenAI</strong> unterstützt uns mit KI: Der Chat nutzt sie für
+                Folgefragen, und der Admin-Bereich für Auswertungen. Dabei übermitteln wir Textstellen aus deinem
+                Gespräch. E-Mail-Adressen, Telefonnummern und Links entfernen wir vorher, dein Geschlecht übermitteln wir
+                nicht. In den Admin-Auswertungen werden nur pseudonymisierte Daten ohne Namen und E-Mail-Adressen
+                verwendet. Die Verarbeitung kann in den USA stattfinden, [Grundlage der Übermittlung, z. B.
+                Standardvertragsklauseln, eintragen].
+              </li>
+              <li>
+                <strong className="text-zinc-200">E-Mail-Versand:</strong> [Anbieter für den Versand der Anmelde-Links
+                eintragen].
+              </li>
+            </ul>
             <p className="mt-2">
-              Diese Website wird über Vercel Inc. gehostet. Beim Aufruf der
-              Seite verarbeitet Vercel technische Daten (z.B. IP-Adresse) zur
-              Bereitstellung der Seite. [Ggf. Auftragsverarbeitungsvertrag /
-              weitere Dienstleister ergänzen.]
+              Mit allen Dienstleistern schließen wir, soweit erforderlich, Verträge zur Auftragsverarbeitung.
             </p>
           </section>
 
           <section>
-            <h2 className="font-semibold text-zinc-100">4. Deine Rechte</h2>
+            <h2 className={h2}>5. Speicherdauer</h2>
             <p className="mt-2">
-              Du hast das Recht auf Auskunft, Berichtigung, Löschung und
-              Einschränkung der Verarbeitung deiner Daten. Kontaktiere uns
-              dafür unter [deine-email@beispiel.com].
+              Wir speichern deine Daten, solange dein Konto besteht. Wenn du dein Konto im Dashboard löschst, ist es
+              sofort gesperrt und wird nach 30 Tagen automatisch und endgültig gelöscht, einschließlich Profil, Fotos,
+              Steckbrief, Chatverlauf und Ideen. Wartelisten-Einträge löschen wir auf Wunsch. Fehlerprotokolle
+              enthalten keine personenbezogenen Daten und werden nach der Behebung entfernt.
+            </p>
+          </section>
+
+          <section>
+            <h2 className={h2}>6. Deine Rechte</h2>
+            <p className="mt-2">
+              Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+              Datenübertragbarkeit und Widerspruch. Vieles kannst du direkt im Dashboard selbst erledigen (Angaben
+              ändern, Steckbrief-Einträge entfernen, Konto löschen). Für alles Weitere schreib uns über das{" "}
+              <Link href="/kontakt" className="text-gold hover:underline">
+                Kontaktformular
+              </Link>{" "}
+              oder an [deine-email@beispiel.com]. Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde
+              zu beschweren.
             </p>
           </section>
         </div>

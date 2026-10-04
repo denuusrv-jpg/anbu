@@ -128,7 +128,7 @@ export function LightCvForm({ onSubmit }: { onSubmit: (cv: LightCv) => void }) {
           {error}
         </p>
       )}
-      <div className="flex justify-end">
+      <div className="sticky bottom-0 -mx-1 flex justify-end bg-gradient-to-t from-zinc-950 via-zinc-950/85 to-transparent px-1 pt-4 pb-1">
         <GoldButton type="submit">Weiter</GoldButton>
       </div>
     </form>

@@ -318,7 +318,7 @@ export default function ProfileForm({
         </div>
       </Field>
 
-      <div className="flex justify-end pt-1">
+      <div className="sticky bottom-0 -mx-1 flex justify-end bg-gradient-to-t from-zinc-950 via-zinc-950/85 to-transparent px-1 pt-4 pb-1">
         <GoldButton type="submit">Profil speichern</GoldButton>
       </div>
     </form>

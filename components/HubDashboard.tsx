@@ -14,6 +14,7 @@ import {
   GROUP_SIZES,
   INTERESTS,
   MATCH_GENDERS,
+  MAX_HUBS,
   REGIONS,
   VIBES,
   VISIBILITIES,
@@ -97,6 +98,8 @@ export default function HubDashboard({
     .filter((h): h is string => Boolean(h))
     .map((h) => REGIONS.find((r) => r.id === h)?.label ?? h);
   const [setupBusiness, setSetupBusiness] = useState(false);
+  const [editingHubs, setEditingHubs] = useState(false);
+  const [hubDraft, setHubDraft] = useState<Choice>({ ids: [], custom: [] });
   const steckbrief = buildSteckbrief({
     gender: profile.gender,
     matchGender: profile.match_gender,
@@ -187,6 +190,26 @@ export default function HubDashboard({
       }
       return { ...p, extras };
     });
+  }
+
+  function startEditHubs() {
+    const list = [profile.region, profile.second_region].filter((h): h is string => Boolean(h));
+    setHubDraft({
+      ids: list.filter((h) => REGIONS.some((r) => r.id === h)),
+      custom: list.filter((h) => !REGIONS.some((r) => r.id === h)),
+    });
+    setMessage("");
+    setEditingHubs(true);
+  }
+
+  async function saveHubs(chosen: Choice) {
+    const list = [...chosen.ids, ...chosen.custom];
+    if (await patch({ hubs: chosen })) {
+      setProfile((p) => ({ ...p, region: list[0], second_region: list[1] ?? null }));
+      setEditingHubs(false);
+      // Die Fortschrittsbalken der Hubs neu laden
+      if (!preview) router.refresh();
+    }
   }
 
   async function changeGroupSize(next: string) {
@@ -587,6 +610,53 @@ export default function HubDashboard({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Hubs */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-zinc-100">{hubLabels.length > 1 ? "Deine Hubs" : "Dein Hub"}</p>
+              {!editingHubs && (
+                <button type="button" onClick={startEditHubs} className="text-xs text-zinc-400 transition-colors hover:text-gold">
+                  Bearbeiten
+                </button>
+              )}
+            </div>
+            {editingHubs ? (
+              <div className="mt-3">
+                <p className="mb-3 text-xs text-zinc-500">
+                  In welchen Bereichen wäre es für dich in Ordnung, mit einer Person befreundet zu sein? Höchstens zwei Hubs.
+                </p>
+                <ChoiceSelect
+                  options={REGIONS}
+                  value={hubDraft}
+                  onChange={setHubDraft}
+                  onConfirm={saveHubs}
+                  maxTotal={MAX_HUBS}
+                  customPlaceholder="Woanders? Schreib deine Region oder dein Land"
+                  confirmLabel={saving ? "Speichere …" : "Speichern"}
+                  extra={
+                    <button
+                      type="button"
+                      onClick={() => setEditingHubs(false)}
+                      className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+                    >
+                      Abbrechen
+                    </button>
+                  }
+                />
+              </div>
+            ) : (
+              <div className="mt-3">
+                <ChipRow>
+                  {hubLabels.map((label) => (
+                    <span key={label} className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200">
+                      {label}
+                    </span>
+                  ))}
+                </ChipRow>
+              </div>
+            )}
           </div>
 
           {/* Geschlecht und Wunsch */}

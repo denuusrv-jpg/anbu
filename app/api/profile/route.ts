@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GENDERS, GROUP_SIZES, INTERESTS, MATCH_GENDERS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
+import { GENDERS, GROUP_SIZES, INTERESTS, MATCH_GENDERS, MAX_HUBS, REGIONS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
 import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
 import { Invalid, choice, followUps, idOrCustom, oneOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
 import { saveTranscript } from "@/lib/profileStore";
@@ -79,6 +79,21 @@ export async function PATCH(request: Request) {
         extras.followUps = list;
       }
       update.extras = extras;
+    }
+
+    // Hubs ändern (höchstens zwei): der erste ist region, der zweite second_region
+    if (body.hubs !== undefined) {
+      const hubs = choice(body.hubs, REGIONS, "Hubs", 1);
+      const list = [...hubs.ids, ...hubs.custom];
+      if (list.length > MAX_HUBS) throw new Invalid(`Bitte höchstens ${MAX_HUBS} Hubs.`);
+      update.region = list[0];
+      update.second_region = list[1] ?? null;
+      // Der Grund für zwei Hubs gilt nur bei zwei Hubs
+      if (list.length < 2) {
+        const extras = { ...((update.extras ?? row.extras ?? {}) as Record<string, unknown>) };
+        delete extras.hubReason;
+        update.extras = extras;
+      }
     }
 
     if (body.gender !== undefined) update.gender = idOrCustom(body.gender, GENDERS, "Geschlecht", true);
