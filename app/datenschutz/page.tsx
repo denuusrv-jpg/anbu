@@ -26,9 +26,9 @@ export default function Datenschutz() {
           <section>
             <h2 className={h2}>1. Verantwortliche Stelle</h2>
             <p className="mt-2">
-              [Name / Firma]
+              Denushan Sarves
               <br />
-              [Adresse]
+              Wilhelmstraße 56, 59067 Hamm
               <br />
               E-Mail: info@dspora.de
             </p>
@@ -104,7 +104,7 @@ export default function Datenschutz() {
               </li>
               <li>
                 <strong className="text-zinc-200">Supabase</strong> betreibt Datenbank, Anmeldung und Dateispeicher
-                (Serverstandort: [Region des Supabase-Projekts eintragen]).
+                (Serverstandort: Irland, EU).
               </li>
               <li>
                 <strong className="text-zinc-200">OpenAI</strong> unterstützt uns mit KI: Der Chat nutzt sie für
@@ -112,12 +112,12 @@ export default function Datenschutz() {
                 Gespräch. E-Mail-Adressen, Telefonnummern und Links entfernen wir vorher, dein Geschlecht übermitteln wir
                 nicht. Für die Eisbrecher-Fragen im Chat übermitteln wir nur Gemeinsamkeiten wie Interessen und Hub, keine
                 Namen und keine Nachrichten. In den Admin-Auswertungen werden nur pseudonymisierte Daten ohne Namen und
-                E-Mail-Adressen verwendet. Die Verarbeitung kann in den USA stattfinden, [Grundlage der Übermittlung, z. B.
-                Standardvertragsklauseln, eintragen].
+                E-Mail-Adressen verwendet. Die Verarbeitung kann in den USA stattfinden, dann auf Grundlage von
+                Standardvertragsklauseln (Art. 46 DSGVO).
               </li>
               <li>
-                <strong className="text-zinc-200">E-Mail-Versand:</strong> [Anbieter für den Versand der Anmelde-Links
-                eintragen].
+                <strong className="text-zinc-200">E-Mail-Versand:</strong> Die Anmelde-Links verschicken wir über Resend
+                (Versand aus der EU-Region). Dabei verarbeitet Resend deine E-Mail-Adresse und den Inhalt der Mail.
               </li>
             </ul>
             <p className="mt-2">

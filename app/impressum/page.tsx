@@ -11,23 +11,18 @@ export default function Impressum() {
         <h1 className="mt-6 text-3xl font-bold text-zinc-50">Impressum</h1>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed">
-          <p className="rounded-lg border border-gold/30 bg-gold/5 p-4 text-gold">
-            Platzhalter — diese Seite ist noch nicht vollständig. Bitte mit
-            echten Angaben ersetzen, bevor die Seite öffentlich beworben wird.
-          </p>
-
           <section>
             <h2 className="font-semibold text-zinc-100">
               Angaben gemäß § 5 TMG
             </h2>
             <p className="mt-2">
-              [Vor- und Nachname bzw. Firmenname]
+              Denushan Sarves
               <br />
-              [Straße und Hausnummer]
+              Wilhelmstraße 56
               <br />
-              [PLZ und Ort]
+              59067 Hamm
               <br />
-              [Land]
+              Deutschland
             </p>
           </section>
 
@@ -35,8 +30,6 @@ export default function Impressum() {
             <h2 className="font-semibold text-zinc-100">Kontakt</h2>
             <p className="mt-2">
               E-Mail: info@dspora.de
-              <br />
-              Telefon (optional): [Telefonnummer]
             </p>
           </section>
 
@@ -44,7 +37,7 @@ export default function Impressum() {
             <h2 className="font-semibold text-zinc-100">
               Verantwortlich für den Inhalt
             </h2>
-            <p className="mt-2">[Name der verantwortlichen Person]</p>
+            <p className="mt-2">Denushan Sarves (Anschrift wie oben)</p>
           </section>
         </div>
       </div>
