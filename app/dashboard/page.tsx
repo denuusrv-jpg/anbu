@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/requireAdmin";
+import { listRooms } from "@/lib/chatRooms";
 import { REGIONS, labelOf } from "@/lib/onboarding";
 
 export const metadata = {
@@ -71,15 +72,22 @@ export default async function Hub() {
     );
   }
 
-  // Gegenseitige Matches (die RLS-Regeln zeigen nur die eigenen)
-  const { count: matchCount } = await supabase.from("matches").select("user_a", { count: "exact", head: true });
+  // Aktive Chats (höchstens 4) und ungelesene Nachrichten
+  let matchCount = 0;
+  let unreadCount = 0;
+  if (isServiceRoleConfigured()) {
+    const { rooms } = await listRooms(getServiceClient(), auth.user.id);
+    matchCount = rooms.filter((r) => !r.dissolved).length;
+    unreadCount = rooms.reduce((sum, r) => sum + r.unread, 0);
+  }
 
   return (
     <HubDashboard
       email={auth.user.email ?? ""}
       profile={profile as unknown as HubProfile}
       hubs={hubs}
-      matchCount={matchCount ?? 0}
+      matchCount={matchCount}
+      unreadCount={unreadCount}
       isAdmin={await isAdminRequest()}
       wishes={(wishes ?? []) as HubWish[]}
     />

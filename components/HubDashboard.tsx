@@ -64,6 +64,7 @@ export default function HubDashboard({
   profile: initial,
   hubs,
   matchCount,
+  unreadCount = 0,
   isAdmin,
   preview = false,
   wishes: initialWishes,
@@ -71,7 +72,8 @@ export default function HubDashboard({
   email: string;
   profile: HubProfile;
   hubs: HubStat[] | null;
-  matchCount: number;
+  matchCount: number; // aktive Chats (höchstens 4)
+  unreadCount?: number;
   isAdmin: boolean;
   /** Admin-Vorschau: zeigt alles wie live, schreibt aber nichts und ruft nichts auf */
   preview?: boolean;
@@ -351,7 +353,7 @@ export default function HubDashboard({
       text:
         active === "community"
           ? matchCount > 0
-            ? `${matchCount} neue${matchCount === 1 ? "r Match" : " Matches"} verfügbar`
+            ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
             : "Dein Hub bereitet passende Verbindungen vor"
           : "Pausiert. Wechsle oben auf „Private Community“, um sie zu aktivieren.",
     },
@@ -361,7 +363,7 @@ export default function HubDashboard({
       text:
         active === "business"
           ? matchCount > 0
-            ? `${matchCount} neue${matchCount === 1 ? "r Match" : " Matches"} verfügbar`
+            ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
             : "Dein Hub bereitet passende Business-Verbindungen vor"
           : "Nicht aktiv. Wechsle oben auf „Business & Co-Founding“, um sie zu aktivieren.",
     },
@@ -419,7 +421,7 @@ export default function HubDashboard({
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-gold" />
               </span>
               <h2 className="text-lg font-semibold text-zinc-50">
-                {matchCount > 0 ? "Neue Matches verfügbar" : "Dein Hub bereitet Matches vor"}
+                {matchCount > 0 ? "Deine Matches warten" : "Dein Hub bereitet Matches vor"}
               </h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
@@ -788,6 +790,41 @@ export default function HubDashboard({
               {message}
             </p>
           )}
+        </motion.section>
+
+        {/* Chats mit Matches */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE, delay: 0.09 }}
+          className={card}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-50">Deine Chats</h2>
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                Du kannst höchstens vier Chats gleichzeitig führen, damit jedes Gespräch echten Fokus bekommt. Verlässt du einen
+                Chat, wird ein Platz für ein neues Match frei.
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="flex justify-end gap-1" aria-hidden>
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} className={`h-2 w-5 rounded-full ${i < matchCount ? "bg-gold" : "bg-white/10"}`} />
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] text-zinc-500">{matchCount} von 4</p>
+            </div>
+          </div>
+          <Link
+            href={preview ? "#" : "/dashboard/chats"}
+            className="cta-premium mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
+          >
+            Zu den Chats
+            {unreadCount > 0 && (
+              <span className="rounded-full bg-zinc-950/80 px-2 py-0.5 text-[11px] text-gold">{unreadCount} neu</span>
+            )}
+          </Link>
         </motion.section>
 
         {/* Steckbrief: was DSpora über dich weiß, und das Gespräch mit der KI */}

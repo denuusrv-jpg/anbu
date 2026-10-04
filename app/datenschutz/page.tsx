@@ -64,6 +64,15 @@ export default function Datenschutz() {
                 des Gesprächs. Einzelne Angaben kannst du im Dashboard jederzeit entfernen.
               </li>
               <li>
+                <strong className="text-zinc-200">Chats mit Matches:</strong> Wenn wir dich mit anderen zusammenbringen, entsteht ein
+                Chat (zu zweit oder in einer Gruppe, höchstens vier Chats gleichzeitig). Die Nachrichten speichern wir, damit ihr sie
+                weiterlesen könnt. Sie sind nur für die Teilnehmer des jeweiligen Chats sichtbar. Wir als Betreiber lesen keine
+                Nachrichteninhalte. Für die Qualität der Plattform werten wir nur anonyme Zahlen aus (zum Beispiel wie viele Chats
+                aktiv sind, ob geantwortet wird, wie oft ein Eisbrecher genutzt wird und das freiwillige Feedback). Ein kurzer
+                Match-Steckbrief erklärt oben im Chat, warum ihr gematcht wurdet. Verlässt du einen Chat, wird dein Platz frei. Endet
+                ein Chat, wird der Steckbrief sofort gelöscht, der Chat selbst spätestens nach 7 Tagen.
+              </li>
+              <li>
                 <strong className="text-zinc-200">Ideen und Wünsche:</strong> Was du uns als Idee für DSpora schickst,
                 speichern wir mit deinem Konto, damit wir die Plattform mit der Community weiterentwickeln können.
               </li>
@@ -101,8 +110,9 @@ export default function Datenschutz() {
                 <strong className="text-zinc-200">OpenAI</strong> unterstützt uns mit KI: Der Chat nutzt sie für
                 Folgefragen, und der Admin-Bereich für Auswertungen. Dabei übermitteln wir Textstellen aus deinem
                 Gespräch. E-Mail-Adressen, Telefonnummern und Links entfernen wir vorher, dein Geschlecht übermitteln wir
-                nicht. In den Admin-Auswertungen werden nur pseudonymisierte Daten ohne Namen und E-Mail-Adressen
-                verwendet. Die Verarbeitung kann in den USA stattfinden, [Grundlage der Übermittlung, z. B.
+                nicht. Für die Eisbrecher-Fragen im Chat übermitteln wir nur Gemeinsamkeiten wie Interessen und Hub, keine
+                Namen und keine Nachrichten. In den Admin-Auswertungen werden nur pseudonymisierte Daten ohne Namen und
+                E-Mail-Adressen verwendet. Die Verarbeitung kann in den USA stattfinden, [Grundlage der Übermittlung, z. B.
                 Standardvertragsklauseln, eintragen].
               </li>
               <li>

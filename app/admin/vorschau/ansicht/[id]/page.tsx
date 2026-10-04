@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import ChatList from "@/components/chat/ChatList";
+import ChatRoom from "@/components/chat/ChatRoom";
 import HubDashboard from "@/components/HubDashboard";
 import ReadyWindow from "@/components/onboarding/ReadyWindow";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
-import { SAMPLE_ANONYMOUS, SAMPLE_BUSINESS, SAMPLE_HUBS, SAMPLE_PRIVATE, SAMPLE_WISHES } from "@/lib/previewViews";
+import { SAMPLE_ANONYMOUS, SAMPLE_BUSINESS, SAMPLE_HUBS, SAMPLE_PRIVATE, SAMPLE_ROOM, SAMPLE_ROOM_ENDED, SAMPLE_ROOMS, SAMPLE_WISHES } from "@/lib/previewViews";
 import OnboardingDone from "@/app/onboarding/fertig/page";
 
 export const metadata = {
@@ -28,7 +30,8 @@ export default async function PreviewView({ params }: { params: Promise<{ id: st
           email="mira@beispiel.de"
           profile={SAMPLE_PRIVATE}
           hubs={SAMPLE_HUBS}
-          matchCount={0}
+          matchCount={3}
+          unreadCount={2}
           isAdmin={false}
           wishes={SAMPLE_WISHES}
           preview
@@ -58,6 +61,12 @@ export default async function PreviewView({ params }: { params: Promise<{ id: st
           preview
         />
       );
+    case "chat-liste":
+      return <ChatList sample={SAMPLE_ROOMS} />;
+    case "chat-raum":
+      return <ChatRoom roomId="r1" sample={SAMPLE_ROOM} />;
+    case "chat-beendet":
+      return <ChatRoom roomId="r4" sample={SAMPLE_ROOM_ENDED} />;
     case "dashboard-admin":
       return (
         <HubDashboard

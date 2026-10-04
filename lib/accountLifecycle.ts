@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/errorLog";
+import { leaveAllRooms } from "@/lib/chatRooms";
 
 // Soft-Delete nach DSGVO: Ein gelöschtes Konto wird gesperrt und bleibt 30 Tage für den Support
 // sichtbar. Danach wird es endgültig entfernt (Konto, Profil, Antworten, Wünsche, Fotos).
@@ -24,6 +25,8 @@ export async function softDeleteAccount(db: SupabaseClient, userId: string): Pro
   if (error) return false;
   // Gesperrt: neue Anmeldungen und das Erneuern bestehender Sitzungen sind nicht mehr möglich
   await db.auth.admin.updateUserById(userId, { ban_duration: BAN_DURATION });
+  // Aus allen Chats austreten: die Plätze der anderen werden frei, aufgelöste Chats verlieren ihren Match-Steckbrief
+  await leaveAllRooms(db, userId);
   return true;
 }
 
@@ -37,6 +40,8 @@ export async function restoreAccount(db: SupabaseClient, userId: string): Promis
 
 /** Endgültig löschen: Fotos, Konto und (per Kaskade) Profil und Wünsche. */
 export async function purgeAccount(db: SupabaseClient, userId: string): Promise<boolean> {
+  // Zuerst aus allen Chats austreten, damit keine verwaisten Räume ohne Mitglieder zurückbleiben
+  await leaveAllRooms(db, userId);
   const files = await db.storage.from("profile-photos").list(userId);
   if (files.data && files.data.length > 0) {
     await db.storage

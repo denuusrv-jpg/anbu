@@ -8,6 +8,8 @@ import { COPILOT_EXAMPLES } from "@/lib/adminCopilot";
 import { computeKpis, loadAdminData, type AdminData } from "@/lib/adminData";
 import { purgeExpired } from "@/lib/accountLifecycle";
 import ErrorsPanel from "@/components/admin/ErrorsPanel";
+import MatchingPanel from "@/components/admin/MatchingPanel";
+import { loadChatMetrics, type ChatMetrics } from "@/lib/chatRooms";
 import { loadSystemErrors, type SystemError } from "@/lib/systemErrors";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { ArrowRightIcon, BoltIcon, EyeIcon } from "@/components/Icons";
@@ -28,6 +30,7 @@ export default async function Admin() {
   let data: AdminData | null = null;
   let dataError = "";
   let systemErrors: SystemError[] | null = null;
+  let chatMetrics: ChatMetrics | null = null;
   const connected = isServiceRoleConfigured();
   if (connected) {
     try {
@@ -36,6 +39,7 @@ export default async function Admin() {
       data = await loadAdminData(db);
       // Fehler-Tracking: fehlt die Tabelle noch, bleibt der Rest des Dashboards trotzdem nutzbar
       systemErrors = await loadSystemErrors(db).catch(() => null);
+      chatMetrics = await loadChatMetrics(db).catch(() => null);
     } catch {
       dataError =
         "Die Daten konnten nicht geladen werden. Sind die Tabellen angelegt (supabase/schema.sql)?";
@@ -99,6 +103,16 @@ export default async function Admin() {
             <ArrowRightIcon className="h-4 w-4 shrink-0 text-zinc-500 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-gold" />
           </Link>
         </div>
+
+        {/* Matching und Chat-Qualität */}
+        {connected && (
+          <>
+            <h2 className="mt-12 text-xs font-semibold tracking-wide text-zinc-500 uppercase">Matching &amp; Chats</h2>
+            <div className="mt-3">
+              <MatchingPanel metrics={chatMetrics} />
+            </div>
+          </>
+        )}
 
         {/* Fehler-Tracking */}
         {connected && (

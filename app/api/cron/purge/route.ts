@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { purgeExpired } from "@/lib/accountLifecycle";
+import { purgeDissolvedRooms } from "@/lib/chatRooms";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export async function GET(request: Request) {
   if (!isServiceRoleConfigured()) {
     return NextResponse.json({ error: "Supabase ist nicht verbunden." }, { status: 503 });
   }
-  const purged = await purgeExpired(getServiceClient());
-  return NextResponse.json({ ok: true, purged });
+  const db = getServiceClient();
+  const purged = await purgeExpired(db);
+  // Aufgelöste Chats (samt Nachrichten) nach 7 Tagen endgültig löschen
+  const rooms = await purgeDissolvedRooms(db);
+  return NextResponse.json({ ok: true, purged, rooms });
 }

@@ -1,0 +1,135 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+import type { RoomSummary } from "@/lib/chatRooms";
+
+type ListData = { rooms: RoomSummary[]; slotsUsed: number; limit: number };
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+// Übersicht der eigenen Chats mit den belegten Plätzen (höchstens 4 gleichzeitig)
+export default function ChatList({ sample }: { sample?: ListData }) {
+  const [data, setData] = useState<ListData | null>(sample ?? null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (sample) return;
+    let alive = true;
+    async function load() {
+      try {
+        const res = await fetch("/api/chats", { cache: "no-store" });
+        if (!res.ok) throw new Error("failed");
+        const json = (await res.json()) as ListData;
+        if (alive) {
+          setData(json);
+          setError("");
+        }
+      } catch {
+        if (alive) setError("Die Chats konnten nicht geladen werden.");
+      }
+    }
+    load();
+    const id = setInterval(() => {
+      if (!document.hidden) load();
+    }, 15000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [sample]);
+
+  const card = "rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl";
+
+  return (
+    <main className="min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
+      <div className="mx-auto max-w-2xl space-y-5">
+        <header className="flex items-center justify-between gap-4">
+          <div>
+            <Link href={sample ? "#" : "/dashboard"} className="text-xs text-zinc-500 hover:text-zinc-300">
+              ← Dashboard
+            </Link>
+            <h1 className="mt-2 text-2xl font-bold text-zinc-50 sm:text-3xl">Deine Chats</h1>
+          </div>
+          {data && (
+            <div className="text-right" title="Du kannst höchstens vier Chats gleichzeitig führen">
+              <div className="flex justify-end gap-1.5" aria-hidden>
+                {Array.from({ length: data.limit }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`h-2.5 w-6 rounded-full ${i < data.slotsUsed ? "bg-gold shadow-[0_0_10px_rgba(242,166,90,0.6)]" : "bg-white/10"}`}
+                  />
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-zinc-500">
+                {data.slotsUsed} von {data.limit} Plätzen belegt
+              </p>
+            </div>
+          )}
+        </header>
+
+        <p className="text-xs leading-relaxed text-zinc-500">
+          Du kannst höchstens {data?.limit ?? 4} Chats gleichzeitig führen, damit jedes Gespräch Raum bekommt. Verlässt du einen Chat, wird ein
+          Platz für ein neues Match frei.
+        </p>
+
+        {error && (
+          <p role="alert" className="text-sm text-rose">
+            {error}
+          </p>
+        )}
+
+        {data && data.rooms.length === 0 && (
+          <div className={`${card} p-8 text-center`}>
+            <h2 className="text-lg font-semibold text-zinc-50">Noch keine Chats</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              Sobald dein Hub öffnet und wir passende Menschen für dich gefunden haben, startet hier dein erster Chat, mit einem Eisbrecher,
+              der zu euren Gemeinsamkeiten passt.
+            </p>
+          </div>
+        )}
+
+        <ul className="space-y-3">
+          {data?.rooms.map((room, i) => (
+            <motion.li
+              key={room.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: EASE, delay: i * 0.05 }}
+            >
+              <Link
+                href={sample ? "#" : `/dashboard/chats/${room.id}`}
+                className={`${card} block p-5 transition-[border-color,box-shadow] duration-300 hover:border-gold/40 hover:shadow-[0_0_28px_-10px_rgba(242,166,90,0.4)]`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-semibold text-zinc-50">
+                      {room.members.filter((m) => !m.isMe).map((m) => m.label).join(", ") || "Allein im Chat"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {room.kind === "duo" ? "Duo" : `Gruppe · ${room.members.length} Personen`}
+                      {room.track === "business" ? " · Business" : ""}
+                      {room.dissolved ? " · beendet" : ""}
+                    </p>
+                  </div>
+                  {room.unread > 0 && (
+                    <span className="shrink-0 rounded-full bg-gold px-2.5 py-0.5 text-xs font-bold text-zinc-950">{room.unread}</span>
+                  )}
+                </div>
+                {room.last && (
+                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-zinc-400">
+                    {room.last.kind === "icebreaker" ? "✨ " : ""}
+                    {room.last.body}
+                  </p>
+                )}
+                {room.last && <p className="mt-2 text-[11px] text-zinc-600">{time.format(new Date(room.last.createdAt))}</p>}
+              </Link>
+            </motion.li>
+          ))}
+        </ul>
+      </div>
+    </main>
+  );
+}

@@ -342,3 +342,107 @@ $$;
 
 revoke all on function public.log_system_error(text, text, text, text) from public, anon, authenticated;
 grant execute on function public.log_system_error(text, text, text, text) to service_role;
+
+-- ─────────────────────────────────────────────────────────────
+-- 13) Chat-Räume zwischen Matches (Duos und Gruppen), Eisbrecher, Match-Steckbrief, anonyme Metriken
+--     Nachrichten sind nur für aktive Mitglieder eines Raums lesbar (RLS). Geschrieben wird ausschließlich über die
+--     Server-API (Service Role). Die Admin-Auswertung nutzt nur die View room_message_meta ohne Nachrichtentext.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.chat_rooms (
+  id           uuid primary key default gen_random_uuid(),
+  kind         text not null check (kind in ('duo', 'group')),
+  track        text not null default 'community' check (track in ('community', 'business')),
+  status       text not null default 'active' check (status in ('active', 'dissolved')),
+  created_at   timestamptz not null default now(),
+  dissolved_at timestamptz
+);
+
+create table if not exists public.chat_room_members (
+  room_id      uuid not null references public.chat_rooms (id) on delete cascade,
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  joined_at    timestamptz not null default now(),
+  left_at      timestamptz,
+  last_read_at timestamptz not null default now(),
+  feedback     text check (feedback in ('good', 'ok', 'bad')),
+  primary key (room_id, user_id)
+);
+create index if not exists chat_room_members_user_idx on public.chat_room_members (user_id) where left_at is null;
+
+create table if not exists public.room_messages (
+  id         uuid primary key default gen_random_uuid(),
+  room_id    uuid not null references public.chat_rooms (id) on delete cascade,
+  user_id    uuid references auth.users (id) on delete cascade,   -- leer bei Eisbrecher und Systemmeldungen
+  kind       text not null default 'user' check (kind in ('user', 'icebreaker', 'system')),
+  body       text not null check (char_length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+create index if not exists room_messages_room_idx on public.room_messages (room_id, created_at);
+
+-- Temporärer Match-Steckbrief: warum wurden die Teilnehmer gematcht? Wird mit dem Raum gelöscht.
+create table if not exists public.room_steckbriefe (
+  room_id    uuid primary key references public.chat_rooms (id) on delete cascade,
+  summary    text not null,
+  shared     jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- Anonyme Ereignisse für die Qualitätsmetriken: bewusst ohne Nutzer-ID und ohne Nachrichteninhalt
+create table if not exists public.room_events (
+  id         uuid primary key default gen_random_uuid(),
+  kind       text not null check (kind in ('room_created', 'icebreaker', 'feedback', 'room_ended')),
+  value      text,
+  meta       jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists room_events_created_idx on public.room_events (created_at desc);
+
+alter table public.chat_rooms enable row level security;
+alter table public.chat_room_members enable row level security;
+alter table public.room_messages enable row level security;
+alter table public.room_steckbriefe enable row level security;
+alter table public.room_events enable row level security;
+
+create or replace function public.is_room_member(p_room uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.chat_room_members m
+    where m.room_id = p_room and m.user_id = auth.uid() and m.left_at is null
+  );
+$$;
+
+drop policy if exists "Eigene Räume lesen" on public.chat_rooms;
+create policy "Eigene Räume lesen" on public.chat_rooms for select to authenticated using (public.is_room_member(id));
+drop policy if exists "Mitglieder lesen" on public.chat_room_members;
+create policy "Mitglieder lesen" on public.chat_room_members for select to authenticated using (public.is_room_member(room_id));
+drop policy if exists "Nachrichten der eigenen Räume lesen" on public.room_messages;
+create policy "Nachrichten der eigenen Räume lesen" on public.room_messages for select to authenticated using (public.is_room_member(room_id));
+drop policy if exists "Steckbrief der eigenen Räume lesen" on public.room_steckbriefe;
+create policy "Steckbrief der eigenen Räume lesen" on public.room_steckbriefe for select to authenticated using (public.is_room_member(room_id));
+
+-- Admin-Auswertung ohne Nachrichtentext: nur Metadaten (wer, wann, welche Art), nie der Inhalt
+create or replace view public.room_message_meta as
+  select id, room_id, user_id, kind, created_at from public.room_messages;
+revoke all on public.room_message_meta from public, anon, authenticated;
+grant select on public.room_message_meta to service_role;
+
+-- Hartes Limit: höchstens 4 aktive Chats pro Person (aufgelöste Räume zählen nicht)
+create or replace function public.enforce_chat_limit() returns trigger language plpgsql as $$
+declare active_count integer;
+begin
+  if new.left_at is null then
+    perform pg_advisory_xact_lock(hashtext(new.user_id::text));
+    select count(*) into active_count
+    from public.chat_room_members m
+    join public.chat_rooms r on r.id = m.room_id
+    where m.user_id = new.user_id and m.left_at is null and r.status = 'active' and m.room_id <> new.room_id;
+    if active_count >= 4 then
+      raise exception 'chat_limit_reached' using errcode = 'P0001';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists chat_limit_trigger on public.chat_room_members;
+create trigger chat_limit_trigger before insert or update of left_at on public.chat_room_members
+  for each row execute function public.enforce_chat_limit();
