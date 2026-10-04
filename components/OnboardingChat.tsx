@@ -137,11 +137,14 @@ export default function OnboardingChat({
   mode = "preview",
   userId,
   resume,
+  aiEnabled = false,
 }: {
   mode?: ChatMode;
   userId?: string;
   /** Eingeloggte Person setzt das Gespräch fort: bereits Gefragtes wird nicht wiederholt */
   resume?: { asked: string[]; context: string; steckbrief: Steckbrief };
+  /** KI (OpenAI) stellt die Folgefragen; ohne Schlüssel oder bei Fehlern gilt die regelbasierte Frage */
+  aiEnabled?: boolean;
 }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -365,6 +368,9 @@ export default function OnboardingChat({
     ask(
       [
         "Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst. Wir können so lange reden, wie du magst, und wenn du Fragen zu DSpora hast, stell sie mir gern zwischendurch.",
+        ...(aiEnabled
+          ? ["Hinweis: Für die Folgefragen hilft mir eine KI (OpenAI). E-Mail-Adressen, Telefonnummern und Links werden vorher entfernt."]
+          : []),
       ],
       "freeText",
     );
@@ -606,15 +612,56 @@ export default function OnboardingChat({
     askNext(answered ? ["Danke, das erzählt schon viel über dich."] : []);
   }
 
+  // Frage der KI holen (bereinigt, ohne Geschlecht). Bei Fehler oder Zeitüberschreitung null: dann gilt die regelbasierte Frage.
+  async function fetchAiQuestion(): Promise<string | null> {
+    if (!aiEnabled) return null;
+    try {
+      const sb = currentSteckbrief();
+      const hints = sb.lines
+        .filter((l) => !["Geschlecht", "Verbinden mit"].includes(l.label))
+        .map((l) => `${l.label}: ${l.value}`)
+        .slice(0, 10);
+      const recent = [
+        ...(resume?.steckbrief.facts ?? []).map((f) => f.answer),
+        ...(extrasText() ? [extrasText()] : []),
+        ...followAnswers.current.map((f) => f.answer),
+      ].slice(-6);
+      const res = await fetch("/api/chat/next", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lastAnswer: lastAnswer.current, recent, asked: askedQuestions.current.slice(-40), hints }),
+        signal: AbortSignal.timeout(9000),
+      });
+      const data = await res.json();
+      return typeof data?.question === "string" ? data.question : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function extrasText(): string {
+    return answers.current.extras?.freeText ?? "";
+  }
+
   // Nächste Frage im Gespräch. Nach jeweils drei Antworten fragt der Chat, ob es weitergehen soll.
-  function askNext(intro: BotLine[] = []) {
+  async function askNext(intro: BotLine[] = []) {
     if (sinceCheckpoint.current >= 3 || skipsInRow.current >= 2) {
       sinceCheckpoint.current = 0;
       skipsInRow.current = 0;
       askCheckpoint(intro);
       return;
     }
-    const question = nextQuestion(lastAnswer.current, talkContext.current, askedQuestions.current);
+    let question: string | null = null;
+    if (aiEnabled) {
+      setStep("intro");
+      setBusy(true);
+      setTyping(true);
+      question = await fetchAiQuestion();
+      if (!alive.current) return;
+      setTyping(false);
+      if (question && askedQuestions.current.includes(question)) question = null;
+    }
+    if (!question) question = nextQuestion(lastAnswer.current, talkContext.current, askedQuestions.current);
     if (!question) {
       exitTalk([...intro, "Ich glaube, ich habe dich jetzt schon richtig gut kennengelernt. Danke dir!"]);
       return;

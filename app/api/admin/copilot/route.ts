@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { answerQuestion } from "@/lib/adminCopilot";
+import { NOT_UNDERSTOOD, tryAnswer } from "@/lib/adminCopilot";
+import { askAdminAi } from "@/lib/adminAi";
+import { getModel, isAiConfigured, takeAiBudget } from "@/lib/ai";
 import { loadAdminData } from "@/lib/adminData";
 import { isAdminRequest } from "@/lib/requireAdmin";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
@@ -27,7 +29,17 @@ export async function POST(request: Request) {
 
   try {
     const data = await loadAdminData(getServiceClient());
-    return NextResponse.json(answerQuestion(body.question, data));
+
+    // Mit KI (gpt-4o-mini), wenn ein Schlüssel hinterlegt ist. Bei Fehlern antwortet die Regel-Logik wie bisher.
+    if (isAiConfigured() && takeAiBudget()) {
+      try {
+        const answer = await askAdminAi(getModel(), body.question, data);
+        return NextResponse.json({ ...answer, source: "ai" });
+      } catch (error) {
+        await logError(error, "API /api/admin/copilot (KI)");
+      }
+    }
+    return NextResponse.json({ ...(tryAnswer(body.question, data) ?? NOT_UNDERSTOOD), source: "rules" });
   } catch (error) {
     await logError(error, "API /api/admin/copilot");
     return NextResponse.json({ error: "Die Daten konnten nicht geladen werden." }, { status: 500 });

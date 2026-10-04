@@ -23,6 +23,8 @@ const PATTERNS: [RegExp, string][] = [
     /\b(password|passwort|passwd|pwd|secret|token|access_token|refresh_token|token_hash|api[_-]?key|apikey|authorization|otp|session)\b(["']?\s*[:=]\s*["']?)(?!\[REDACTED\])[^\s"'&,;)}\]]+/gi,
     `$1$2${REDACTED}`,
   ],
+  // API-Schlüssel (auch teilweise maskiert, wie in Fehlermeldungen von OpenAI: sk-proj-****abcd)
+  [/\bsk-[A-Za-z0-9_*.-]{4,}/g, REDACTED],
   // UUIDs (z. B. Nutzer-IDs)
   [/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, REDACTED],
   // IPv4-Adressen

@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRightIcon, SparkleIcon } from "@/components/Icons";
 
-type Answer = { answer: string; items?: { label: string; value?: string }[] };
+type Answer = { answer: string; items?: { label: string; value?: string }[]; source?: "ai" | "rules" };
 type Entry = { id: number; question: string; result?: Answer; error?: string; pending: boolean };
 
 const VISIBLE = 4;
@@ -108,7 +108,7 @@ export default function AdminCopilot({ examples }: { examples: string[] }) {
                     <span className="text-rose">{e.error}</span>
                   ) : (
                     <>
-                      <p>{e.result?.answer}</p>
+                      <p className="whitespace-pre-line">{e.result?.answer}</p>
                       {e.result?.items && e.result.items.length > 0 && (
                         <ul className="mt-2 divide-y divide-white/5 rounded-xl border border-white/10 bg-zinc-950/40">
                           {e.result.items.map((item, i) => (
@@ -118,6 +118,9 @@ export default function AdminCopilot({ examples }: { examples: string[] }) {
                             </li>
                           ))}
                         </ul>
+                      )}
+                      {e.result?.source === "ai" && (
+                        <p className="mt-2 text-[10px] tracking-wide text-zinc-500 uppercase">Beantwortet mit KI</p>
                       )}
                     </>
                   )}

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import HubDashboard from "@/components/HubDashboard";
 import ReadyWindow from "@/components/onboarding/ReadyWindow";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
-import { SAMPLE_BUSINESS, SAMPLE_HUBS, SAMPLE_PRIVATE, SAMPLE_WISHES } from "@/lib/previewViews";
+import { SAMPLE_ANONYMOUS, SAMPLE_BUSINESS, SAMPLE_HUBS, SAMPLE_PRIVATE, SAMPLE_WISHES } from "@/lib/previewViews";
 import OnboardingDone from "@/app/onboarding/fertig/page";
 
 export const metadata = {
@@ -43,6 +43,18 @@ export default async function PreviewView({ params }: { params: Promise<{ id: st
           matchCount={2}
           isAdmin={false}
           wishes={SAMPLE_WISHES}
+          preview
+        />
+      );
+    case "dashboard-anonym":
+      return (
+        <HubDashboard
+          email="anonym@beispiel.de"
+          profile={SAMPLE_ANONYMOUS}
+          hubs={SAMPLE_HUBS.slice(0, 1)}
+          matchCount={0}
+          isAdmin={false}
+          wishes={[]}
           preview
         />
       );

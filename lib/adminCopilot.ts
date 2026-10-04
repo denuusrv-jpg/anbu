@@ -18,7 +18,7 @@ const fmt = new Intl.DateTimeFormat("de-DE", {
   timeStyle: "short",
 });
 const when = (iso: string) => fmt.format(new Date(iso));
-const who = (p: { email: string; profile?: { displayName?: string } | null }) =>
+export const who = (p: { email: string; profile?: { displayName?: string } | null }) =>
   `${p.profile?.displayName ?? "Anonym"}${p.email ? ` (${p.email})` : ""}`;
 
 function top(counts: Map<string, number>, limit = 8) {
@@ -36,7 +36,8 @@ function tally(profiles: AdminProfile[], pick: (p: AdminProfile) => string[]) {
 
 const choiceOf = (c: Choice | undefined, options: Option[]) => (c ? choiceLabels(c, options) : []);
 
-export function answerQuestion(question: string, data: AdminData, now = new Date()): CopilotAnswer {
+// Regelbasierte Antwort auf bekannte Fragen; null, wenn die Frage nicht erkannt wurde
+export function tryAnswer(question: string, data: AdminData, now = new Date()): CopilotAnswer | null {
   const q = question.toLowerCase().replace(/[?!.,]/g, " ").replace(/\s+/g, " ").trim();
   const has = (...words: string[]) => words.some((w) => q.includes(w));
   const active = data.profiles.filter((p) => !p.deleted_at);
@@ -282,10 +283,16 @@ export function answerQuestion(question: string, data: AdminData, now = new Date
     };
   }
 
-  return {
-    answer:
-      "Das habe ich nicht verstanden. Ich kann zum Beispiel Auskunft geben zu Logins, Registrierungen, Top-Interessen, Regionen, Vibes, Sprachen, Wünschen, Soft-Delete und zur Warteliste.",
-  };
+  return null;
+}
+
+export const NOT_UNDERSTOOD: CopilotAnswer = {
+  answer:
+    "Das habe ich nicht verstanden. Ich kann zum Beispiel Auskunft geben zu Logins, Registrierungen, Top-Interessen, Regionen, Vibes, Sprachen, Wünschen, Soft-Delete und zur Warteliste.",
+};
+
+export function answerQuestion(question: string, data: AdminData, now = new Date()): CopilotAnswer {
+  return tryAnswer(question, data, now) ?? NOT_UNDERSTOOD;
 }
 
 // Beispiele, die in der Oberfläche rotieren

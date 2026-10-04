@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import OnboardingChat from "@/components/OnboardingChat";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
+import { isAiConfigured } from "@/lib/ai";
 import { buildSteckbrief } from "@/lib/steckbrief";
 import type { BusinessData, Choice, OnboardingAnswers } from "@/lib/onboarding";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -19,17 +20,18 @@ export default async function Onboarding({
   searchParams: Promise<{ test?: string; talk?: string }>;
 }) {
   const { test, talk } = await searchParams;
+  const aiEnabled = isAiConfigured();
 
   // Admin-Testlauf: nur mit gültigem Admin-Cookie, es wird nichts gespeichert
   if (test === "1") {
     const store = await cookies();
     if (verifySessionToken(store.get(ADMIN_COOKIE)?.value)) {
-      return <OnboardingChat mode="test" />;
+      return <OnboardingChat aiEnabled={aiEnabled} mode="test" />;
     }
   }
 
   // Supabase noch nicht verbunden: Chat läuft im Vorschau-Modus
-  if (!isSupabaseConfigured) return <OnboardingChat mode="preview" />;
+  if (!isSupabaseConfigured) return <OnboardingChat aiEnabled={aiEnabled} mode="preview" />;
 
   const supabase = await getServerClient();
   const { data } = await supabase.auth.getUser();
@@ -45,7 +47,7 @@ export default async function Onboarding({
       const extras = (row.extras ?? {}) as { freeText?: string; followUps?: { question: string; answer: string }[] };
       const previous = extras.followUps ?? [];
       return (
-        <OnboardingChat
+        <OnboardingChat aiEnabled={aiEnabled}
           mode="live"
           userId={data.user.id}
           resume={{
@@ -72,8 +74,8 @@ export default async function Onboarding({
 
   // Angemeldet: speichert direkt. Gast: Anmeldung per Link am Ende des Chats.
   return data.user ? (
-    <OnboardingChat mode="live" userId={data.user.id} />
+    <OnboardingChat aiEnabled={aiEnabled} mode="live" userId={data.user.id} />
   ) : (
-    <OnboardingChat mode="guest" />
+    <OnboardingChat aiEnabled={aiEnabled} mode="guest" />
   );
 }

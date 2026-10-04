@@ -22,6 +22,11 @@ export const PREVIEW_VIEWS: PreviewView[] = [
     description: "Dasselbe Dashboard im Business-Modus, mit Light-CV und Business-Sichtbarkeit.",
   },
   {
+    id: "dashboard-anonym",
+    label: "Dashboard: Anonym",
+    description: "Eine Person, die anonym gestartet ist und noch kein Profil mit Namen angelegt hat.",
+  },
+  {
     id: "dashboard-admin",
     label: "Dashboard mit Admin-Zugang",
     description: "So sieht das Dashboard aus, wenn eine aktive Admin-Session besteht (Admin-Button oben rechts).",
@@ -75,6 +80,16 @@ export const SAMPLE_PRIVATE: HubProfile = {
     ],
     meetFrequency: "weekend",
   },
+};
+
+export const SAMPLE_ANONYMOUS: HubProfile = {
+  ...SAMPLE_PRIVATE,
+  second_region: null,
+  mode: "anonymous",
+  profile: null,
+  visibility: "stealth",
+  group_size: "duo",
+  extras: null,
 };
 
 export const SAMPLE_BUSINESS: HubProfile = {
