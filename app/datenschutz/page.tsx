@@ -30,7 +30,7 @@ export default function Datenschutz() {
               <br />
               [Adresse]
               <br />
-              E-Mail: hallo@dspora.de
+              E-Mail: info@dspora.de
             </p>
           </section>
 
@@ -144,7 +144,7 @@ export default function Datenschutz() {
               <Link href="/kontakt" className="text-gold hover:underline">
                 Kontaktformular
               </Link>{" "}
-              oder an hallo@dspora.de. Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde
+              oder an info@dspora.de. Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde
               zu beschweren.
             </p>
           </section>
