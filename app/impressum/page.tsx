@@ -34,7 +34,7 @@ export default function Impressum() {
           <section>
             <h2 className="font-semibold text-zinc-100">Kontakt</h2>
             <p className="mt-2">
-              E-Mail: [deine-email@beispiel.com]
+              E-Mail: hallo@dspora.de
               <br />
               Telefon (optional): [Telefonnummer]
             </p>
