@@ -14,17 +14,17 @@ export type PreviewView = {
 export const PREVIEW_VIEWS: PreviewView[] = [
   {
     id: "dashboard-privat",
-    label: "Dashboard: Private Community",
-    description: "Das Dashboard einer Person im Modus „Private Community“ (Beispiel-Profil Mira).",
+    label: "Profil: Private Community",
+    description: "Das Profil einer Person im Modus „Private Community“ (Beispiel-Profil Mira).",
   },
   {
     id: "dashboard-business",
-    label: "Dashboard: Business & Co-Founding",
-    description: "Dasselbe Dashboard im Business-Modus, mit Light-CV und Business-Sichtbarkeit.",
+    label: "Profil: Business & Co-Founding",
+    description: "Dasselbe Profil im Business-Modus, mit Light-CV und Business-Sichtbarkeit.",
   },
   {
     id: "dashboard-anonym",
-    label: "Dashboard: Anonym",
+    label: "Profil: Anonym",
     description: "Eine Person, die anonym gestartet ist und noch kein Profil mit Namen angelegt hat.",
   },
   {
@@ -44,8 +44,8 @@ export const PREVIEW_VIEWS: PreviewView[] = [
   },
   {
     id: "dashboard-admin",
-    label: "Dashboard mit Admin-Zugang",
-    description: "So sieht das Dashboard aus, wenn eine aktive Admin-Session besteht (Admin-Button oben rechts).",
+    label: "Profil mit Admin-Zugang",
+    description: "So sieht das Profil aus, wenn eine aktive Admin-Session besteht (Admin-Button oben rechts).",
   },
   {
     id: "startklar-gast",
@@ -60,7 +60,7 @@ export const PREVIEW_VIEWS: PreviewView[] = [
   {
     id: "startklar-fortsetzen",
     label: "Startklar-Fenster: Gespräch fortgesetzt",
-    description: "Erscheint, wenn jemand das Gespräch aus dem Dashboard fortgesetzt und gespeichert hat.",
+    description: "Erscheint, wenn jemand das Gespräch aus dem Profil fortgesetzt und gespeichert hat.",
   },
   {
     id: "fertig",

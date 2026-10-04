@@ -48,13 +48,13 @@ export default function Datenschutz() {
               <li>
                 <strong className="text-zinc-200">Geschlecht (freiwillig):</strong> Wie du dich identifizierst und mit
                 wem du dich verbinden möchtest. Die Angabe ist freiwillig und erfolgt auf Grundlage deiner Einwilligung.
-                Du kannst sie jederzeit im Dashboard ändern oder die Option „Möchte ich nicht angeben“ wählen.
+                Du kannst sie jederzeit in deinem Profil ändern oder die Option „Möchte ich nicht angeben“ wählen.
               </li>
               <li>
                 <strong className="text-zinc-200">Gespräch und Steckbrief:</strong> Was du im Chat erzählst, speichern wir
                 als Steckbrief, damit wir dich besser kennenlernen und passende Verbindungen vorschlagen können. Der
                 Chatverlauf wird deinem Konto zugeordnet, ist für andere Nutzer nicht sichtbar und dient dem Fortsetzen
-                des Gesprächs. Einzelne Angaben kannst du im Dashboard jederzeit entfernen.
+                des Gesprächs. Einzelne Angaben kannst du in deinem Profil jederzeit entfernen.
               </li>
               <li>
                 <strong className="text-zinc-200">Chats mit Matches:</strong> Wenn wir dich mit anderen zusammenbringen, entsteht ein
@@ -121,7 +121,7 @@ export default function Datenschutz() {
           <section>
             <h2 className={h2}>5. Speicherdauer</h2>
             <p className="mt-2">
-              Wir speichern deine Daten, solange dein Konto besteht. Wenn du dein Konto im Dashboard löschst, ist es
+              Wir speichern deine Daten, solange dein Konto besteht. Wenn du dein Konto in deinem Profil löschst, ist es
               sofort gesperrt und wird nach 30 Tagen automatisch und endgültig gelöscht, einschließlich Profil, Fotos,
               Steckbrief, Chatverlauf und Ideen. Wartelisten-Einträge löschen wir auf Wunsch. Fehlerprotokolle
               enthalten keine personenbezogenen Daten und werden nach der Behebung entfernt.
@@ -132,7 +132,7 @@ export default function Datenschutz() {
             <h2 className={h2}>6. Deine Rechte</h2>
             <p className="mt-2">
               Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
-              Datenübertragbarkeit und Widerspruch. Vieles kannst du direkt im Dashboard selbst erledigen (Angaben
+              Datenübertragbarkeit und Widerspruch. Vieles kannst du direkt in deinem Profil selbst erledigen (Angaben
               ändern, Steckbrief-Einträge entfernen, Konto löschen). Für alles Weitere schreib uns über das{" "}
               <Link href="/kontakt" className="text-gold hover:underline">
                 Kontaktformular

@@ -1,5 +1,5 @@
 // Antworten des Chats auf Fragen zu DSpora. Alles hier stammt aus den Texten der Webseite
-// (Startseite, "Unsere Mission") und aus dem, was der Chat und das Dashboard selbst anbieten.
+// (Startseite, "Unsere Mission") und aus dem, was der Chat und das Profil selbst anbieten.
 // Es wird nichts dazu erfunden: Was hier nicht steht, beantwortet der Chat nicht, sondern verweist
 // auf das Kontaktformular.
 
@@ -72,7 +72,7 @@ const ENTRIES: Entry[] = [
   {
     keywords: ["passwort", "login", "anmeld", "einlog", "registr", "konto", "account", "passkey", "face id"],
     answer: {
-      text: "Ein Passwort brauchst du bei DSpora nicht. Du meldest dich über einen Link an, den wir dir per E-Mail schicken. Im Dashboard kannst du außerdem einen Passkey einrichten, um dich mit Face ID oder Touch ID anzumelden. Dein Konto kannst du dort auch jederzeit selbst löschen.",
+      text: "Ein Passwort brauchst du bei DSpora nicht. Du meldest dich über einen Link an, den wir dir per E-Mail schicken. In deinem Profil kannst du außerdem einen Passkey einrichten, um dich mit Face ID oder Touch ID anzumelden. Dein Konto kannst du dort auch jederzeit selbst löschen.",
     },
   },
   {
@@ -90,7 +90,7 @@ const ENTRIES: Entry[] = [
   {
     keywords: ["daten", "datenschutz", "speicher", "dsgvo", "löschen", "loeschen"],
     answer: {
-      text: "Deine E-Mail-Adresse bleibt für andere unsichtbar, und dein Konto kannst du im Dashboard jederzeit selbst löschen. Alles Weitere zum Umgang mit Daten findest du in der Datenschutzerklärung.",
+      text: "Deine E-Mail-Adresse bleibt für andere unsichtbar, und dein Konto kannst du in deinem Profil jederzeit selbst löschen. Alles Weitere zum Umgang mit Daten findest du in der Datenschutzerklärung.",
       link: PRIVACY,
     },
   },

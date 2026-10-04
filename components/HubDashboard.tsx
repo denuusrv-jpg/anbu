@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import BusinessEditor from "@/components/BusinessEditor";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
@@ -369,19 +370,20 @@ export default function HubDashboard({
     },
   ];
 
-  const card = "rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-xl sm:p-7";
+  const card = "rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7";
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
+    <main className="relative isolate min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
+      <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         {/* Kopf */}
         <header className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-gold uppercase">DSpora Dashboard</p>
+            <p className="text-xs font-semibold tracking-wide text-gold uppercase">DSpora Profil</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
               {name ? `Hey ${name}` : "Willkommen"}
             </h1>
-            <p className="mt-0.5 text-xs text-zinc-500">{email}</p>
+            <p className="mt-0.5 text-xs text-white/70">{email}</p>
           </div>
           <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
             {isAdmin && (
@@ -991,7 +993,7 @@ export default function HubDashboard({
         )}
 
         {/* Konto löschen (Soft-Delete, 30 Tage) */}
-        <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 sm:p-7">
+        <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">
           <h2 className="text-sm font-semibold text-zinc-300">Konto löschen</h2>
           {!confirmDelete ? (
             <>
@@ -1036,11 +1038,11 @@ export default function HubDashboard({
           )}
         </section>
 
-        <footer className="flex items-center justify-between px-1 pt-2 text-xs text-zinc-500">
-          <Link href="/onboarding" className="transition-colors hover:text-zinc-300">
+        <footer className="flex items-center justify-between px-1 pt-2 text-xs text-white/70">
+          <Link href="/onboarding" className="transition-colors hover:text-white">
             Chat erneut durchspielen
           </Link>
-          <Link href="/" className="transition-colors hover:text-zinc-300">
+          <Link href="/" className="transition-colors hover:text-white">
             Zur Startseite
           </Link>
         </footer>

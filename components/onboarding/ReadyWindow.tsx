@@ -67,7 +67,7 @@ export default function ReadyWindow({
             </Link>
           ) : (
             <Link href="/dashboard" className={primary}>
-              Zum Dashboard
+              Zum Profil
             </Link>
           )}
           <Link href="/" className={secondary}>

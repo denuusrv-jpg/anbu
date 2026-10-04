@@ -139,10 +139,11 @@ function WavePlane({ pulses }: { pulses: boolean }) {
   );
 }
 
+// fixed=true: Hintergrund bleibt beim Scrollen stehen (lange Seiten)
 // pulses=false: derselbe Hintergrund ohne die pulsierenden Verbindungs-Impulse (z. B. hinter dem Chat)
-export default function FlowingWaveBackground({ pulses = true }: { pulses?: boolean }) {
+export default function FlowingWaveBackground({ pulses = true, fixed = false }: { pulses?: boolean; fixed?: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+    <div className={`pointer-events-none ${fixed ? "fixed" : "absolute"} inset-0 -z-10 overflow-hidden`}>
       <Canvas
         orthographic={false}
         camera={{ position: [0, 0, 1] }}

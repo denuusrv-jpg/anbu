@@ -510,7 +510,7 @@ export default function OnboardingChat({
   // Fragt eine Person zwischendurch etwas zu DSpora, antwortet der Chat anhand der Webseiten-Infos
   // (nichts Erfundenes, sonst Hinweis auf das Kontaktformular) und stellt dann dieselbe Frage noch einmal.
   function tryAnswerSiteQuestion(value: string, question: string, backTo: Step): boolean {
-    // Der Steckbrief: Wie sehe ich aktuell aus? Anpassen ist im Dashboard und im Gespräch jederzeit möglich.
+    // Der Steckbrief: Wie sehe ich aktuell aus? Anpassen ist im Profil und im Gespräch jederzeit möglich.
     if (isSteckbriefRequest(value)) {
       user(value);
       ask(
@@ -518,27 +518,27 @@ export default function OnboardingChat({
           { text: steckbriefText(currentSteckbrief()) },
           loggedIn
             ? {
-                text: "Wenn etwas nicht mehr stimmt, erzähl mir hier einfach den neuen Stand. Einzelne Angaben kannst du im Dashboard auch selbst entfernen.",
+                text: "Wenn etwas nicht mehr stimmt, erzähl mir hier einfach den neuen Stand. Einzelne Angaben kannst du in deinem Profil auch selbst entfernen.",
                 link: { href: "/dashboard", label: "Steckbrief im Dashboard" },
               }
-            : "Nach der Anmeldung kannst du alles jederzeit im Dashboard anpassen und mir im Gespräch Neues erzählen.",
+            : "Nach der Anmeldung kannst du alles jederzeit in deinem Profil anpassen und mir im Gespräch Neues erzählen.",
           `Aber zurück zu dir: ${question}`,
         ],
         backTo,
       );
       return true;
     }
-    // Etwas vergessen/entfernen: das geschieht bewusst sichtbar im Dashboard, nicht heimlich im Gespräch
+    // Etwas vergessen/entfernen: das geschieht bewusst sichtbar im Profil, nicht heimlich im Gespräch
     if (isRemoveRequest(value)) {
       user(value);
       ask(
         [
           loggedIn
             ? {
-                text: "Einzelne Angaben entfernst du im Dashboard unter „Dein Steckbrief“ mit dem ×. Dann sind sie auch wirklich weg. Wenn sich etwas geändert hat, erzähl mir hier gern den neuen Stand.",
+                text: "Einzelne Angaben entfernst du in deinem Profil unter „Dein Steckbrief“ mit dem ×. Dann sind sie auch wirklich weg. Wenn sich etwas geändert hat, erzähl mir hier gern den neuen Stand.",
                 link: { href: "/dashboard", label: "Zum Steckbrief" },
               }
-            : "Nach der Anmeldung kannst du im Dashboard unter „Dein Steckbrief“ jede Angabe mit dem × entfernen. Wenn sich etwas geändert hat, erzähl mir gern den neuen Stand.",
+            : "Nach der Anmeldung kannst du in deinem Profil unter „Dein Steckbrief“ jede Angabe mit dem × entfernen. Wenn sich etwas geändert hat, erzähl mir gern den neuen Stand.",
           `Aber zurück zu dir: ${question}`,
         ],
         backTo,
@@ -711,7 +711,7 @@ export default function OnboardingChat({
       return;
     }
     user("Später fortsetzen");
-    exitTalk(["Alles klar, wir setzen das Gespräch später fort. Du findest es dann in deinem Dashboard."]);
+    exitTalk(["Alles klar, wir setzen das Gespräch später fort. Du findest es dann in deinem Profil."]);
   }
 
   // Gespräch beenden: neu angemeldet geht es mit der Treffhäufigkeit und dem Profil weiter,

@@ -59,7 +59,7 @@ export async function PATCH(request: Request) {
       transcript = validateTranscript(talk.transcript);
     }
 
-    // Eine Angabe aus dem Steckbrief entfernen (Dashboard: ×)
+    // Eine Angabe aus dem Steckbrief entfernen (Profil: ×)
     if (body.removeFact !== undefined) {
       const fact = (body.removeFact && typeof body.removeFact === "object" ? body.removeFact : {}) as {
         kind?: unknown;

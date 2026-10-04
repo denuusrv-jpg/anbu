@@ -27,7 +27,7 @@ export default function OnboardingDone() {
               href="/dashboard"
               className="cta-premium inline-flex w-full items-center justify-center rounded-full bg-gradient-to-b from-gold-light to-gold px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_24px_-12px_rgba(242,166,90,0.45)]"
             >
-              Zum Dashboard
+              Zum Profil
             </Link>
             <Link
               href="/"

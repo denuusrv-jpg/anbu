@@ -1,5 +1,5 @@
 // Der Steckbrief: das, was DSpora über eine Person weiß. Er wird aus den Profil-Angaben und den Antworten
-// im Gespräch zusammengesetzt, ist also immer der aktuelle Stand. Chat, Dashboard und Admin nutzen dieselbe Funktion.
+// im Gespräch zusammengesetzt, ist also immer der aktuelle Stand. Chat, Profil und Admin nutzen dieselbe Funktion.
 
 import {
   GENDERS,

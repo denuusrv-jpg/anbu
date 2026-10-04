@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import type { RoomSummary } from "@/lib/chatRooms";
 
 type ListData = { rooms: RoomSummary[]; slotsUsed: number; limit: number };
@@ -41,15 +42,16 @@ export default function ChatList({ sample }: { sample?: ListData }) {
     };
   }, [sample]);
 
-  const card = "rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl";
+  const card = "rounded-3xl border border-white/10 bg-zinc-950/75 backdrop-blur-md";
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
+    <main className="relative isolate min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
+      <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="flex items-center justify-between gap-4">
           <div>
-            <Link href={sample ? "#" : "/dashboard"} className="text-xs text-zinc-500 hover:text-zinc-300">
-              ← Dashboard
+            <Link href={sample ? "#" : "/dashboard"} className="text-xs text-white/70 hover:text-white">
+              ← Profil
             </Link>
             <h1 className="mt-2 text-2xl font-bold text-zinc-50 sm:text-3xl">Deine Chats</h1>
           </div>

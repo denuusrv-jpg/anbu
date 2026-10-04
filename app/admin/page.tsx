@@ -96,7 +96,7 @@ export default async function Admin() {
               <div>
                 <p className="text-sm font-semibold text-zinc-50">Profil-Vorschau</p>
                 <p className="mt-0.5 text-xs text-zinc-400">
-                  Beispiel-Ansichten aller Bereiche nach der Anmeldung (Dashboard, Business, Startklar-Fenster)
+                  Beispiel-Ansichten aller Bereiche nach der Anmeldung (Profil, Business, Startklar-Fenster)
                 </p>
               </div>
             </div>
