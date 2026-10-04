@@ -16,6 +16,7 @@ const fragmentShader = /* glsl */ `
   varying vec2 vUv;
   uniform float uTime;
   uniform vec2 uResolution;
+  uniform float uPulses;
 
   float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -97,13 +98,13 @@ const fragmentShader = /* glsl */ `
 
       signal += (ring * 0.45 + dot) * strength;
     }
-    color += vec3(1.0, 0.9, 0.7) * signal * 0.35;
+    color += vec3(1.0, 0.9, 0.7) * signal * 0.35 * uPulses;
 
     gl_FragColor = vec4(color, 1.0);
   }
 `;
 
-function WavePlane() {
+function WavePlane({ pulses }: { pulses: boolean }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const { viewport } = useThree();
 
@@ -111,8 +112,9 @@ function WavePlane() {
     () => ({
       uTime: { value: 0 },
       uResolution: { value: new THREE.Vector2(1, 1) },
+      uPulses: { value: pulses ? 1 : 0 },
     }),
-    [],
+    [pulses],
   );
 
   useFrame((_, delta) => {
@@ -137,7 +139,8 @@ function WavePlane() {
   );
 }
 
-export default function FlowingWaveBackground() {
+// pulses=false: derselbe Hintergrund ohne die pulsierenden Verbindungs-Impulse (z. B. hinter dem Chat)
+export default function FlowingWaveBackground({ pulses = true }: { pulses?: boolean }) {
   return (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       <Canvas
@@ -146,7 +149,7 @@ export default function FlowingWaveBackground() {
         gl={{ antialias: true }}
         dpr={[1, 1.5]}
       >
-        <WavePlane />
+        <WavePlane pulses={pulses} />
       </Canvas>
       <div className="absolute inset-0 bg-zinc-950/10" />
     </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
 import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
 import SingleChoice from "@/components/onboarding/SingleChoice";
@@ -896,8 +897,9 @@ export default function OnboardingChat({
   const headerLabel = resume ? "Gespräch" : inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / ${TOTAL_STEPS}` : "";
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-zinc-950 sm:p-6">
-      <div className="relative flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden border-white/10 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_40px_100px_-30px_rgba(0,0,0,0.9)] backdrop-blur-2xl sm:h-[min(780px,calc(100dvh-3rem))] sm:rounded-3xl sm:border">
+    <div className="relative isolate flex min-h-[100dvh] items-center justify-center overflow-hidden bg-zinc-950 sm:p-6">
+      <FlowingWaveBackground pulses={false} />
+      <div className="relative flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden border-white/10 bg-zinc-950/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_40px_100px_-30px_rgba(0,0,0,0.6)] backdrop-blur-md sm:h-[min(780px,calc(100dvh-3rem))] sm:rounded-3xl sm:border">
         <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
 
         {/* Kopfzeile */}
