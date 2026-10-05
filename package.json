@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.72",
     "@ai-sdk/openai": "^4.0.83",
     "@react-three/fiber": "^9.8.1",
     "@supabase/ssr": "^0.12.7",
