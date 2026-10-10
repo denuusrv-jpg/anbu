@@ -13,6 +13,13 @@ export const REGIONS: Option[] = [
   { id: "oesterreich", label: "Österreich" },
 ];
 
+// Zusätzliche "Hubs" für Leute ohne Region: reine Online-Freundschaften und Orte ohne Hub in der Nähe
+export const PSEUDO_HUBS: Option[] = [
+  { id: "online", label: "Online" },
+  { id: "warteliste", label: "Warteliste (noch kein Hub in der Nähe)" },
+];
+export const ALL_HUBS: Option[] = [...REGIONS, ...PSEUDO_HUBS];
+
 export const INTERESTS: Option[] = [
   { id: "gym", label: "Gym" },
   { id: "gaming", label: "Gaming" },
@@ -65,6 +72,7 @@ export const VISIBILITIES: Option[] = [
 
 // Geschlecht (Selbstangabe, freiwillig) und mit wem man sich verbinden möchte.
 // Die Angaben beziehen sich immer auf die Selbstidentifikation: trans Frauen sind Frauen, trans Männer sind Männer.
+// Alte Ids (nonbinary, na) bleiben gültig, damit bereits gespeicherte Profile weiter funktionieren.
 export const GENDERS: Option[] = [
   { id: "female", label: "Weiblich" },
   { id: "male", label: "Männlich" },
@@ -72,31 +80,93 @@ export const GENDERS: Option[] = [
   { id: "na", label: "Möchte ich nicht angeben" },
 ];
 
+// Im Chat: nur zwei Auswahlfelder, alles andere schreibt die Person selbst
+export const GENDER_CHOICES: Option[] = [
+  { id: "male", label: "Männlich" },
+  { id: "female", label: "Weiblich" },
+];
+
+// Wunsch an das Gegenüber. "mixed" gibt es nur für Gruppen (Crew, Squad).
 export const MATCH_GENDERS: Option[] = [
   { id: "any", label: "Egal" },
-  { id: "female", label: "Frauen (inkl. trans Frauen)" },
-  { id: "male", label: "Männer (inkl. trans Männer)" },
+  { id: "female", label: "Weiblich" },
+  { id: "male", label: "Männlich" },
+  { id: "other", label: "Anderes" },
+  { id: "mixed", label: "Gemischt" },
 ];
+
+export const DUO_WISHES: Option[] = [
+  { id: "male", label: "Männliche Freundschaften" },
+  { id: "female", label: "Weibliche Freundschaften" },
+  { id: "any", label: "Egal, mir ist es wichtig, dass es passt" },
+];
+
+export const GROUP_WISHES: Option[] = [
+  { id: "mixed", label: "Gemischte Gruppe" },
+  { id: "male", label: "Nur Männer" },
+  { id: "female", label: "Nur Frauen" },
+  { id: "any", label: "Egal, Hauptsache Match" },
+];
+
+/** Grobe Zuordnung des Geschlechts einer Person: männlich, weiblich oder anderes (auch eigene Wörter). */
+export function genderGroup(value: string | null | undefined): "male" | "female" | "other" | "unknown" {
+  if (!value) return "unknown";
+  const v = value.trim().toLowerCase();
+  if (v === "male" || /^(m|mann|männlich|maennlich|junge|boy|man|he|er)$/.test(v) || v.startsWith("männ") || v.startsWith("maenn")) return "male";
+  if (v === "female" || /^(w|f|frau|weiblich|mädchen|maedchen|girl|woman|she|sie)$/.test(v) || v.startsWith("weib")) return "female";
+  if (v === "na") return "unknown";
+  return "other";
+}
 
 // Gewünschte Gruppengröße (Duo, Crew, Squad wie auf der Startseite)
 export const GROUP_SIZES: Option[] = [
   { id: "duo", label: "Duo (2er Gruppe)" },
   { id: "crew", label: "Crew (4er Gruppe)" },
   { id: "squad", label: "Squad (8er Gruppe)" },
+  { id: "any", label: "Egal" },
 ];
 
 // Wie oft würde man eine Person maximal sehen wollen? (bei längeren Gesprächen)
+// Wie oft sieht man sich realistisch? (alte Ids weekend, multi, flexible bleiben in gespeicherten Daten möglich)
 export const MEET_FREQUENCIES: Option[] = [
-  { id: "weekend", label: "Nur am Wochenende" },
-  { id: "monthly", label: "Ein- bis zweimal im Monat" },
-  { id: "weekly", label: "Einmal pro Woche" },
-  { id: "multi", label: "Mehrmals pro Woche" },
-  { id: "flexible", label: "Nach Lust und Laune" },
+  { id: "rare", label: "Seltener als 1× im Monat" },
+  { id: "monthly", label: "1–2× im Monat" },
+  { id: "weekly", label: "1–2× pro Woche" },
+  { id: "often", label: "3× pro Woche oder öfter" },
 ];
 
+export const MEET_MODES: Option[] = [
+  { id: "online", label: "Nur online schreiben" },
+  { id: "activities", label: "Auch gemeinsame Aktivitäten und Hobbys vor Ort" },
+];
+
+// Maximale Fahrzeit mit dem Auto. Der Wert 0 steht für "Egal".
+export const TRAVEL_OPTIONS: { minutes: number; label: string }[] = [
+  { minutes: 10, label: "10 Minuten" },
+  { minutes: 20, label: "20 Minuten" },
+  { minutes: 45, label: "45 Minuten" },
+  { minutes: 60, label: "1 Stunde" },
+  { minutes: 120, label: "2 Stunden" },
+  { minutes: 0, label: "Egal" },
+];
+
+// Vorschläge im Chat (vier pro Frage), der Rest wird frei eingegeben
+export const INTEREST_SUGGESTIONS: Record<"community" | "business", string[]> = {
+  community: ["gym", "musik", "reisen", "essen"],
+  business: ["sport", "reisen", "essen", "kultur"],
+};
+export const VIBE_SUGGESTIONS: Record<"community" | "business", string[]> = {
+  community: ["entspannt", "humorvoll", "spontan", "tiefgruendig"],
+  business: ["zielorientiert", "humorvoll", "entspannt", "kreativ"],
+};
+export const MAX_INTERESTS = 5;
+export const MIN_INTERESTS = 2;
+export const MAX_VIBES = 5;
+export const FREE_FIELDS = 8; // leere Eingabefelder für eigene Begriffe
+
 export const TRACKS: Option[] = [
-  { id: "community", label: "Privat / Community" },
-  { id: "business", label: "Business & Co-Founding" },
+  { id: "community", label: "Friends-Community" },
+  { id: "business", label: "Business-Community" },
 ];
 
 // Business-Modus
@@ -162,6 +232,16 @@ export type OnboardingAnswers = {
   gender?: string; // Id aus GENDERS oder eigener Text
   matchGender?: string; // Id aus MATCH_GENDERS
   groupSize?: string; // Id aus GROUP_SIZES
+  // Phase 1 (Basisfragen für das Matching)
+  age?: number;
+  ageMin?: number;
+  ageMax?: number;
+  meetMode?: "online" | "activities";
+  travelMinutes?: number | null; // maximale Fahrzeit mit dem Auto, leer = egal
+  languages?: Choice;
+  lifePhase?: string; // Id aus PHASES oder eigener Text
+  lat?: number; // grob gerundet, aus dem Ort berechnet
+  lng?: number;
   region: string; // erster gewählter Hub: Id aus REGIONS oder eigener Text
   secondRegion?: string; // optional zweiter Hub (höchstens zwei)
   city?: string;

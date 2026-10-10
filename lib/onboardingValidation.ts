@@ -1,5 +1,11 @@
 import "server-only";
 import {
+  ALL_HUBS,
+  MEET_MODES,
+  MAX_INTERESTS,
+  MAX_VIBES,
+  MIN_INTERESTS,
+  TRAVEL_OPTIONS,
   ACHIEVEMENT_MAX,
   CUSTOM_PATTERN,
   EXPERTISE_MAX,
@@ -101,7 +107,7 @@ export function manyOf(value: unknown, options: Option[], field: string, max = M
   return Array.from(new Set(list as string[]));
 }
 
-export function choice(value: unknown, options: Option[], field: string, minTotal: number): Choice {
+export function choice(value: unknown, options: Option[], field: string, minTotal: number, maxTotal: number = MAX_CHOICES): Choice {
   if (!isObject(value)) fail(`${field} ist ungültig.`);
   const idList = manyOf((value as Record<string, unknown>).ids, options, field);
   const customRaw = (value as Record<string, unknown>).custom ?? [];
@@ -119,7 +125,7 @@ export function choice(value: unknown, options: Option[], field: string, minTota
     ),
   );
   if (idList.length + custom.length < minTotal) fail(`${field}: Bitte wähle etwas aus.`);
-  if (idList.length + custom.length > MAX_CHOICES) fail(`${field}: Zu viele Einträge.`);
+  if (idList.length + custom.length > maxTotal) fail(`${field}: Zu viele Einträge (höchstens ${maxTotal}).`);
   return { ids: idList, custom };
 }
 
@@ -295,15 +301,53 @@ export function validateAnswers(body: unknown): { answers: OnboardingAnswers; to
   // Business-Profile sind immer Profile mit Namen, nie anonym
   if (track === "business" && mode !== "profile") fail("Business-Profile können nicht anonym sein.");
 
+  const ageField = (value: unknown, field: string): number | undefined => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (typeof value !== "number" || !Number.isInteger(value) || value < MIN_AGE || value > MAX_AGE) {
+      fail(`${field} muss zwischen ${MIN_AGE} und ${MAX_AGE} liegen.`);
+    }
+    return value as number;
+  };
+  const age = ageField(b.age, "Alter");
+  const ageMin = ageField(b.ageMin, "Altersspanne (von)");
+  const ageMax = ageField(b.ageMax, "Altersspanne (bis)");
+  if (ageMin !== undefined && ageMax !== undefined && ageMin > ageMax) fail("Altersspanne: „von“ darf nicht größer sein als „bis“.");
+
+  const meetMode = oneOf(b.meetMode, MEET_MODES, "Art der Freundschaft") as "online" | "activities" | undefined;
+
+  let travelMinutes: number | null | undefined;
+  if (b.travelMinutes === null) travelMinutes = null;
+  else if (b.travelMinutes !== undefined) {
+    if (typeof b.travelMinutes !== "number" || !TRAVEL_OPTIONS.some((o) => o.minutes === b.travelMinutes)) {
+      fail("Entfernung ist ungültig.");
+    }
+    travelMinutes = (b.travelMinutes as number) === 0 ? null : (b.travelMinutes as number);
+  }
+
+  const coord = (value: unknown, min: number, max: number, field: string): number | undefined => {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) fail(`${field} ist ungültig.`);
+    return Math.round((value as number) * 100) / 100;
+  };
+
   const answers: OnboardingAnswers = {
     gender: idOrCustom(b.gender, GENDERS, "Geschlecht"),
     matchGender: oneOf(b.matchGender, MATCH_GENDERS, "Wunsch"),
     groupSize: oneOf(b.groupSize, GROUP_SIZES, "Gruppengröße"),
-    region: idOrCustom(b.region, REGIONS, "Region", true) as string,
-    secondRegion: idOrCustom(b.secondRegion, REGIONS, "Zweiter Hub"),
+    age,
+    ageMin,
+    ageMax,
+    meetMode,
+    travelMinutes,
+    languages: b.languages === undefined ? undefined : choice(b.languages, LANGUAGES, "Sprachen", 1, 5),
+    lifePhase: idOrCustom(b.lifePhase, PHASES, "Lebensphase"),
+    lat: coord(b.lat, 45, 56, "Ort"),
+    lng: coord(b.lng, 5, 18, "Ort"),
+    region: idOrCustom(b.region, ALL_HUBS, "Region", true) as string,
+    secondRegion: idOrCustom(b.secondRegion, ALL_HUBS, "Zweiter Hub"),
     city: stringOf(b.city, "Stadt", 60),
-    interests: choice(b.interests, INTERESTS, "Interessen", 1),
-    vibes: choice(b.vibes, VIBES, "Vibe", 1),
+    interests: choice(b.interests, INTERESTS, "Interessen", MIN_INTERESTS, MAX_INTERESTS),
+    vibes: choice(b.vibes, VIBES, "Vibe", 1, MAX_VIBES),
     mode: mode as OnboardingAnswers["mode"],
     track,
     business: track === "business" ? validateBusiness(b.business) : undefined,

@@ -446,3 +446,55 @@ $$;
 drop trigger if exists chat_limit_trigger on public.chat_room_members;
 create trigger chat_limit_trigger before insert or update of left_at on public.chat_room_members
   for each row execute function public.enforce_chat_limit();
+
+-- ─────────────────────────────────────────────────────────────
+-- 14) Neues Matching: Phase-1-Felder, KI-Profil, Freigaben (Hubs und Match-Vorschläge)
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists age int;
+alter table public.user_profiles add column if not exists age_min int;
+alter table public.user_profiles add column if not exists age_max int;
+alter table public.user_profiles add column if not exists meet_mode text;            -- 'online' | 'activities'
+alter table public.user_profiles add column if not exists travel_minutes int;        -- maximale Fahrzeit mit dem Auto, leer = egal
+alter table public.user_profiles add column if not exists languages jsonb;           -- { ids: [], custom: [] }
+alter table public.user_profiles add column if not exists life_phase text;
+alter table public.user_profiles add column if not exists lat numeric(6,2);          -- Ort grob (auf ca. 1 km gerundet)
+alter table public.user_profiles add column if not exists lng numeric(6,2);
+alter table public.user_profiles add column if not exists meet_frequency text;       -- 'rare' | 'monthly' | 'weekly' | 'often'
+alter table public.user_profiles add column if not exists interest_concepts jsonb;   -- Begriffe der KI-Zuordnung, z. B. ["racket","fitness"]
+alter table public.user_profiles add column if not exists vibe_concepts jsonb;
+alter table public.user_profiles add column if not exists ai_profile jsonb;          -- Werte-Tags und No-Gos aus der Auswertung (Phase 2)
+alter table public.user_profiles add column if not exists phase2_done boolean not null default false;
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_meet_mode_check') then
+    alter table public.user_profiles add constraint user_profiles_meet_mode_check check (meet_mode is null or meet_mode in ('online', 'activities'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_age_check') then
+    alter table public.user_profiles add constraint user_profiles_age_check check (age is null or age between 18 and 99);
+  end if;
+end $$;
+
+-- Freigabe pro Hub: ein Hub öffnet erst, wenn der Admin ihn freigibt
+create table if not exists public.hub_approvals (
+  hub         text primary key,
+  status      text not null default 'approved' check (status in ('approved', 'closed')),
+  decided_at  timestamptz not null default now()
+);
+alter table public.hub_approvals enable row level security;
+
+-- Match-Vorschläge: werden berechnet, aber erst mit Freigabe zu Chat-Räumen
+create table if not exists public.match_proposals (
+  id          uuid primary key default gen_random_uuid(),
+  status      text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  hub         text not null,
+  track       text not null check (track in ('community', 'business')),
+  members     uuid[] not null,
+  score       numeric(5,1) not null,
+  breakdown   jsonb not null default '{}'::jsonb,
+  summary     text,
+  room_id     uuid references public.chat_rooms (id) on delete set null,
+  created_at  timestamptz not null default now(),
+  decided_at  timestamptz
+);
+create index if not exists match_proposals_status_idx on public.match_proposals (status, created_at desc);
+alter table public.match_proposals enable row level security;
