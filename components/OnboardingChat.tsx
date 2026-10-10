@@ -392,7 +392,7 @@ export default function OnboardingChat({
     ask(
       [
         t("Willkommen bei DSpora. Lass uns herausfinden, was dir wichtig ist."),
-        t("Ein paar kurze Fragen (etwa eine Minute), die alle beantwortet werden müssen, damit wir passende Leute für dich finden. Danach kannst du freiwillig mit mir weiterreden."),
+        t("Ein paar kurze Fragen (etwa 2 Minuten), die alle beantwortet werden müssen, damit wir passende Leute für dich finden. Danach kannst du freiwillig mit mir weiterreden."),
         t("Wonach suchst du bei DSpora?"),
       ],
       "track",
@@ -1625,7 +1625,7 @@ export default function OnboardingChat({
                   aria-label={tx("KI-Analyse und Datenschutz")}
                 >
                   <ShieldIcon className="h-3 w-3 shrink-0" />
-                  <span>{tx("KI-Analyse aktiv. Sensible Daten werden lokal gefiltert.")}</span>
+                  <span>{tx("KI-Analyse aktiv. Sensible Daten werden automatisch gefiltert.")}</span>
                 </button>
               )}
             </div>
