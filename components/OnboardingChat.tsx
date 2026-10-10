@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
+import { AgeInput, AgeRangeInput } from "@/components/onboarding/AgeForms";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
-import ProfileForm, { type ProfileResult } from "@/components/onboarding/ProfileForm";
 import SingleChoice from "@/components/onboarding/SingleChoice";
-import { LightCvForm } from "@/components/onboarding/BusinessFields";
+import TermPicker from "@/components/onboarding/TermPicker";
 import { Chip, ChipRow, LongTextAnswer, TextAnswer } from "@/components/onboarding/ui";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
@@ -24,53 +24,63 @@ import {
 } from "@/lib/steckbrief";
 import ReadyWindow, { type ReadyKind } from "@/components/onboarding/ReadyWindow";
 import {
+  DUO_WISHES,
   FOLLOW_UP_ANSWER_MAX,
   FREE_TEXT_MAX,
-  HUB_REASON_MAX,
-  GENDERS,
+  GENDER_CHOICES,
   GOALS,
   GROUP_SIZES,
+  GROUP_WISHES,
   INTERESTS,
-  MATCH_GENDERS,
-  MAX_HUBS,
+  INTEREST_SUGGESTIONS,
+  LANGUAGES,
+  MAX_INTERESTS,
   MAX_TRANSCRIPT,
+  MAX_VIBES,
   MEET_FREQUENCIES,
-  REGIONS,
+  MEET_MODES,
+  MIN_INTERESTS,
+  NAME_PATTERN,
+  PHASES,
   ROLE_MAX,
   SECTORS,
   TRACKS,
+  TRAVEL_OPTIONS,
   VIBES,
+  VIBE_SUGGESTIONS,
   WISHES_MAX,
   choiceLabels,
   labelOf,
   type ChatTurn,
   type Choice,
-  type LightCv,
   type OnboardingAnswers,
 } from "@/lib/onboarding";
 
 type Step =
   | "intro"
+  | "track"
+  | "groupSize"
   | "gender"
   | "matchGender"
-  | "groupSize"
-  | "region"
-  | "hubReason"
+  | "age"
+  | "ageRange"
+  | "meetMode"
   | "city"
-  | "interests"
-  | "vibes"
-  | "more"
-  | "mode"
-  | "track"
+  | "cityConfirm"
+  | "travel"
+  | "frequency"
+  | "languages"
+  | "lifePhase"
   | "sector"
   | "role"
   | "goals"
-  | "cv"
+  | "interests"
+  | "vibes"
+  | "nickname"
+  | "more"
   | "freeText"
   | "followUp"
   | "checkpoint"
-  | "frequency"
-  | "profile"
   | "wishes"
   | "login"
   | "sent"
@@ -88,25 +98,8 @@ const EMPTY: Choice = { ids: [], custom: [] };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_SECONDS = 30;
 
-// Fortschritt der Kernfragen (Anzeige oben); danach "Profil" und "Finale"
-const TOTAL_STEPS = 6;
-const STEP_NUMBER: Partial<Record<Step, number>> = {
-  gender: 1,
-  matchGender: 1,
-  groupSize: 2,
-  region: 3,
-  hubReason: 3,
-  city: 3,
-  interests: 4,
-  vibes: 5,
-  more: 6,
-  freeText: 6,
-  followUp: 6,
-  checkpoint: 6,
-  frequency: 6,
-  mode: 6,
-};
-const PROFILE_STEPS: Step[] = ["track", "sector", "role", "goals", "cv", "profile"];
+// Phase 1: alle Basisfragen sind Pflicht. Die Reihenfolge hängt von den Antworten ab (online/Aktivitäten, Friends/Business).
+const TALK_STEPS: Step[] = ["more", "freeText", "followUp", "checkpoint"];
 const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
 
 // guest: noch nicht angemeldet, Anmeldung per Link am Ende | live: angemeldet, speichert direkt
@@ -154,13 +147,13 @@ export default function OnboardingChat({
   const [step, setStep] = useState<Step>("intro");
   const [text, setText] = useState("");
   const [inputError, setInputError] = useState("");
-  const [hubs, setHubs] = useState<Choice>(EMPTY);
-  const [chosenFrequency, setChosenFrequency] = useState<string | undefined>();
+  const [langs, setLangs] = useState<Choice>(EMPTY);
+  const [wishKind, setWishKind] = useState<"duo" | "group">("duo");
   const [chosenGender, setChosenGender] = useState<string | undefined>();
   const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
-  const [path, setPath] = useState<"anonymous" | "profile">("anonymous");
   const [followQuestion, setFollowQuestion] = useState("");
   const [track, setTrack] = useState<"community" | "business">("community");
+  const [ageNow, setAgeNow] = useState(25);
   const [chosenSector, setChosenSector] = useState<string | undefined>();
   const [goals, setGoals] = useState<Choice>(EMPTY);
 
@@ -176,6 +169,7 @@ export default function OnboardingChat({
 
   const answers = useRef<Partial<OnboardingAnswers>>({});
   const photos = useRef<Blob[]>([]);
+  const pendingPlace = useRef<{ name: string; lat: number; lng: number; hub: string; hubLabel: string } | null>(null);
   const business = useRef<{ sector?: string; role?: string; goals?: Choice }>({});
   const followAnswers = useRef<{ question: string; answer: string }[]>([]);
   // Chatverlauf (wird pro Konto gespeichert, für die Person selbst nicht sichtbar)
@@ -256,15 +250,30 @@ export default function OnboardingChat({
     }
     ask(
       [
-        "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt – ganz anonym und in deinem Tempo.",
-        "Ein paar kurze Fragen, dann bist du durch. Zuerst: Als was identifizierst du dich? Die Angabe ist freiwillig, du kannst auch etwas Eigenes schreiben.",
+        "Willkommen bei DSpora. Lass uns herausfinden, wer wirklich zu dir passt, in deinem Tempo.",
+        "Phase 1 sind ein paar kurze Fragen (etwa 2 Minuten), die alle beantwortet werden müssen, damit wir passende Leute für dich finden. Danach kannst du freiwillig mit mir weiterreden.",
+        "Los geht's: Wonach suchst du bei DSpora?",
       ],
-      "gender",
+      "track",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ——— Basis-Flow: Gruppengröße, Region, Interessen, Vibe ———
+  // ——— Phase 1: Basisfragen (alle Pflicht) ———
+
+  function pickTrack(next: "community" | "business") {
+    answers.current.track = next;
+    setTrack(next);
+    user(labelOf(next, TRACKS));
+    ask(["Perfekt! In welcher Gruppengröße möchtest du Leute treffen?"], "groupSize");
+  }
+
+  function pickGroupSize(value: string, label: string) {
+    answers.current.groupSize = value;
+    setWishKind(value === "duo" ? "duo" : "group");
+    user(label);
+    ask(["Danke dir! Als was identifizierst du dich? Du kannst auch etwas Eigenes schreiben."], "gender");
+  }
 
   function pickGender(value: string, label: string) {
     if (!value) {
@@ -276,176 +285,133 @@ export default function OnboardingChat({
     user(label);
     ask(
       [
-        "Danke dir! Mit wem möchtest du dich am liebsten verbinden? Das bezieht sich immer darauf, wie sich Menschen selbst identifizieren: trans Frauen sind Frauen, trans Männer sind Männer.",
+        wishKind === "duo"
+          ? "Gut zu wissen! Welche Freundschaften suchst du?"
+          : "Gut zu wissen! Welche Gruppe suchst du? Beantworte es so, wie es für dich passt.",
       ],
       "matchGender",
     );
   }
 
   function pickMatchGender(value: string, label: string) {
-    answers.current.matchGender = value;
+    const wishes = wishKind === "duo" ? DUO_WISHES : GROUP_WISHES;
+    // Eigener Text (nicht in der Liste) heißt "Anderes"
+    answers.current.matchGender = wishes.some((w) => w.id === value) ? value : "other";
     user(label);
-    ask(["Gut zu wissen! In welcher Gruppengröße möchtest du Leute treffen?"], "groupSize");
+    ask(["Wie alt bist du?"], "age");
   }
 
-  function pickGroupSize(value: string, label: string) {
-    answers.current.groupSize = value;
+  function submitAge(age: number) {
+    answers.current.age = age;
+    setAgeNow(age);
+    user(String(age));
+    ask(["Und welche Altersspanne passt dir bei den anderen? Du kannst die Zahlen anpassen."], "ageRange");
+  }
+
+  function submitAgeRange(min: number, max: number) {
+    answers.current.ageMin = min;
+    answers.current.ageMax = max;
+    user(`${min} bis ${max} Jahre`);
+    ask(["Wie soll die Freundschaft aussehen?"], "meetMode");
+  }
+
+  function pickMeetMode(value: string, label: string) {
+    answers.current.meetMode = value as "online" | "activities";
     user(label);
-    ask(
-      [
-        "Gute Wahl! In welchen Bereichen (Hubs) wäre es für dich noch in Ordnung, mit einer Person befreundet zu sein? Du kannst maximal zwei Hubs auswählen.",
-      ],
-      "region",
-    );
-  }
-
-  function confirmHubs(chosen: Choice) {
-    const list = [...chosen.ids, ...chosen.custom];
-    answers.current.region = list[0];
-    answers.current.secondRegion = list[1];
-    user(choiceLabels(chosen, REGIONS).join(" + "));
-    if (list.length > 1) {
-      ask(
-        [
-          "Du hast zwei Hubs gewählt. Was steckt dahinter? Zum Beispiel Studium, Job, Familie oder Pendeln. So können wir später besser einschätzen, wie oft ihr euch sehen könntet.",
-        ],
-        "hubReason",
-      );
+    if (value === "online") {
+      answers.current.region = "online";
+      answers.current.travelMinutes = null;
+      askLanguages();
       return;
     }
-    askCity();
+    ask(["In welcher Stadt wohnst du? Ich ordne dich dann dem nächsten Hub zu."], "city");
   }
 
-  function askCity() {
-    ask(["Und in welcher Stadt wohnst du? So finden wir Leute in deiner Nähe. Du kannst auch überspringen."], "city");
-  }
-
-  function submitHubReason(skip = false) {
+  async function submitCity() {
     const value = text.trim();
-    if (!skip && value && tryAnswerSiteQuestion(value, "Was steckt hinter deinen zwei Hubs?", "hubReason")) return;
-    extras().hubReason = skip || !value ? undefined : value;
-    user(skip || !value ? "Überspringen" : value);
-    askCity();
-  }
-
-  function submitCity(skip = false) {
-    const value = text.trim();
-    if (!skip && value.length > 60) {
-      setInputError("Maximal 60 Zeichen.");
+    if (value.length < 2) {
+      setInputError("Bitte gib deinen Wohnort an.");
       return;
     }
-    answers.current.city = skip || !value ? undefined : value;
-    user(skip || !value ? "Überspringen" : value);
-    ask(
-      ["Was begeistert dich? Such dir aus, was passt – und wenn etwas fehlt, trag einfach dein eigenes ein."],
-      "interests",
-    );
-  }
-
-  function confirmInterests(chosen: Choice) {
-    answers.current.interests = chosen;
-    user(choiceLabels(chosen, INTERESTS).join(", "));
-    ask(["Und welcher Vibe beschreibt dich am besten? Wähle gern mehrere oder schreib deinen eigenen."], "vibes");
-  }
-
-  function confirmVibes(chosen: Choice) {
-    answers.current.vibes = chosen;
-    user(choiceLabels(chosen, VIBES).join(", "));
-    ask(
-      [
-        "Möchtest du noch ein bisschen mit mir plaudern, damit ich dich besser kennenlerne? Das ist freiwillig, du kannst auch direkt weitermachen.",
-      ],
-      "more",
-    );
-  }
-
-  function pickMore(wantsChat: boolean) {
-    if (!wantsChat) {
-      user("Nein, weiter");
-      askMode();
+    user(value);
+    setStep("intro");
+    setBusy(true);
+    setTyping(true);
+    let place: { name: string; lat: number; lng: number; hub: string; hubLabel: string } | null = null;
+    try {
+      const res = await fetch("/api/geo/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city: value }),
+        signal: AbortSignal.timeout(12000),
+      });
+      const data = await res.json();
+      place = data?.place ?? null;
+    } catch {
+      place = null;
+    }
+    if (!alive.current) return;
+    setTyping(false);
+    if (!place) {
+      await ask(["Diesen Ort konnte ich leider nicht zuordnen. Bitte gib die nächstgrößere Stadt in deiner Nähe ein."], "city");
       return;
     }
-    user("Ja, gern");
-    ask(
+    pendingPlace.current = place;
+    await ask(
       [
-        "Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst. Wir können so lange reden, wie du magst, und wenn du Fragen zu DSpora hast, stell sie mir gern zwischendurch.",
-        ...(aiEnabled
-          ? ["Hinweis: Für die Folgefragen hilft mir eine KI (OpenAI). E-Mail-Adressen, Telefonnummern und Links werden vorher entfernt."]
-          : []),
+        place.hub === "warteliste"
+          ? `Ich habe „${place.name}“ gefunden. In deiner Nähe gibt es noch keinen Hub. Du kommst auf die Warteliste, und wir melden uns, sobald es einen gibt. Passt das so?`
+          : `Ich habe „${place.name}“ gefunden und ordne dich dem Hub ${place.hubLabel} zu. Passt das?`,
       ],
-      "freeText",
+      "cityConfirm",
     );
   }
 
-  function askFrequency(intro: BotLine[] = []) {
-    setChosenFrequency(undefined);
-    ask(
-      [
-        ...intro,
-        "Noch eine Frage, die bei einem längeren Gespräch wichtig ist: Wie oft würdest du eine Person maximal sehen wollen? Zum Beispiel nur am Wochenende.",
-      ],
-      "frequency",
-    );
+  function confirmCity(yes: boolean) {
+    const place = pendingPlace.current;
+    if (!yes || !place) {
+      user("Anderen Ort eingeben");
+      ask(["Kein Problem. Welcher Ort passt besser?"], "city");
+      return;
+    }
+    answers.current.city = place.name;
+    answers.current.lat = place.lat;
+    answers.current.lng = place.lng;
+    answers.current.region = place.hub;
+    user("Ja, passt");
+    ask(["Wie weit darf jemand maximal von dir entfernt wohnen? Gemeint ist die Fahrzeit mit dem Auto."], "travel");
+  }
+
+  function pickTravel(minutes: number, label: string) {
+    answers.current.travelMinutes = minutes === 0 ? null : minutes;
+    user(label);
+    ask(["Wie oft würdest du dich realistisch mit jemandem treffen?"], "frequency");
   }
 
   function pickFrequency(value: string, label: string) {
-    if (!value) {
-      setChosenFrequency(undefined);
-      return;
-    }
     extras().meetFrequency = value;
-    setChosenFrequency(value);
     user(label);
-    askMode();
+    askLanguages();
   }
 
-  function askMode(intro: BotLine[] = []) {
-    ask(
-      [
-        ...intro,
-        "Jetzt die große Frage: Möchtest du ganz anonym starten – oder ein Profil mit deiner Geschichte anlegen? Beides ist völlig okay, und du kannst es später im Hub ändern.",
-      ],
-      "mode",
-    );
+  function askLanguages() {
+    ask(["Welche Sprachen sprichst du gern mit Freunden? Du kannst mehrere wählen oder eigene eintragen."], "languages");
   }
 
-  // ——— Die große Weiche ———
-
-  function pickMode(next: "anonymous" | "profile") {
-    answers.current.mode = next;
-    setPath(next);
-    if (next === "anonymous") {
-      user("Anonym starten");
-      ask(
-        [
-          "Sehr gut, so bleibst du absolut anonym: Niemand sieht deinen Namen oder deine E-Mail-Adresse.",
-          "Die Anmeldung läuft über einen sicheren Link per E-Mail, einen sogenannten Magic Link. Du brauchst kein Passwort und musst dir nichts merken.",
-          "Zum Abschluss habe ich noch eine Bitte an dich: Was wünschst du dir von DSpora? Welche Features oder Ideen sollten wir unbedingt einbauen?",
-        ],
-        "wishes",
-      );
-      return;
+  function confirmLanguages(chosen: Choice) {
+    answers.current.languages = chosen;
+    user(choiceLabels(chosen, LANGUAGES).join(", "));
+    if (track === "business") {
+      ask(["Spannend! In welcher Branche oder welchem Sektor bist du unterwegs?"], "sector");
+    } else {
+      ask(["Wo stehst du gerade im Leben?"], "lifePhase");
     }
-    user("Profil anlegen");
-    ask(
-      [
-        "Wunderbar! Wie möchtest du dich bei DSpora einbringen? Privat in der Community oder geschäftlich, zum Beispiel auf der Suche nach Co-Foundern oder Kooperationen?",
-      ],
-      "track",
-    );
   }
 
-  // ——— Modus-Weiche: Privat / Community oder Business & Co-Founding ———
-
-  function pickTrack(next: "community" | "business") {
-    answers.current.track = next;
-    setTrack(next);
-    user(labelOf(next, TRACKS));
-    if (next === "community") {
-      goToProfileForm();
-      return;
-    }
-    ask(["Spannend! In welcher Branche oder welchem Sektor bist du unterwegs?"], "sector");
+  function pickPhase(value: string, label: string) {
+    answers.current.lifePhase = value;
+    user(label);
+    askInterests();
   }
 
   function pickSector(value: string, label: string) {
@@ -467,37 +433,100 @@ export default function OnboardingChat({
     }
     business.current.role = value;
     user(value);
-    ask(
-      ["Was ist dein Hauptziel bei DSpora? Wähle bis zu drei – oder schreib dein eigenes."],
-      "goals",
-    );
+    ask(["Was ist dein Hauptziel bei DSpora? Wähle bis zu drei oder schreib dein eigenes."], "goals");
   }
 
   function confirmGoals(chosen: Choice) {
     business.current.goals = chosen;
-    user(choiceLabels(chosen, GOALS).join(", "));
-    ask(
-      [
-        "Jetzt dein Light-CV: kein klassischer Lebenslauf, sondern ein kompakter Steckbrief. Expertise, deine Top-3-Erfolge und optional ein paar Links. Alles kann kurz bleiben.",
-      ],
-      "cv",
-    );
-  }
-
-  function submitCv(cv: LightCv) {
     answers.current.business = {
       sector: business.current.sector as string,
       role: business.current.role as string,
-      goals: business.current.goals as Choice,
-      cv,
+      goals: chosen,
+      cv: { achievements: [], links: [] },
     };
-    const parts = [
-      cv.expertise ? "Expertise" : null,
-      cv.achievements.length ? `${cv.achievements.length} Erfolg${cv.achievements.length === 1 ? "" : "e"}` : null,
-      cv.links.length ? `${cv.links.length} Link${cv.links.length === 1 ? "" : "s"}` : null,
-    ].filter(Boolean);
-    user(parts.length ? `Light-CV: ${parts.join(", ")}` : "Light-CV später ergänzen");
-    goToProfileForm();
+    user(choiceLabels(chosen, GOALS).join(", "));
+    askInterests();
+  }
+
+  function askInterests() {
+    ask(
+      [
+        track === "business"
+          ? "Was begeistert dich abseits der Arbeit? Gemeinsame Aktivitäten wie Tennis oder Padel verbinden oft am meisten. Tippe einen Vorschlag an oder schreib eigene Wörter."
+          : "Was begeistert dich? Tippe einen Vorschlag an oder schreib eigene Wörter in die Felder.",
+      ],
+      "interests",
+    );
+  }
+
+  function confirmInterests(chosen: Choice) {
+    answers.current.interests = chosen;
+    user(choiceLabels(chosen, INTERESTS).join(", "));
+    ask(["Und welcher Vibe beschreibt dich am besten? Auch hier gern eigene Wörter."], "vibes");
+  }
+
+  function confirmVibes(chosen: Choice) {
+    answers.current.vibes = chosen;
+    user(choiceLabels(chosen, VIBES).join(", "));
+    ask(
+      [
+        "Fast geschafft! Wie sollen wir dich nennen? Ein Spitzname oder Künstlername reicht, so kannst du anonym bleiben. Deinen echten Namen kannst du später im Profil ergänzen.",
+      ],
+      "nickname",
+    );
+  }
+
+  function submitNickname() {
+    const value = text.trim();
+    if (!NAME_PATTERN.test(value)) {
+      setInputError("2 bis 24 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.");
+      return;
+    }
+    answers.current.mode = "profile";
+    answers.current.profile = {
+      displayName: value,
+      age: answers.current.age,
+      hobbies: [],
+      languages: answers.current.languages ?? EMPTY,
+      phase: answers.current.lifePhase,
+      visibility: "stealth",
+      photoCount: 0,
+    };
+    user(value);
+    ask(
+      [
+        "Das war Phase 1, danke dir! Möchtest du mir in Phase 2 noch mehr von dir erzählen? Das ist freiwillig. Ich stelle dir dann passende, tiefere Fragen, damit die Matches noch besser passen.",
+      ],
+      "more",
+    );
+  }
+
+  function pickMore(wantsChat: boolean) {
+    if (!wantsChat) {
+      user("Nein, weiter");
+      toWishes();
+      return;
+    }
+    user("Ja, gern");
+    ask(
+      [
+        "Schön! Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst. Auch was du nicht magst, hilft mir. Wir können so lange reden, wie du magst, und wenn du Fragen zu DSpora hast, stell sie mir gern zwischendurch.",
+        ...(aiEnabled
+          ? ["Hinweis: Für die Folgefragen hilft mir eine KI (OpenAI), für die Auswertung am Ende eine weitere (Claude von Anthropic). E-Mail-Adressen, Telefonnummern und Links werden vorher entfernt."]
+          : []),
+      ],
+      "freeText",
+    );
+  }
+
+  function toWishes(intro: BotLine[] = []) {
+    ask(
+      [
+        ...intro,
+        "Zum Abschluss habe ich noch eine Bitte an dich: Was wünschst du dir von DSpora? Welche Features oder Ideen sollten wir unbedingt einbauen?",
+      ],
+      "wishes",
+    );
   }
 
   // ——— Freitext und Folgefragen (optional, vor der Weiche), danach das Profil ———
@@ -572,6 +601,13 @@ export default function OnboardingChat({
       region: a.region,
       secondRegion: a.secondRegion,
       city: a.city,
+      age: a.age,
+      ageMin: a.ageMin,
+      ageMax: a.ageMax,
+      meetMode: a.meetMode,
+      travelMinutes: a.travelMinutes,
+      languages: a.languages,
+      lifePhase: a.lifePhase,
       interests: a.interests,
       vibes: a.vibes,
       track: a.track,
@@ -619,7 +655,7 @@ export default function OnboardingChat({
     try {
       const sb = currentSteckbrief();
       const hints = sb.lines
-        .filter((l) => !["Geschlecht", "Verbinden mit"].includes(l.label))
+        .filter((l) => !["Geschlecht", "Verbinden mit", "Alter", "Gesuchtes Alter"].includes(l.label))
         .map((l) => `${l.label}: ${l.value}`)
         .slice(0, 10);
       const recent = [
@@ -714,15 +750,13 @@ export default function OnboardingChat({
     exitTalk(["Alles klar, wir setzen das Gespräch später fort. Du findest es dann in deinem Profil."]);
   }
 
-  // Gespräch beenden: neu angemeldet geht es mit der Treffhäufigkeit und dem Profil weiter,
-  // beim Fortsetzen werden die neuen Antworten gespeichert.
+  // Gespräch beenden: neu angemeldet geht es mit den Wünschen weiter, beim Fortsetzen werden die neuen Antworten gespeichert.
   function exitTalk(intro: BotLine[] = []) {
     if (resume) {
       finishResume(intro);
       return;
     }
-    if (answers.current.extras?.meetFrequency) askMode(intro);
-    else askFrequency(intro);
+    toWishes(intro);
   }
 
   async function finishResume(intro: BotLine[] = []) {
@@ -748,31 +782,6 @@ export default function OnboardingChat({
     }
   }
 
-  function goToProfileForm() {
-    ask(
-      [
-        "Noch ein paar Details für dein Profil. Nur der Anzeigename ist Pflicht, alles andere ist freiwillig – und du bestimmst, wer dein Profil sehen darf.",
-      ],
-      "profile",
-    );
-  }
-
-  function submitProfile({ profile, photos: blobs }: ProfileResult) {
-    answers.current.profile = profile;
-    photos.current = blobs;
-    user(
-      `Profil angelegt: ${profile.displayName}${
-        blobs.length > 0 ? ` · ${blobs.length} ${blobs.length === 1 ? "Foto" : "Fotos"}` : ""
-      }`,
-    );
-    ask(
-      [
-        "Danke, das Profil steht! Zum Abschluss habe ich noch eine Bitte an dich: Was wünschst du dir von DSpora? Welche Features oder Ideen sollten wir unbedingt einbauen?",
-      ],
-      "wishes",
-    );
-  }
-
   // ——— Finale: Wünsche, dann Anmeldung/Speichern ———
 
   function submitWishes(skip = false) {
@@ -787,9 +796,7 @@ export default function OnboardingChat({
       shownAt.current = Date.now();
       ask(
         [
-          path === "anonymous"
-            ? "Fast geschafft! Zum Schluss bestätigst du deine E-Mail-Adresse. Ich schicke dir einen Link, mit dem du dich anonym anmeldest."
-            : "Fast geschafft! Zum Schluss bestätigst du deine E-Mail-Adresse. Ich schicke dir einen Link, mit dem du dich anmeldest und dein Profil gespeichert wird.",
+          "Fast geschafft! Zum Schluss bestätigst du deine E-Mail-Adresse. Ich schicke dir einen Link, mit dem du dich anmeldest und dein Profil gespeichert wird.",
         ],
         "login",
       );
@@ -889,12 +896,37 @@ export default function OnboardingChat({
     }
   }
 
-  const stepNumber = STEP_NUMBER[step];
-  const inProfile = PROFILE_STEPS.includes(step);
+  // Reihenfolge der Phase-1-Fragen für die Fortschrittsanzeige (hängt von den bisherigen Antworten ab)
+  const phase1: Step[] = [
+    "track",
+    "groupSize",
+    "gender",
+    "matchGender",
+    "age",
+    "ageRange",
+    "meetMode",
+    ...(answers.current.meetMode === "online" ? [] : (["city", "travel", "frequency"] as Step[])),
+    "languages",
+    ...(track === "business" ? (["sector", "role", "goals"] as Step[]) : (["lifePhase"] as Step[])),
+    "interests",
+    "vibes",
+    "nickname",
+  ];
+  const phase1Step: Step = step === "cityConfirm" ? "city" : step;
+  const questionIndex = phase1.indexOf(phase1Step);
+  const inTalk = TALK_STEPS.includes(step);
   const inFinale = FINALE_STEPS.includes(step);
   const showPanel = !busy && step !== "intro";
-  const progress = resume ? 0 : inFinale ? 1 : inProfile ? 0.9 : (stepNumber ?? 0) / TOTAL_STEPS;
-  const headerLabel = resume ? "Gespräch" : inFinale ? "Finale" : inProfile ? "Profil" : stepNumber ? `${stepNumber} / ${TOTAL_STEPS}` : "";
+  const progress = resume ? 0 : inFinale ? 1 : inTalk ? 0.9 : questionIndex >= 0 ? (questionIndex + 1) / (phase1.length + 1) : 0;
+  const headerLabel = resume
+    ? "Gespräch"
+    : inFinale
+      ? "Finale"
+      : inTalk
+        ? "Phase 2"
+        : questionIndex >= 0
+          ? `Frage ${questionIndex + 1} / ${phase1.length}`
+          : "";
 
   return (
     <div className="relative isolate flex min-h-[100dvh] items-center justify-center overflow-hidden bg-zinc-950 sm:p-6">
@@ -919,7 +951,7 @@ export default function OnboardingChat({
               </span>
             )}
           </div>
-          <span className="w-14 text-right text-xs text-zinc-500">{headerLabel}</span>
+          <span className="w-24 text-right text-xs text-zinc-500">{headerLabel}</span>
           <div className="absolute inset-x-0 bottom-0 h-px bg-white/5">
             <motion.div
               className="h-full bg-gold/70"
@@ -1009,20 +1041,11 @@ export default function OnboardingChat({
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.3, ease: EASE }}
               >
-                {step === "gender" && (
-                  <SingleChoice
-                    options={GENDERS}
-                    value={chosenGender}
-                    onSelect={pickGender}
-                    customPlaceholder="Etwas anderes? Schreib es selbst"
-                  />
-                )}
-
-                {step === "matchGender" && (
+                {step === "track" && (
                   <ChipRow>
-                    {MATCH_GENDERS.map((g) => (
-                      <Chip key={g.id} onClick={() => pickMatchGender(g.id, g.label)}>
-                        {g.label}
+                    {TRACKS.map((t) => (
+                      <Chip key={t.id} onClick={() => pickTrack(t.id as "community" | "business")}>
+                        {t.label}
                       </Chip>
                     ))}
                   </ChipRow>
@@ -1038,27 +1061,35 @@ export default function OnboardingChat({
                   </ChipRow>
                 )}
 
-                {step === "region" && (
-                  <ChoiceSelect
-                    options={REGIONS}
-                    value={hubs}
-                    onChange={setHubs}
-                    onConfirm={confirmHubs}
-                    maxTotal={MAX_HUBS}
-                    customPlaceholder="Woanders? Schreib deine Region oder dein Land"
+                {step === "gender" && (
+                  <SingleChoice
+                    options={GENDER_CHOICES}
+                    value={chosenGender}
+                    onSelect={pickGender}
+                    customPlaceholder="Anderes: schreib es selbst"
                   />
                 )}
 
-                {step === "hubReason" && (
-                  <LongTextAnswer
-                    value={text}
-                    onChange={setText}
-                    onSubmit={() => submitHubReason()}
-                    placeholder="z. B. Ich studiere in Köln, meine Familie lebt in Stuttgart …"
-                    maxLength={HUB_REASON_MAX}
-                    minLength={3}
-                    onSkip={() => submitHubReason(true)}
+                {step === "matchGender" && (
+                  <SingleChoice
+                    options={wishKind === "duo" ? DUO_WISHES : GROUP_WISHES}
+                    onSelect={pickMatchGender}
+                    customPlaceholder="Anderes: schreib es selbst"
                   />
+                )}
+
+                {step === "age" && <AgeInput onSubmit={submitAge} />}
+
+                {step === "ageRange" && <AgeRangeInput age={ageNow} onSubmit={submitAgeRange} />}
+
+                {step === "meetMode" && (
+                  <ChipRow>
+                    {MEET_MODES.map((m) => (
+                      <Chip key={m.id} onClick={() => pickMeetMode(m.id, m.label)}>
+                        {m.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
                 )}
 
                 {step === "city" && (
@@ -1069,60 +1100,53 @@ export default function OnboardingChat({
                       setInputError("");
                     }}
                     onSubmit={() => submitCity()}
-                    placeholder="Deine Stadt"
+                    placeholder="Dein Wohnort"
                     error={inputError}
-                    extra={
-                      <Chip onClick={() => submitCity(true)} subtle>
-                        Überspringen
-                      </Chip>
-                    }
                   />
                 )}
 
-                {step === "interests" && (
-                  <ChoiceSelect
-                    options={INTERESTS}
-                    value={interests}
-                    onChange={setInterests}
-                    onConfirm={confirmInterests}
-                    customPlaceholder="Etwas anderes? Eigenes hinzufügen"
-                  />
-                )}
-
-                {step === "vibes" && (
-                  <ChoiceSelect
-                    options={VIBES}
-                    value={vibes}
-                    onChange={setVibes}
-                    onConfirm={confirmVibes}
-                    customPlaceholder="Dein eigener Vibe"
-                  />
-                )}
-
-                {step === "more" && (
+                {step === "cityConfirm" && (
                   <ChipRow>
-                    <Chip onClick={() => pickMore(true)}>Ja, gern</Chip>
-                    <Chip onClick={() => pickMore(false)} subtle>
-                      Nein, weiter
+                    <Chip onClick={() => confirmCity(true)}>Ja, passt</Chip>
+                    <Chip onClick={() => confirmCity(false)} subtle>
+                      Anderen Ort eingeben
                     </Chip>
                   </ChipRow>
                 )}
 
-                {step === "mode" && (
+                {step === "travel" && (
                   <ChipRow>
-                    <Chip onClick={() => pickMode("anonymous")}>Anonym starten</Chip>
-                    <Chip onClick={() => pickMode("profile")}>Profil anlegen</Chip>
-                  </ChipRow>
-                )}
-
-                {step === "track" && (
-                  <ChipRow>
-                    {TRACKS.map((t) => (
-                      <Chip key={t.id} onClick={() => pickTrack(t.id as "community" | "business")}>
-                        {t.label}
+                    {TRAVEL_OPTIONS.map((o) => (
+                      <Chip key={o.minutes} onClick={() => pickTravel(o.minutes, o.label)}>
+                        {o.label}
                       </Chip>
                     ))}
                   </ChipRow>
+                )}
+
+                {step === "frequency" && (
+                  <ChipRow>
+                    {MEET_FREQUENCIES.map((f) => (
+                      <Chip key={f.id} onClick={() => pickFrequency(f.id, f.label)}>
+                        {f.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                )}
+
+                {step === "languages" && (
+                  <ChoiceSelect
+                    options={LANGUAGES}
+                    value={langs}
+                    onChange={setLangs}
+                    onConfirm={confirmLanguages}
+                    maxTotal={5}
+                    customPlaceholder="Eine andere Sprache? Eigene hinzufügen"
+                  />
+                )}
+
+                {step === "lifePhase" && (
+                  <SingleChoice options={PHASES} onSelect={pickPhase} customPlaceholder="Etwas anderes? Eigene Angabe" />
                 )}
 
                 {step === "sector" && (
@@ -1159,7 +1183,54 @@ export default function OnboardingChat({
                   />
                 )}
 
-                {step === "cv" && <LightCvForm onSubmit={submitCv} />}
+                {step === "interests" && (
+                  <TermPicker
+                    key="interests"
+                    suggestions={INTEREST_SUGGESTIONS[track].map((id) => INTERESTS.find((o) => o.id === id)).filter((o): o is NonNullable<typeof o> => Boolean(o))}
+                    allOptions={INTERESTS}
+                    max={MAX_INTERESTS}
+                    min={MIN_INTERESTS}
+                    placeholder={(i) => ["z. B. Tennis", "z. B. Padel", "z. B. Kochen", "z. B. Fotografie", "z. B. Anime", "z. B. Wandern", "z. B. Bouldern", "z. B. Podcasts"][i] ?? "Eigener Begriff"}
+                    hint="Bis zu 5 insgesamt. Ähnliche Wörter erkenne ich selbst, du musst nicht dasselbe tippen wie andere."
+                    onConfirm={confirmInterests}
+                  />
+                )}
+
+                {step === "vibes" && (
+                  <TermPicker
+                    key="vibes"
+                    suggestions={VIBE_SUGGESTIONS[track].map((id) => VIBES.find((o) => o.id === id)).filter((o): o is NonNullable<typeof o> => Boolean(o))}
+                    allOptions={VIBES}
+                    max={MAX_VIBES}
+                    min={1}
+                    placeholder={(i) => ["z. B. Ehrlich", "z. B. Neugierig", "z. B. Herzlich", "z. B. Ruhig", "z. B. Offen", "z. B. Ehrgeizig", "z. B. Gelassen", "z. B. Verspielt"][i] ?? "Eigener Begriff"}
+                    hint="Bis zu 5 insgesamt."
+                    onConfirm={confirmVibes}
+                  />
+                )}
+
+                {step === "nickname" && (
+                  <TextAnswer
+                    value={text}
+                    onChange={(v) => {
+                      setText(v);
+                      setInputError("");
+                    }}
+                    onSubmit={submitNickname}
+                    placeholder="Dein Spitzname oder Künstlername"
+                    maxLength={24}
+                    error={inputError}
+                  />
+                )}
+
+                {step === "more" && (
+                  <ChipRow>
+                    <Chip onClick={() => pickMore(true)}>Ja, gern</Chip>
+                    <Chip onClick={() => pickMore(false)} subtle>
+                      Nein, weiter
+                    </Chip>
+                  </ChipRow>
+                )}
 
                 {step === "freeText" && (
                   <LongTextAnswer
@@ -1195,17 +1266,6 @@ export default function OnboardingChat({
                     </Chip>
                   </ChipRow>
                 )}
-
-                {step === "frequency" && (
-                  <SingleChoice
-                    options={MEET_FREQUENCIES}
-                    value={chosenFrequency}
-                    onSelect={pickFrequency}
-                    customPlaceholder="Etwas anderes? Eigene Angabe"
-                  />
-                )}
-
-                {step === "profile" && <ProfileForm onSubmit={submitProfile} track={track} />}
 
                 {step === "wishes" && (
                   <LongTextAnswer
@@ -1263,11 +1323,7 @@ export default function OnboardingChat({
                       disabled={sending || !email.trim()}
                       className="cta-premium w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-3 text-sm font-semibold text-zinc-950 transition-opacity disabled:opacity-50"
                     >
-                      {sending
-                        ? "Sende …"
-                        : path === "anonymous"
-                          ? "Jetzt anonym anmelden"
-                          : "Jetzt anmelden & Profil speichern"}
+                      {sending ? "Sende …" : "Jetzt anmelden & Profil speichern"}
                     </button>
                     <p className="px-2 text-center text-[11px] leading-relaxed text-zinc-500">
                       Kein Passwort nötig. Deine E-Mail-Adresse bleibt für andere unsichtbar.

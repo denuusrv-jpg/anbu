@@ -1,5 +1,27 @@
 import { NextResponse } from "next/server";
-import { GENDERS, GROUP_SIZES, INTERESTS, MATCH_GENDERS, MAX_HUBS, REGIONS, TRACKS, VIBES, VISIBILITIES } from "@/lib/onboarding";
+import {
+  ALL_HUBS,
+  GENDERS,
+  GROUP_SIZES,
+  INTERESTS,
+  LANGUAGES,
+  MATCH_GENDERS,
+  MAX_AGE,
+  MAX_HUBS,
+  MAX_INTERESTS,
+  MAX_VIBES,
+  MEET_FREQUENCIES,
+  MEET_MODES,
+  MIN_AGE,
+  MIN_INTERESTS,
+  PHASES,
+  TRACKS,
+  TRAVEL_OPTIONS,
+  VIBES,
+  VISIBILITIES,
+} from "@/lib/onboarding";
+import { conceptsWithAi } from "@/lib/conceptAi";
+import { scheduleEvaluation } from "@/lib/evaluate";
 import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
 import { Invalid, choice, followUps, idOrCustom, oneOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
 import { saveTranscript } from "@/lib/profileStore";
@@ -40,8 +62,55 @@ export async function PATCH(request: Request) {
   const update: Record<string, unknown> = {};
   let transcript: ReturnType<typeof validateTranscript> = [];
   try {
-    if (body.interests !== undefined) update.interests = choice(body.interests, INTERESTS, "Interessen", 1);
-    if (body.vibes !== undefined) update.vibes = choice(body.vibes, VIBES, "Vibe", 1);
+    if (body.interests !== undefined) {
+      const interests = choice(body.interests, INTERESTS, "Interessen", MIN_INTERESTS, MAX_INTERESTS);
+      update.interests = interests;
+      update.interest_concepts = await conceptsWithAi(interests, "interest");
+    }
+    if (body.vibes !== undefined) {
+      const vibes = choice(body.vibes, VIBES, "Vibe", 1, MAX_VIBES);
+      update.vibes = vibes;
+      update.vibe_concepts = await conceptsWithAi(vibes, "vibe");
+    }
+
+    // Angaben aus Phase 1 anpassen (Alter, Altersspanne, Art der Freundschaft, Entfernung, Ort, Sprachen, Lebensphase, Häufigkeit)
+    const intField = (value: unknown, field: string) => {
+      if (typeof value !== "number" || !Number.isInteger(value) || value < MIN_AGE || value > MAX_AGE) {
+        throw new Invalid(`${field} muss zwischen ${MIN_AGE} und ${MAX_AGE} liegen.`);
+      }
+      return value;
+    };
+    if (body.age !== undefined) update.age = intField(body.age, "Alter");
+    if (body.ageMin !== undefined) update.age_min = intField(body.ageMin, "Altersspanne (von)");
+    if (body.ageMax !== undefined) update.age_max = intField(body.ageMax, "Altersspanne (bis)");
+    if (body.ageMin !== undefined && body.ageMax !== undefined && (body.ageMin as number) > (body.ageMax as number)) {
+      throw new Invalid("Altersspanne: „von“ darf nicht größer sein als „bis“.");
+    }
+    if (body.meetMode !== undefined) {
+      update.meet_mode = oneOf(body.meetMode, MEET_MODES, "Art der Freundschaft", true);
+      if (update.meet_mode === "online") {
+        update.region = "online";
+        update.travel_minutes = null;
+      }
+    }
+    if (body.travelMinutes !== undefined) {
+      if (body.travelMinutes === null || body.travelMinutes === 0) update.travel_minutes = null;
+      else if (typeof body.travelMinutes === "number" && TRAVEL_OPTIONS.some((o) => o.minutes === body.travelMinutes)) update.travel_minutes = body.travelMinutes;
+      else throw new Invalid("Entfernung ist ungültig.");
+    }
+    if (body.place !== undefined) {
+      const p = (body.place && typeof body.place === "object" ? body.place : {}) as { name?: unknown; lat?: unknown; lng?: unknown; hub?: unknown };
+      if (typeof p.name !== "string" || p.name.trim().length < 2 || p.name.length > 60) throw new Invalid("Ort ist ungültig.");
+      if (typeof p.lat !== "number" || typeof p.lng !== "number" || p.lat < 45 || p.lat > 56 || p.lng < 5 || p.lng > 18) throw new Invalid("Ort ist ungültig.");
+      if (typeof p.hub !== "string" || !ALL_HUBS.some((h) => h.id === p.hub)) throw new Invalid("Hub ist ungültig.");
+      update.city = p.name.trim();
+      update.lat = Math.round(p.lat * 100) / 100;
+      update.lng = Math.round(p.lng * 100) / 100;
+      update.region = p.hub;
+    }
+    if (body.languages !== undefined) update.languages = choice(body.languages, LANGUAGES, "Sprachen", 1, 5);
+    if (body.lifePhase !== undefined) update.life_phase = idOrCustom(body.lifePhase, PHASES, "Lebensphase", true);
+    if (body.meetFrequency !== undefined) update.meet_frequency = oneOf(body.meetFrequency, MEET_FREQUENCIES, "Treffhäufigkeit", true);
 
     // Gespräch fortsetzen: neue Fragen und Antworten werden an die bisherigen angehängt,
     // der Chatverlauf wird pro Konto abgelegt (für die Person selbst unsichtbar)
@@ -83,7 +152,7 @@ export async function PATCH(request: Request) {
 
     // Hubs ändern (höchstens zwei): der erste ist region, der zweite second_region
     if (body.hubs !== undefined) {
-      const hubs = choice(body.hubs, REGIONS, "Hubs", 1);
+      const hubs = choice(body.hubs, ALL_HUBS, "Hubs", 1);
       const list = [...hubs.ids, ...hubs.custom];
       if (list.length > MAX_HUBS) throw new Invalid(`Bitte höchstens ${MAX_HUBS} Hubs.`);
       update.region = list[0];
@@ -154,6 +223,8 @@ export async function PATCH(request: Request) {
   }
 
   await saveTranscript(data.user.id, transcript);
+  // Neue Antworten aus dem Gespräch: im Hintergrund auswerten (Werte-Tags, No-Gos)
+  if (body.talk !== undefined) scheduleEvaluation(data.user.id);
   if (Object.keys(update).length === 0) return NextResponse.json({ ok: true });
 
   const { error } = await supabase.from("user_profiles").update(update).eq("user_id", data.user.id);

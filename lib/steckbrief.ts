@@ -2,13 +2,17 @@
 // im Gespräch zusammengesetzt, ist also immer der aktuelle Stand. Chat, Profil und Admin nutzen dieselbe Funktion.
 
 import {
+  ALL_HUBS,
   GENDERS,
+  LANGUAGES,
+  MEET_MODES,
+  PHASES,
+  TRAVEL_OPTIONS,
   GOALS,
   GROUP_SIZES,
   INTERESTS,
   MATCH_GENDERS,
   MEET_FREQUENCIES,
-  REGIONS,
   SECTORS,
   VIBES,
   choiceLabels,
@@ -35,6 +39,13 @@ export type SteckbriefSource = {
   track?: "community" | "business" | null;
   business?: BusinessData | null;
   extras?: OnboardingAnswers["extras"] | null;
+  age?: number | null;
+  ageMin?: number | null;
+  ageMax?: number | null;
+  meetMode?: string | null;
+  travelMinutes?: number | null;
+  languages?: Choice | null;
+  lifePhase?: string | null;
 };
 
 export const FREE_FACT_QUESTION = "Frei erzählt";
@@ -47,8 +58,14 @@ export function buildSteckbrief(src: SteckbriefSource): Steckbrief {
 
   add("Geschlecht", src.gender ? labelOf(src.gender, GENDERS) : undefined);
   add("Verbinden mit", src.matchGender ? labelOf(src.matchGender, MATCH_GENDERS) : undefined);
+  add("Alter", src.age ? String(src.age) : undefined);
+  add("Gesuchtes Alter", src.ageMin && src.ageMax ? `${src.ageMin} bis ${src.ageMax}` : undefined);
   add("Gruppengröße", src.groupSize ? labelOf(src.groupSize, GROUP_SIZES) : undefined);
-  const hubs = [src.region, src.secondRegion].filter((r): r is string => Boolean(r)).map((r) => labelOf(r, REGIONS));
+  add("Art der Freundschaft", src.meetMode ? labelOf(src.meetMode, MEET_MODES) : undefined);
+  add("Max. Entfernung (Auto)", src.meetMode === "activities" ? (src.travelMinutes ? (TRAVEL_OPTIONS.find((o) => o.minutes === src.travelMinutes)?.label ?? `${src.travelMinutes} Minuten`) : "Egal") : undefined);
+  add("Sprachen", src.languages ? choiceLabels(src.languages, LANGUAGES).join(", ") : undefined);
+  add("Lebensphase", src.lifePhase ? labelOf(src.lifePhase, PHASES) : undefined);
+  const hubs = [src.region, src.secondRegion].filter((r): r is string => Boolean(r)).map((r) => labelOf(r, ALL_HUBS));
   add(hubs.length > 1 ? "Hubs" : "Hub", hubs.join(" + "));
   add("Stadt", src.city);
   add("Interessen", src.interests ? choiceLabels(src.interests, INTERESTS).join(", ") : undefined);

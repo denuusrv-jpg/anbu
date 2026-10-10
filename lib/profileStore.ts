@@ -1,6 +1,8 @@
 import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { ChatTurn, OnboardingAnswers } from "@/lib/onboarding";
+import { conceptsWithAi } from "@/lib/conceptAi";
+import { scheduleEvaluation } from "@/lib/evaluate";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { logError } from "@/lib/errorLog";
 
@@ -16,13 +18,29 @@ export async function saveProfile(
   const wishes = answers.extras?.wishes?.trim();
   const extras = answers.extras ? { ...answers.extras, wishes: undefined } : null;
 
+  // Eigene Wörter einem Begriff zuordnen, damit z. B. "Tennis" und "Padel" als ähnlich erkannt werden
+  const [interestConcepts, vibeConcepts] = await Promise.all([conceptsWithAi(answers.interests, "interest"), conceptsWithAi(answers.vibes, "vibe")]);
+  const online = answers.meetMode === "online";
+
   const { error } = await supabase.from("user_profiles").upsert(
     {
       user_id: user.id,
+      age: answers.age ?? null,
+      age_min: answers.ageMin ?? null,
+      age_max: answers.ageMax ?? null,
+      meet_mode: answers.meetMode ?? null,
+      travel_minutes: online ? null : answers.travelMinutes ?? null,
+      languages: answers.languages ?? null,
+      life_phase: answers.lifePhase ?? null,
+      lat: online ? null : answers.lat ?? null,
+      lng: online ? null : answers.lng ?? null,
+      meet_frequency: answers.extras?.meetFrequency ?? null,
+      interest_concepts: interestConcepts,
+      vibe_concepts: vibeConcepts,
       gender: answers.gender ?? null,
       match_gender: answers.matchGender ?? null,
       group_size: answers.groupSize ?? null,
-      region: answers.region,
+      region: online ? "online" : answers.region,
       second_region: answers.secondRegion ?? null,
       city: answers.city ?? null,
       interests: answers.interests,
@@ -44,6 +62,9 @@ export async function saveProfile(
   }
 
   await saveTranscript(user.id, transcript);
+
+  // Phase 2 (Gespräch) vorhanden: Auswertung im Hintergrund
+  if ((answers.extras?.followUps?.length ?? 0) >= 2 || (answers.extras?.freeText?.length ?? 0) >= 40) scheduleEvaluation(user.id);
 
   if (wishes) {
     // Dieselbe Idee nicht doppelt ablegen, wenn jemand den Chat erneut durchläuft
