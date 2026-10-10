@@ -40,7 +40,7 @@ export default async function Onboarding({
   if (data.user && talk === "1") {
     const { data: row } = await supabase
       .from("user_profiles")
-      .select("extras, deleted_at, gender, match_gender, group_size, region, second_region, city, interests, vibes, track, business")
+      .select("extras, deleted_at, gender, match_gender, group_size, region, second_region, city, interests, vibes, track, business, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase")
       .eq("user_id", data.user.id)
       .maybeSingle();
     if (row && !row.deleted_at) {
@@ -53,6 +53,7 @@ export default async function Onboarding({
           resume={{
             asked: previous.map((f) => f.question),
             context: [extras.freeText ?? "", ...previous.map((f) => f.answer)].join(" "),
+            track: row.track as "community" | "business",
             steckbrief: buildSteckbrief({
               gender: row.gender,
               matchGender: row.match_gender,
@@ -60,6 +61,13 @@ export default async function Onboarding({
               region: row.region,
               secondRegion: row.second_region,
               city: row.city,
+              age: row.age,
+              ageMin: row.age_min,
+              ageMax: row.age_max,
+              meetMode: row.meet_mode,
+              travelMinutes: row.travel_minutes,
+              languages: row.languages as Choice | null,
+              lifePhase: row.life_phase,
               interests: row.interests as Choice,
               vibes: row.vibes as Choice,
               track: row.track as "community" | "business",

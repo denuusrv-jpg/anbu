@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       recent: strings(body.recent, 6, 600),
       asked: strings(body.asked, 40, 300),
       hints: strings(body.hints, 12, 120),
+      track: body.track === "business" ? "business" : "community",
     });
     return question ? NextResponse.json({ question }) : fallback;
   } catch (error) {

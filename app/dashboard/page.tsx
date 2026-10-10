@@ -6,7 +6,7 @@ import { getServerClient } from "@/lib/supabase/server";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/requireAdmin";
 import { listRooms } from "@/lib/chatRooms";
-import { REGIONS, labelOf } from "@/lib/onboarding";
+import { ALL_HUBS, labelOf } from "@/lib/onboarding";
 
 export const metadata = {
   title: "Dein Hub — DSpora",
@@ -38,7 +38,7 @@ export default async function Hub() {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras")
+    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency")
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
@@ -67,7 +67,7 @@ export default async function Hub() {
           db.from("user_profiles").select("user_id", { count: "exact", head: true }).eq("region", id).is("deleted_at", null),
           db.from("user_profiles").select("user_id", { count: "exact", head: true }).eq("second_region", id).is("deleted_at", null),
         ]);
-        return { id, label: labelOf(id, REGIONS), count: (first.count ?? 0) + (second.count ?? 0) };
+        return { id, label: labelOf(id, ALL_HUBS), count: (first.count ?? 0) + (second.count ?? 0) };
       }),
     );
   }

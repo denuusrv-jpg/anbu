@@ -7,16 +7,27 @@ import { AnimatePresence, motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import BusinessEditor from "@/components/BusinessEditor";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
+import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
 import { getBrowserClient } from "@/lib/supabase/client";
 import {
-  GENDERS,
+  ALL_HUBS,
+  DUO_WISHES,
+  GENDER_CHOICES,
   GROUP_SIZES,
+  GROUP_WISHES,
   INTERESTS,
-  MATCH_GENDERS,
-  MAX_HUBS,
-  REGIONS,
+  LANGUAGES,
+  MAX_AGE,
+  MAX_INTERESTS,
+  MAX_VIBES,
+  MEET_FREQUENCIES,
+  MEET_MODES,
+  MIN_AGE,
+  MIN_INTERESTS,
+  PHASES,
+  TRAVEL_OPTIONS,
   VIBES,
   VISIBILITIES,
   choiceLabels,
@@ -42,6 +53,14 @@ export type HubProfile = {
   gender: string | null;
   match_gender: string | null;
   extras: OnboardingAnswers["extras"] | null;
+  age?: number | null;
+  age_min?: number | null;
+  age_max?: number | null;
+  meet_mode?: "online" | "activities" | null;
+  travel_minutes?: number | null;
+  languages?: Choice | null;
+  life_phase?: string | null;
+  meet_frequency?: string | null;
 };
 
 export type HubStat = { id: string; label: string; count: number };
@@ -54,7 +73,6 @@ const EMPTY_BUSINESS: BusinessData = {
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const HUB_TARGET = 100;
 
 export type HubWish = { id: string; wish: string; created_at: string };
 
@@ -99,10 +117,15 @@ export default function HubDashboard({
 
   const hubLabels = [profile.region, profile.second_region]
     .filter((h): h is string => Boolean(h))
-    .map((h) => REGIONS.find((r) => r.id === h)?.label ?? h);
+    .map((h) => ALL_HUBS.find((r) => r.id === h)?.label ?? h);
   const [setupBusiness, setSetupBusiness] = useState(false);
-  const [editingHubs, setEditingHubs] = useState(false);
-  const [hubDraft, setHubDraft] = useState<Choice>({ ids: [], custom: [] });
+  const [editingPlace, setEditingPlace] = useState(false);
+  const [placeText, setPlaceText] = useState("");
+  const [placeFound, setPlaceFound] = useState<{ name: string; lat: number; lng: number; hub: string; hubLabel: string } | null>(null);
+  const [placeError, setPlaceError] = useState("");
+  const [ageDraft, setAgeDraft] = useState({ age: "", min: "", max: "" });
+  const [editingLanguages, setEditingLanguages] = useState(false);
+  const [langDraft, setLangDraft] = useState<Choice>({ ids: [], custom: [] });
   const steckbrief = buildSteckbrief({
     gender: profile.gender,
     matchGender: profile.match_gender,
@@ -110,6 +133,13 @@ export default function HubDashboard({
     region: profile.region,
     secondRegion: profile.second_region,
     city: profile.city,
+    age: profile.age,
+    ageMin: profile.age_min,
+    ageMax: profile.age_max,
+    meetMode: profile.meet_mode,
+    travelMinutes: profile.travel_minutes,
+    languages: profile.languages,
+    lifePhase: profile.life_phase,
     interests: profile.interests,
     vibes: profile.vibes,
     track: profile.track,
@@ -195,23 +225,81 @@ export default function HubDashboard({
     });
   }
 
-  function startEditHubs() {
-    const list = [profile.region, profile.second_region].filter((h): h is string => Boolean(h));
-    setHubDraft({
-      ids: list.filter((h) => REGIONS.some((r) => r.id === h)),
-      custom: list.filter((h) => !REGIONS.some((r) => r.id === h)),
-    });
-    setMessage("");
-    setEditingHubs(true);
+  // Wohnort: wird geprüft und dem nächsten Hub zugeordnet, erst nach der Bestätigung gespeichert
+  async function checkPlace() {
+    const value = placeText.trim();
+    if (value.length < 2) {
+      setPlaceError("Bitte gib deinen Wohnort an.");
+      return;
+    }
+    setPlaceError("");
+    setPlaceFound(null);
+    try {
+      const res = await fetch("/api/geo/resolve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ city: value }),
+      });
+      const data = await res.json();
+      if (data?.place) setPlaceFound(data.place);
+      else setPlaceError("Diesen Ort konnte ich nicht zuordnen. Bitte gib die nächstgrößere Stadt an.");
+    } catch {
+      setPlaceError("Keine Verbindung. Bitte versuch es noch einmal.");
+    }
   }
 
-  async function saveHubs(chosen: Choice) {
-    const list = [...chosen.ids, ...chosen.custom];
-    if (await patch({ hubs: chosen })) {
-      setProfile((p) => ({ ...p, region: list[0], second_region: list[1] ?? null }));
-      setEditingHubs(false);
-      // Die Fortschrittsbalken der Hubs neu laden
+  async function savePlace() {
+    if (!placeFound) return;
+    if (await patch({ place: placeFound })) {
+      setProfile((p) => ({ ...p, city: placeFound.name, region: placeFound.hub }));
+      setEditingPlace(false);
+      setPlaceFound(null);
+      setPlaceText("");
       if (!preview) router.refresh();
+    }
+  }
+
+  async function changeTravel(minutes: number) {
+    const next = minutes === 0 ? null : minutes;
+    if (next === (profile.travel_minutes ?? null)) return;
+    if (await patch({ travelMinutes: minutes })) setProfile((p) => ({ ...p, travel_minutes: next }));
+  }
+
+  async function changeMeetMode(next: "online" | "activities") {
+    if (next === profile.meet_mode) return;
+    if (await patch({ meetMode: next })) setProfile((p) => ({ ...p, meet_mode: next, ...(next === "online" ? { region: "online", travel_minutes: null } : {}) }));
+  }
+
+  async function changeFrequency(next: string) {
+    if (next === profile.meet_frequency) return;
+    if (await patch({ meetFrequency: next })) setProfile((p) => ({ ...p, meet_frequency: next }));
+  }
+
+  async function changePhase(next: string) {
+    if (next === profile.life_phase) return;
+    if (await patch({ lifePhase: next })) setProfile((p) => ({ ...p, life_phase: next }));
+  }
+
+  async function saveAges() {
+    const num = (t: string) => (/^\d{1,2}$/.test(t.trim()) ? Number(t.trim()) : NaN);
+    const age = num(ageDraft.age);
+    const min = num(ageDraft.min);
+    const max = num(ageDraft.max);
+    if ([age, min, max].some((n) => Number.isNaN(n) || n < MIN_AGE || n > MAX_AGE)) {
+      setMessage(`Bitte gib Zahlen zwischen ${MIN_AGE} und ${MAX_AGE} an.`);
+      return;
+    }
+    if (min > max) {
+      setMessage("Altersspanne: „von“ darf nicht größer sein als „bis“.");
+      return;
+    }
+    if (await patch({ age, ageMin: min, ageMax: max })) setProfile((p) => ({ ...p, age, age_min: min, age_max: max }));
+  }
+
+  async function saveLanguages(chosen: Choice) {
+    if (await patch({ languages: chosen })) {
+      setProfile((p) => ({ ...p, languages: chosen }));
+      setEditingLanguages(false);
     }
   }
 
@@ -427,8 +515,8 @@ export default function HubDashboard({
               </h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Sobald sich genug Leute in deinen Hubs eintragen, öffnet sich dein Hub und wir verbinden dich mit
-              passenden Menschen. Du musst nichts weiter tun.
+              Wir prüfen die Anmeldungen und öffnen deinen Hub, sobald genug passende Leute dabei sind. Jedes Match
+              schauen wir uns vorher an. Du musst nichts weiter tun.
             </p>
 
             {/* Getrennt nach Intention */}
@@ -461,19 +549,9 @@ export default function HubDashboard({
                   {profile.city ? ` · ${profile.city}` : ""}
                 </div>
                 {hubs?.map((h) => (
-                  <div key={h.id} className="mt-2 pl-[26px]">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-gold to-gold-light"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.max(Math.min(h.count / HUB_TARGET, 1) * 100, 4)}%` }}
-                        transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-xs text-zinc-500">
-                      {h.count} von {HUB_TARGET} Anmeldungen im Hub {h.label}
-                    </p>
-                  </div>
+                  <p key={h.id} className="mt-1.5 pl-[26px] text-xs text-zinc-500">
+                    {h.count} {h.count === 1 ? "Anmeldung" : "Anmeldungen"} im Hub {h.label}
+                  </p>
                 ))}
               </li>
               <li className="flex items-center gap-2.5 text-zinc-400">
@@ -616,74 +694,207 @@ export default function HubDashboard({
             </div>
           </div>
 
-          {/* Hubs */}
+          {/* Wohnort, Hub und Entfernung */}
           <div className="mt-6 border-t border-white/10 pt-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-100">{hubLabels.length > 1 ? "Deine Hubs" : "Dein Hub"}</p>
-              {!editingHubs && (
-                <button type="button" onClick={startEditHubs} className="text-xs text-zinc-400 transition-colors hover:text-gold">
+              <p className="text-sm font-medium text-zinc-100">Art der Freundschaft und Wohnort</p>
+            </div>
+            <div className="mt-3" role="radiogroup" aria-label="Art der Freundschaft">
+              <ChipRow>
+                {MEET_MODES.map((m) => (
+                  <Chip key={m.id} selected={profile.meet_mode === m.id} onClick={() => changeMeetMode(m.id as "online" | "activities")}>
+                    {m.label}
+                  </Chip>
+                ))}
+              </ChipRow>
+            </div>
+            {profile.meet_mode !== "online" && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-zinc-400">
+                    {profile.city ? `${profile.city} · ` : ""}Hub {hubLabels.join(" + ") || "–"}
+                  </p>
+                  {!editingPlace && (
+                    <button type="button" onClick={() => { setEditingPlace(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
+                      Ort ändern
+                    </button>
+                  )}
+                </div>
+                {editingPlace && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        value={placeText}
+                        onChange={(e) => { setPlaceText(e.target.value); setPlaceFound(null); setPlaceError(""); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); checkPlace(); } }}
+                        placeholder="Dein Wohnort"
+                        aria-label="Dein Wohnort"
+                        className={fieldClass}
+                      />
+                      <button type="button" onClick={checkPlace} className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold">
+                        Prüfen
+                      </button>
+                    </div>
+                    {placeError && <p role="alert" className="text-xs text-rose">{placeError}</p>}
+                    {placeFound && (
+                      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-3.5 py-2.5 text-xs text-zinc-200">
+                        <span>„{placeFound.name}“ gehört zum Hub {placeFound.hubLabel}.</span>
+                        <button type="button" onClick={savePlace} className="rounded-full bg-gold px-3 py-1 font-semibold text-zinc-950">
+                          {saving ? "Speichere …" : "Übernehmen"}
+                        </button>
+                      </div>
+                    )}
+                    <button type="button" onClick={() => setEditingPlace(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
+                      Abbrechen
+                    </button>
+                  </div>
+                )}
+                <p className="mt-4 text-xs text-zinc-400">Wie weit darf jemand maximal entfernt wohnen? (Fahrzeit mit dem Auto)</p>
+                <div className="mt-2" role="radiogroup" aria-label="Maximale Entfernung">
+                  <ChipRow>
+                    {TRAVEL_OPTIONS.map((o) => (
+                      <Chip key={o.minutes} selected={(profile.travel_minutes ?? 0) === o.minutes} onClick={() => changeTravel(o.minutes)}>
+                        {o.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                </div>
+                <p className="mt-4 text-xs text-zinc-400">Wie oft würdest du dich realistisch treffen?</p>
+                <div className="mt-2" role="radiogroup" aria-label="Treffhäufigkeit">
+                  <ChipRow>
+                    {MEET_FREQUENCIES.map((f) => (
+                      <Chip key={f.id} selected={profile.meet_frequency === f.id} onClick={() => changeFrequency(f.id)}>
+                        {f.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Alter */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <p className="text-sm font-medium text-zinc-100">Alter und gesuchte Altersspanne</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                value={ageDraft.age || (profile.age ? String(profile.age) : "")}
+                onChange={(e) => setAgeDraft((d) => ({ ...d, age: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
+                inputMode="numeric"
+                aria-label="Dein Alter"
+                placeholder="Alter"
+                className="w-20 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
+              />
+              <span className="text-xs text-zinc-500">Gesucht von</span>
+              <input
+                value={ageDraft.min || (profile.age_min ? String(profile.age_min) : "")}
+                onChange={(e) => setAgeDraft((d) => ({ ...d, min: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
+                inputMode="numeric"
+                aria-label="Gesucht ab"
+                placeholder="von"
+                className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
+              />
+              <span className="text-xs text-zinc-500">bis</span>
+              <input
+                value={ageDraft.max || (profile.age_max ? String(profile.age_max) : "")}
+                onChange={(e) => setAgeDraft((d) => ({ ...d, max: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
+                inputMode="numeric"
+                aria-label="Gesucht bis"
+                placeholder="bis"
+                className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setAgeDraft((d) => ({ age: d.age || String(profile.age ?? ""), min: d.min || String(profile.age_min ?? ""), max: d.max || String(profile.age_max ?? "") }));
+                  saveAges();
+                }}
+                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold"
+              >
+                {saving ? "Speichere …" : "Speichern"}
+              </button>
+            </div>
+          </div>
+
+          {/* Sprachen und Lebensphase */}
+          <div className="mt-6 border-t border-white/10 pt-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-zinc-100">Sprachen</p>
+              {!editingLanguages && (
+                <button type="button" onClick={() => { setLangDraft(profile.languages ?? { ids: [], custom: [] }); setEditingLanguages(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
                   Bearbeiten
                 </button>
               )}
             </div>
-            {editingHubs ? (
+            {editingLanguages ? (
               <div className="mt-3">
-                <p className="mb-3 text-xs text-zinc-500">
-                  In welchen Bereichen wäre es für dich in Ordnung, mit einer Person befreundet zu sein? Höchstens zwei Hubs.
-                </p>
                 <ChoiceSelect
-                  options={REGIONS}
-                  value={hubDraft}
-                  onChange={setHubDraft}
-                  onConfirm={saveHubs}
-                  maxTotal={MAX_HUBS}
-                  customPlaceholder="Woanders? Schreib deine Region oder dein Land"
+                  options={LANGUAGES}
+                  value={langDraft}
+                  onChange={setLangDraft}
+                  onConfirm={saveLanguages}
+                  maxTotal={5}
+                  customPlaceholder="Eine andere Sprache? Eigene hinzufügen"
                   confirmLabel={saving ? "Speichere …" : "Speichern"}
-                  extra={
-                    <button
-                      type="button"
-                      onClick={() => setEditingHubs(false)}
-                      className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
-                    >
-                      Abbrechen
-                    </button>
-                  }
+                  extra={<button type="button" onClick={() => setEditingLanguages(false)} className="text-xs text-zinc-500 hover:text-zinc-300">Abbrechen</button>}
                 />
               </div>
             ) : (
               <div className="mt-3">
                 <ChipRow>
-                  {hubLabels.map((label) => (
-                    <span key={label} className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200">
-                      {label}
-                    </span>
+                  {choiceLabels(profile.languages ?? { ids: [], custom: [] }, LANGUAGES).map((label) => (
+                    <span key={label} className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200">{label}</span>
                   ))}
                 </ChipRow>
               </div>
+            )}
+            {profile.track !== "business" && (
+              <>
+                <p className="mt-5 text-sm font-medium text-zinc-100">Lebensphase</p>
+                <div className="mt-3" role="radiogroup" aria-label="Lebensphase">
+                  <ChipRow>
+                    {PHASES.map((ph) => (
+                      <Chip key={ph.id} selected={profile.life_phase === ph.id} onClick={() => changePhase(ph.id)}>
+                        {ph.label}
+                      </Chip>
+                    ))}
+                  </ChipRow>
+                </div>
+              </>
             )}
           </div>
 
           {/* Geschlecht und Wunsch */}
           <div className="mt-6 border-t border-white/10 pt-5">
             <p className="text-sm font-medium text-zinc-100">Geschlecht</p>
-            <p className="mt-0.5 text-xs text-zinc-500">Freiwillig. Es zählt, wie du dich selbst identifizierst.</p>
+            <p className="mt-0.5 text-xs text-zinc-500">Es zählt, wie du dich selbst identifizierst.</p>
             <div className="mt-3" role="radiogroup" aria-label="Geschlecht">
               <ChipRow>
-                {GENDERS.map((g) => (
+                {GENDER_CHOICES.map((g) => (
                   <Chip key={g.id} selected={profile.gender === g.id} onClick={() => changeGender(g.id)}>
                     {g.label}
                   </Chip>
                 ))}
+                {profile.gender && !GENDER_CHOICES.some((g) => g.id === profile.gender) && (
+                  <Chip selected onClick={() => {}}>
+                    {profile.gender === "nonbinary" ? "Nicht-binär / divers" : profile.gender === "na" ? "Keine Angabe" : profile.gender}
+                  </Chip>
+                )}
               </ChipRow>
             </div>
             <p className="mt-5 text-sm font-medium text-zinc-100">Mit wem möchtest du dich verbinden?</p>
             <div className="mt-3" role="radiogroup" aria-label="Verbinden mit">
               <ChipRow>
-                {MATCH_GENDERS.map((g) => (
+                {(profile.group_size === "duo" ? DUO_WISHES : GROUP_WISHES).map((g) => (
                   <Chip key={g.id} selected={profile.match_gender === g.id} onClick={() => changeMatchGender(g.id)}>
                     {g.label}
                   </Chip>
                 ))}
+                {profile.match_gender === "other" && (
+                  <Chip selected onClick={() => {}}>
+                    Anderes
+                  </Chip>
+                )}
               </ChipRow>
             </div>
           </div>
@@ -751,6 +962,8 @@ export default function HubDashboard({
                       onChange={setDraft}
                       onConfirm={saveEdit}
                       customPlaceholder={key === "interests" ? "Eigenes hinzufügen" : "Eigenen Vibe hinzufügen"}
+                      maxTotal={key === "interests" ? MAX_INTERESTS : MAX_VIBES}
+                      minTotal={key === "interests" ? MIN_INTERESTS : 1}
                       confirmLabel={saving ? "Speichere …" : "Speichern"}
                       extra={
                         <button

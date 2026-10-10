@@ -136,7 +136,7 @@ export default function OnboardingChat({
   mode?: ChatMode;
   userId?: string;
   /** Eingeloggte Person setzt das Gespräch fort: bereits Gefragtes wird nicht wiederholt */
-  resume?: { asked: string[]; context: string; steckbrief: Steckbrief };
+  resume?: { asked: string[]; context: string; steckbrief: Steckbrief; track?: "community" | "business" };
   /** KI (OpenAI) stellt die Folgefragen; ohne Schlüssel oder bei Fehlern gilt die regelbasierte Frage */
   aiEnabled?: boolean;
 }) {
@@ -666,7 +666,7 @@ export default function OnboardingChat({
       const res = await fetch("/api/chat/next", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lastAnswer: lastAnswer.current, recent, asked: askedQuestions.current.slice(-40), hints }),
+        body: JSON.stringify({ lastAnswer: lastAnswer.current, recent, asked: askedQuestions.current.slice(-40), hints, track: resume?.track ?? track }),
         signal: AbortSignal.timeout(9000),
       });
       const data = await res.json();

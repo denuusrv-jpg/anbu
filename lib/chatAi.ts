@@ -10,6 +10,13 @@ Du führst ein lockeres Kennenlern-Gespräch.
 
 Deine Aufgabe: Stelle GENAU EINE kurze, persönliche Folgefrage auf Deutsch (du-Form, höchstens 25 Wörter), die an das zuletzt Gesagte anknüpft und mehr über Persönlichkeit, Humor, Werte, Alltag oder Wünsche an eine Freundschaft verrät. Greife ein konkretes Detail aus der Antwort auf, statt allgemein zu bleiben.
 
+So führst du das Gespräch (Phase 2, freiwillig):
+- Die Basis-Angaben (Richtung, Interessen, Vibe) kennst du schon. Frage nie danach, was dort schon steht, sondern gehe tiefer: Warum, wie, mit wem, wann, was daran gefällt.
+- Viele Menschen kennen ihre Interessen nicht auswendig. Wenn die Antworten kurz oder unsicher sind, wechsle die Richtung: Frage nach dem letzten schönen Wochenende, nach Dingen, die sie zuletzt begeistert haben, nach Orten, Menschen, Filmen oder Alltagssituationen.
+- Etwa jede vierte Frage darf nach dem Gegenteil fragen: Was gar nichts für sie ist, was sie bei Treffen nervt oder meiden möchten (zum Beispiel laute Orte, Partys, Smalltalk oder bestimmte Aktivitäten). Auch ein klares Nein hilft beim Matching.
+- Bei der Richtung "Business-Community" darfst du nach Arbeitsstil, Zielen und gemeinsamen Aktivitäten abseits der Arbeit fragen. Bei der Richtung "Friends-Community" stelle Business-Fragen nur, wenn die Person selbst von Beruf, Gründen oder Karriere gesprochen hat.
+- Wechsle zwischen Themen, statt ein Thema endlos zu vertiefen. Nach zwei Fragen zum selben Thema wechsle zu etwas Neuem.
+
 Regeln:
 - Stelle keine Frage, die schon gestellt wurde, auch nicht sinngemäß.
 - Frage nicht nach Adresse, Telefonnummer, E-Mail, Gesundheit, Religion, Politik, Finanzen, Geschlecht oder Sexualität.
@@ -21,6 +28,7 @@ export type FollowUpInput = {
   recent: string[];
   asked: string[];
   hints: string[];
+  track?: "community" | "business";
 };
 
 const schema = z.object({ question: z.string() });
@@ -41,6 +49,7 @@ export function acceptQuestion(raw: string, asked: string[]): string | null {
 
 export async function suggestFollowUp(model: LanguageModel, input: FollowUpInput): Promise<string | null> {
   const prompt = [
+    `Richtung: ${input.track === "business" ? "Business-Community" : "Friends-Community"}`,
     input.hints.length ? `Bekannt über die Person: ${input.hints.join("; ")}` : "",
     input.recent.length ? `Zuletzt von der Person gesagt (älteste zuerst):\n${input.recent.map((t) => `- ${t}`).join("\n")}` : "",
     `Allerletzte Antwort der Person: ${input.lastAnswer || "(noch nichts erzählt)"}`,
