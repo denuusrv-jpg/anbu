@@ -91,9 +91,11 @@ export async function evaluateProfile(userId: string): Promise<boolean> {
       abortSignal: AbortSignal.timeout(45000),
     });
 
+    // No-Gos nur über feste Regeln zuordnen: eine KI-Zuordnung nach "Nähe" wäre hier gefährlich
+    // (z. B. wird "Smalltalk" als No-Go sonst leicht auf "Deep Talks" abgebildet, das Gegenteil).
     const noGos: string[] = [];
     for (const word of output.noGos) {
-      const c = await toConcept(word, "interest");
+      const c = conceptByRules(word, "interest") ?? unknownConcept(word);
       if (noGos.indexOf(c) < 0) noGos.push(c);
     }
     const extra: string[] = [];

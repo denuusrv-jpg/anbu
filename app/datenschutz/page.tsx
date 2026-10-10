@@ -40,21 +40,34 @@ export default function Datenschutz() {
                 notwendige Cookies ein, die deine Anmeldung erhalten.
               </li>
               <li>
-                <strong className="text-zinc-200">Profil und Matching:</strong> Region, Stadt, Interessen, Vibe,
-                gewünschte Gruppengröße, die gewählten Hubs und, wenn du ein Profil anlegst, Anzeigename, Alter,
-                Hobbys, Sprachen, Lebensphase, Fun Fact und Fotos. Im Business-Modus zusätzlich Branche, Rolle, Ziele
-                und dein Light-CV (Expertise, Erfolge, Links). Wer dein Profil sehen darf, stellst du selbst ein.
+                <strong className="text-zinc-200">Profil und Matching (Phase 1):</strong> Richtung (Friends oder Business),
+                gewünschte Gruppengröße, Alter und gewünschte Altersspanne, Art der Freundschaft (online oder mit
+                Aktivitäten), Wohnort, maximale Fahrzeit mit dem Auto, Treffhäufigkeit, Sprachen, Lebensphase,
+                Interessen, Vibe und ein Spitzname. Aus dem Wohnort berechnen wir grobe Koordinaten (auf etwa einen
+                Kilometer gerundet) und ordnen dich einem Hub zu. Im Business-Modus zusätzlich Branche, Rolle und Ziele,
+                später optional ein Light-CV. Wer dein Profil sehen darf, stellst du selbst ein.
               </li>
               <li>
-                <strong className="text-zinc-200">Geschlecht (freiwillig):</strong> Wie du dich identifizierst und mit
-                wem du dich verbinden möchtest. Die Angabe ist freiwillig und erfolgt auf Grundlage deiner Einwilligung.
-                Du kannst sie jederzeit in deinem Profil ändern oder die Option „Möchte ich nicht angeben“ wählen.
+                <strong className="text-zinc-200">Geschlecht:</strong> Wie du dich identifizierst (männlich, weiblich oder
+                ein eigenes Wort, das du selbst wählst) und welche Freundschaften oder Gruppen du suchst. Die Angabe ist
+                für das Matching nötig und erfolgt auf Grundlage deiner Einwilligung. Du kannst sie jederzeit in deinem
+                Profil ändern.
               </li>
               <li>
-                <strong className="text-zinc-200">Gespräch und Steckbrief:</strong> Was du im Chat erzählst, speichern wir
+                <strong className="text-zinc-200">Matching mit Freigabe:</strong> Aus deinen Antworten berechnet die KI
+                Vorschläge, wer gut zu wem passt (Punktesystem). Aus diesen Vorschlägen entsteht erst dann ein Chat, wenn
+                wir den Vorschlag geprüft und freigegeben haben. Hubs öffnen wir ebenfalls erst nach unserer Prüfung. Zur
+                Prüfung sehen wir in unserem Admin-Bereich die Anmeldelisten eines Hubs und die Grundlage jedes
+                Vorschlags (Punkte je Bereich); auffällige Anmeldungen (zum Beispiel doppelte oder Wegwerf-Adressen)
+                markieren wir automatisch.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Gespräch (Phase 2, freiwillig) und Steckbrief:</strong> Was du im Chat erzählst, speichern wir
                 als Steckbrief, damit wir dich besser kennenlernen und passende Verbindungen vorschlagen können. Der
                 Chatverlauf wird deinem Konto zugeordnet, ist für andere Nutzer nicht sichtbar und dient dem Fortsetzen
-                des Gesprächs. Einzelne Angaben kannst du in deinem Profil jederzeit entfernen.
+                des Gesprächs. Einzelne Angaben kannst du in deinem Profil jederzeit entfernen. Nach dem Gespräch werten wir
+                es automatisch aus und leiten drei Persönlichkeits-Merkmale (zum Beispiel ruhig oder extrovertiert) sowie
+                ausdrücklich Abgelehntes ab. Sie fließen als kleiner Bonus oder Abzug in das Matching ein.
               </li>
               <li>
                 <strong className="text-zinc-200">Chats mit Matches:</strong> Wenn wir dich mit anderen zusammenbringen, entsteht ein
@@ -84,7 +97,10 @@ export default function Datenschutz() {
               (Art. 6 Abs. 1 lit. b DSGVO). Freiwillige Angaben wie das Geschlecht beruhen auf deiner Einwilligung
               (Art. 6 Abs. 1 lit. a, bei besonderen Kategorien Art. 9 Abs. 2 lit. a DSGVO), die du jederzeit mit Wirkung
               für die Zukunft widerrufen kannst. Das technische Fehler-Tracking dient unserem berechtigten Interesse an
-              einem stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO).
+              einem stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Teilnahme am freiwilligen Gespräch (Phase 2) und
+              die daraus abgeleiteten Merkmale beruhen auf deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die du
+              jederzeit widerrufen kannst. Über Vorschläge für Chats entscheiden wir nach eigener Prüfung, es gibt keine
+              ausschließlich automatisierte Entscheidung mit rechtlicher Wirkung.
             </p>
           </section>
 
@@ -100,8 +116,16 @@ export default function Datenschutz() {
                 (Serverstandort: Irland, EU).
               </li>
               <li>
+                <strong className="text-zinc-200">Anthropic (Claude)</strong> wertet nach einem freiwilligen Gespräch
+                (Phase 2) die Antworten aus und fasst im Admin-Bereich Auffälligkeiten zusammen. Dabei übermitteln wir
+                bereinigte Textstellen und deine Basis-Angaben zu Richtung, Interessen und Vibe, aber keinen Namen, keine
+                E-Mail-Adresse, kein Geschlecht und kein Alter. Die Verarbeitung kann in den USA stattfinden, dann auf
+                Grundlage von Standardvertragsklauseln (Art. 46 DSGVO).
+              </li>
+              <li>
                 <strong className="text-zinc-200">OpenAI</strong> unterstützt uns mit KI: Der Chat nutzt sie für
-                Folgefragen, und der Admin-Bereich für Auswertungen. Dabei übermitteln wir Textstellen aus deinem
+                Folgefragen, zur Zuordnung eigener Begriffe (nur die eingegebenen Wörter) und zur Einordnung eines
+                eingegebenen Wohnorts (nur der Ortsname), und der Admin-Bereich für Auswertungen. Dabei übermitteln wir Textstellen aus deinem
                 Gespräch. E-Mail-Adressen, Telefonnummern und Links entfernen wir vorher, dein Geschlecht übermitteln wir
                 nicht. Für die Eisbrecher-Fragen im Chat übermitteln wir nur Gemeinsamkeiten wie Interessen und Hub, keine
                 Namen und keine Nachrichten. In den Admin-Auswertungen werden nur pseudonymisierte Daten ohne Namen und

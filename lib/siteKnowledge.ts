@@ -27,7 +27,7 @@ const ENTRIES: Entry[] = [
   {
     keywords: ["anonym", "diskret", "name", "foto", "profilbild", "sichtbar", "sehen", "stigma", "versteck"],
     answer: {
-      text: "Anonymität ist bei uns eine Option, kein Zwang: Du kannst geschützt und anonym starten und dich erst öffnen, wenn der passende Freundeskreis gefunden ist. Genauso kannst du von Anfang an mit Namen, Profilbild und Stadt auftreten. Wer dein Profil sehen darf, stellst du selbst ein.",
+      text: "Anonymität ist bei uns eine Option, kein Zwang: Im Chat gibst du nur einen Spitznamen an, so bleibst du geschützt und kannst dich erst öffnen, wenn der passende Freundeskreis gefunden ist. Wer dein Profil sehen darf, stellst du selbst ein.",
     },
   },
   {
@@ -66,7 +66,7 @@ const ENTRIES: Entry[] = [
   {
     keywords: ["business", "co-founder", "cofounder", "founder", "mentor", "partner", "geschäft", "geschaeft", "light-cv", "lebenslauf", "karriere", "investor"],
     answer: {
-      text: "DSpora ist nicht nur für Freundschaften da: Du kannst die Plattform auch für Business-Kontakte nutzen, zum Beispiel, um Co-Founder, Partner oder Mentoren zu finden. Dafür legst du im Onboarding ein kurzes Light-CV an und bestimmst selbst, wer dich sehen darf.",
+      text: "DSpora ist nicht nur für Freundschaften da: Du kannst die Plattform auch für Business-Kontakte nutzen, zum Beispiel, um Co-Founder, Partner oder Mentoren zu finden. Dafür wählst du im Onboarding die Richtung Business-Community und gibst Branche, Rolle und Ziele an. Ein kurzes Light-CV kannst du später in deinem Profil ergänzen, und du bestimmst selbst, wer dich sehen darf.",
     },
   },
   {
