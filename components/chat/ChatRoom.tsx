@@ -170,7 +170,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     );
   }
 
-  const others = detail.members.filter((m) => !m.isMe).map((m) => m.label);
+  const othersList = detail.members.filter((m) => !m.isMe);
   const dissolved = detail.room.dissolved;
   const userMessages = messages.filter((m) => m.kind === "user").length;
   const askFeedback = !dissolved && !detail.myFeedback && !feedbackDone && userMessages >= 6;
@@ -185,7 +185,22 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             <Link href={sample ? "#" : "/dashboard/chats"} className="text-xs text-zinc-500 hover:text-zinc-300">
               ← Chats
             </Link>
-            <h1 className="mt-1 truncate text-lg font-semibold text-zinc-50">{others.join(", ") || "Chat"}</h1>
+            <h1 className="mt-1 truncate text-lg font-semibold text-zinc-50">
+              {othersList.length === 0
+                ? "Chat"
+                : othersList.map((m, i) => (
+                    <span key={m.label + i}>
+                      {i > 0 && ", "}
+                      {m.userId && !sample ? (
+                        <Link href={`/profil/${m.userId}`} className="underline-offset-2 hover:text-gold hover:underline" title="Profil ansehen">
+                          {m.label}
+                        </Link>
+                      ) : (
+                        m.label
+                      )}
+                    </span>
+                  ))}
+            </h1>
             <p className="text-[11px] text-zinc-500">
               {detail.room.kind === "duo" ? "Duo" : `Gruppe · ${detail.members.length} Personen`}
               {detail.room.track === "business" ? " · Business" : ""}

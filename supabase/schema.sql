@@ -538,3 +538,20 @@ $$;
 drop trigger if exists protect_ai_profile_trigger on public.user_profiles;
 create trigger protect_ai_profile_trigger before insert or update on public.user_profiles
   for each row execute function public.protect_ai_profile();
+
+-- ─────────────────────────────────────────────────────────────
+-- 16) Profil im Instagram-Stil: Profilbild und bis zu 6 Beiträge (je bis zu 6 Slides)
+--     Die Bilder liegen im privaten Bucket profile-photos: <Nutzer-ID>/avatar.jpg und <Nutzer-ID>/posts/<Beitrags-ID>/<n>.jpg.
+--     Angezeigt werden sie über kurzlebige Links, die der Server nur für berechtigte Personen erzeugt.
+-- ─────────────────────────────────────────────────────────────
+alter table public.user_profiles add column if not exists has_avatar boolean not null default false;
+
+create table if not exists public.profile_posts (
+  id         uuid primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  caption    text check (caption is null or char_length(caption) <= 200),
+  slides     int not null check (slides between 1 and 6),
+  created_at timestamptz not null default now()
+);
+create index if not exists profile_posts_user_idx on public.profile_posts (user_id, created_at desc);
+alter table public.profile_posts enable row level security;

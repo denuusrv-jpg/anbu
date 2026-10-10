@@ -23,7 +23,7 @@ export class ChatError extends Error {
 export const MESSAGE_MAX = 2000;
 const DISSOLVED_KEEP_DAYS = 7;
 
-export type MemberLabel = { label: string; isMe: boolean };
+export type MemberLabel = { label: string; isMe: boolean; userId?: string };
 export type RoomMessage = {
   id: string;
   kind: "user" | "icebreaker" | "system";
@@ -67,7 +67,7 @@ async function labelsFor(db: Db, memberIds: string[], meId: string): Promise<{ l
     else if (entry?.mode === "profile" && entry.name) label = entry.name;
     else label = `Anonym ${++anon}`;
     byId.set(id, label);
-    list.push({ label, isMe: id === meId });
+    list.push({ label, isMe: id === meId, userId: id === meId ? undefined : id });
   }
   return { list, byId };
 }

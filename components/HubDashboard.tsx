@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import BusinessEditor from "@/components/BusinessEditor";
 import ChoiceSelect from "@/components/onboarding/ChoiceSelect";
+import ProfileEditor from "@/components/profile/ProfileEditor";
+import type { PostView } from "@/lib/profileMedia";
 import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
@@ -29,7 +31,6 @@ import {
   PHASES,
   TRAVEL_OPTIONS,
   VIBES,
-  VISIBILITIES,
   choiceLabels,
   type BusinessData,
   type Choice,
@@ -43,7 +44,7 @@ export type HubProfile = {
   interests: Choice;
   vibes: Choice;
   mode: "anonymous" | "profile";
-  profile: { displayName?: string } | null;
+  profile: { displayName?: string; firstName?: string; lastName?: string; bio?: string; hobbies?: string[] } | null;
   status: "preparing" | "matched";
   track: "community" | "business";
   business: BusinessData | null;
@@ -88,7 +89,13 @@ export default function HubDashboard({
   isAdmin,
   preview = false,
   wishes: initialWishes,
+  userId,
+  avatar = null,
+  posts = [],
 }: {
+  userId?: string;
+  avatar?: string | null;
+  posts?: PostView[];
   email: string;
   profile: HubProfile;
   hubs: HubStat[] | null;
@@ -149,7 +156,6 @@ export default function HubDashboard({
   });
   const lastError = useRef("");
   const hasProfile = Boolean(profile.profile);
-  const anonymous = profile.mode === "anonymous";
   const name = profile.profile?.displayName;
 
   useEffect(() => {
@@ -351,11 +357,6 @@ export default function HubDashboard({
     return null;
   }
 
-  async function toggleAnonymous() {
-    const next = anonymous ? "profile" : "anonymous";
-    if (await patch({ mode: next })) setProfile((p) => ({ ...p, mode: next }));
-  }
-
   async function submitWish(e: React.FormEvent) {
     e.preventDefault();
     if (preview) {
@@ -449,7 +450,7 @@ export default function HubDashboard({
           ? matchCount > 0
             ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
             : "Dein Hub bereitet passende Verbindungen vor"
-          : "Pausiert. Wechsle oben auf „Private Community“, um sie zu aktivieren.",
+          : "Pausiert. Wechsle oben auf „Friends-Community“, um sie zu aktivieren.",
     },
     {
       id: "business" as const,
@@ -459,7 +460,7 @@ export default function HubDashboard({
           ? matchCount > 0
             ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
             : "Dein Hub bereitet passende Business-Verbindungen vor"
-          : "Nicht aktiv. Wechsle oben auf „Business & Co-Founding“, um sie zu aktivieren.",
+          : "Nicht aktiv. Wechsle oben auf „Business-Community“, um sie zu aktivieren.",
     },
   ];
 
@@ -566,6 +567,26 @@ export default function HubDashboard({
           </div>
         </motion.section>
 
+        {/* Profilseite (Instagram-Stil) */}
+        {userId && (
+          <ProfileEditor
+            userId={userId}
+            visibility={profile.visibility}
+            track={profile.track}
+            avatar={avatar}
+            posts={posts}
+            preview={preview}
+            onVisibility={changeVisibility}
+            info={{
+              displayName: profile.profile?.displayName ?? "",
+              firstName: profile.profile?.firstName ?? "",
+              lastName: profile.profile?.lastName ?? "",
+              bio: profile.profile?.bio ?? "",
+              hobbies: profile.profile?.hobbies ?? [],
+            }}
+          />
+        )}
+
         {/* Profil verwalten */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
@@ -585,8 +606,8 @@ export default function HubDashboard({
             >
               {(
                 [
-                  { id: "community", label: "Private Community" },
-                  { id: "business", label: "Business & Co-Founding" },
+                  { id: "community", label: "Friends-Community" },
+                  { id: "business", label: "Business-Community" },
                 ] as const
               ).map((m) => {
                 const on = (setupBusiness ? "business" : profile.track) === m.id;
@@ -628,75 +649,6 @@ export default function HubDashboard({
                 />
               </div>
             )}
-          </div>
-
-          {/* Anonymität */}
-          <div className="mt-6 flex items-start justify-between gap-4 border-t border-white/10 pt-5">
-            <div>
-              <p className="text-sm font-medium text-zinc-100">Anonym bleiben</p>
-              <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">
-                {anonymous
-                  ? "Andere sehen nur deine Interessen, nie deinen Namen oder deine Fotos."
-                  : "Dein Profil mit Anzeigename ist für die gewählte Gruppe sichtbar."}
-              </p>
-              {profile.track === "business" && (
-                <p className="mt-1.5 text-xs text-zinc-400">Business-Profile sind immer mit Namen sichtbar.</p>
-              )}
-              {!hasProfile && (
-                <p className="mt-1.5 text-xs text-zinc-400">
-                  Du hast noch kein Profil angelegt.{" "}
-                  <Link href="/onboarding" className="text-gold hover:underline">
-                    Profil anlegen
-                  </Link>
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={anonymous}
-              aria-label="Anonym bleiben"
-              disabled={saving || (!hasProfile && anonymous) || profile.track === "business"}
-              onClick={toggleAnonymous}
-              className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors duration-300 disabled:opacity-40 ${
-                anonymous ? "border-gold/60 bg-gold/30" : "border-white/15 bg-white/10"
-              }`}
-            >
-              <motion.span
-                className="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow"
-                animate={{ x: anonymous ? 20 : 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 32 }}
-              />
-            </button>
-          </div>
-
-          {/* Sichtbarkeit */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">Wer darf mein Profil sehen?</p>
-            <div className="mt-3 space-y-2" role="radiogroup" aria-label="Sichtbarkeit">
-              {VISIBILITIES.filter((v) => v.id !== "business" || profile.track === "business").map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={profile.visibility === v.id}
-                  disabled={saving}
-                  onClick={() => changeVisibility(v.id as HubProfile["visibility"])}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors disabled:opacity-60 ${
-                    profile.visibility === v.id
-                      ? "border-gold/60 bg-gold/10 text-gold"
-                      : "border-white/10 bg-white/5 text-zinc-200 hover:border-gold/40"
-                  }`}
-                >
-                  <span
-                    className={`h-3.5 w-3.5 shrink-0 rounded-full border ${
-                      profile.visibility === v.id ? "border-gold bg-gold" : "border-white/30"
-                    }`}
-                  />
-                  {v.label}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Wohnort, Hub und Entfernung */}

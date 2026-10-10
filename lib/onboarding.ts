@@ -65,9 +65,9 @@ export const PHASES: Option[] = [
 
 // Wer darf mein Profil sehen? (wird in der Datenbank durchgesetzt, siehe supabase/schema.sql)
 export const VISIBILITIES: Option[] = [
-  { id: "public", label: "Öffentlich für alle registrierten DSpora-Minds" },
-  { id: "business", label: "Nur für andere Business-Profile sichtbar" },
-  { id: "stealth", label: "Stealth: nur nach gegenseitigem Match" },
+  { id: "public", label: "Öffentlich" },
+  { id: "business", label: "Nur Business" },
+  { id: "stealth", label: "Privat" },
 ];
 
 // Geschlecht (Selbstangabe, freiwillig) und mit wem man sich verbinden möchte.

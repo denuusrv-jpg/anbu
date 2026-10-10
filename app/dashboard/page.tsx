@@ -6,6 +6,7 @@ import { getServerClient } from "@/lib/supabase/server";
 import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { isAdminRequest } from "@/lib/requireAdmin";
 import { listRooms } from "@/lib/chatRooms";
+import { avatarUrl, loadPosts, type PostView } from "@/lib/profileMedia";
 import { ALL_HUBS, labelOf } from "@/lib/onboarding";
 
 export const metadata = {
@@ -38,7 +39,7 @@ export default async function Hub() {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, notify_matches")
+    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, notify_matches, has_avatar")
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
@@ -81,8 +82,20 @@ export default async function Hub() {
     unreadCount = rooms.reduce((sum, r) => sum + r.unread, 0);
   }
 
+  // Profilbild und Beiträge (kurzlebige Links)
+  let avatar: string | null = null;
+  let posts: PostView[] = [];
+  if (isServiceRoleConfigured()) {
+    const db = getServiceClient();
+    if ((profile as { has_avatar?: boolean }).has_avatar) avatar = await avatarUrl(db, auth.user.id);
+    posts = await loadPosts(db, auth.user.id);
+  }
+
   return (
     <HubDashboard
+      userId={auth.user.id}
+      avatar={avatar}
+      posts={posts}
       email={auth.user.email ?? ""}
       profile={profile as unknown as HubProfile}
       hubs={hubs}

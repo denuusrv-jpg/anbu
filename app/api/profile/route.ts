@@ -7,7 +7,10 @@ import {
   LANGUAGES,
   MATCH_GENDERS,
   MAX_AGE,
+  CUSTOM_PATTERN,
+  MAX_HOBBIES,
   MAX_HUBS,
+  NAME_PATTERN,
   MAX_INTERESTS,
   MAX_VIBES,
   MEET_FREQUENCIES,
@@ -23,7 +26,7 @@ import {
 import { conceptsWithAi } from "@/lib/conceptAi";
 import { scheduleEvaluation } from "@/lib/evaluate";
 import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
-import { Invalid, choice, followUps, idOrCustom, oneOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
+import { Invalid, choice, followUps, idOrCustom, oneOf, stringOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
 import { saveTranscript } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -80,6 +83,40 @@ export async function PATCH(request: Request) {
       }
       return value;
     };
+    // Profilbild vorhanden oder entfernt (das Bild selbst lädt der Browser in den eigenen Ordner)
+    if (body.avatar !== undefined) {
+      if (typeof body.avatar !== "boolean") throw new Invalid("Profilbild ist ungültig.");
+      update.has_avatar = body.avatar;
+    }
+    // Angaben der Profilseite: Spitzname, Vorname, Nachname, Text über mich, Hobbys
+    if (body.profileInfo !== undefined) {
+      const info = (body.profileInfo && typeof body.profileInfo === "object" ? body.profileInfo : {}) as Record<string, unknown>;
+      const current = ((row.profile ?? {}) as Record<string, unknown>) || {};
+      const next: Record<string, unknown> = { ...current, hobbies: current.hobbies ?? [], languages: current.languages ?? { ids: [], custom: [] }, photoCount: 0 };
+      if (info.displayName !== undefined) {
+        const name = stringOf(info.displayName, "Spitzname", 24, true) as string;
+        if (!NAME_PATTERN.test(name)) throw new Invalid("Spitzname: 2 bis 24 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.");
+        next.displayName = name;
+      }
+      const real = (value: unknown, label: string) => {
+        const t = stringOf(value, label, 40);
+        if (t && !NAME_PATTERN.test(t.slice(0, 24))) throw new Invalid(`${label} ist ungültig.`);
+        return t || undefined;
+      };
+      if (info.firstName !== undefined) next.firstName = real(info.firstName, "Vorname");
+      if (info.lastName !== undefined) next.lastName = real(info.lastName, "Nachname");
+      if (info.bio !== undefined) next.bio = stringOf(info.bio, "Text über dich", 300) || undefined;
+      if (info.hobbies !== undefined) {
+        if (!Array.isArray(info.hobbies) || info.hobbies.length > MAX_HOBBIES) throw new Invalid("Hobbys sind ungültig.");
+        next.hobbies = Array.from(new Set((info.hobbies as unknown[]).map((h) => {
+          if (typeof h !== "string" || !CUSTOM_PATTERN.test(h.trim())) throw new Invalid("Hobbys sind ungültig.");
+          return h.trim();
+        })));
+      }
+      if (!next.displayName) throw new Invalid("Bitte gib einen Spitznamen an.");
+      update.profile = next;
+      update.mode = "profile";
+    }
     if (body.notifyMatches !== undefined) {
       if (typeof body.notifyMatches !== "boolean") throw new Invalid("Einstellung ist ungültig.");
       update.notify_matches = body.notifyMatches;

@@ -54,6 +54,20 @@ export default function Datenschutz() {
                 Profil ändern.
               </li>
               <li>
+                <strong className="text-zinc-200">Profilseite (freiwillig):</strong> Profilbild, bis zu sechs Beiträge mit je
+                bis zu sechs Bildern, Bildunterschriften, ein Text über dich, Hobbys sowie optional Vor- und Nachname. Du
+                stellst ein, ob dein Profil öffentlich für angemeldete Mitglieder oder privat ist. Bei einem privaten Profil
+                sind nur Profilbild und Spitzname sichtbar, und nur für Personen, mit denen du in einem Chat bist. Die Bilder
+                liegen in einem nicht öffentlichen Speicher und werden nur über kurzlebige Links angezeigt. Beim Löschen deines
+                Kontos werden sie mit gelöscht.
+              </li>
+              <li>
+                <strong className="text-zinc-200">Meldungen und Benachrichtigungen:</strong> Meldest du eine Person aus einem
+                Chat, speichern wir den Grund, deinen optionalen Hinweis und die Beteiligten, damit wir prüfen können, ob wir
+                eingreifen müssen. Nachrichteninhalte lesen wir dabei nicht. Wenn ein neuer Chat für dich bereitsteht,
+                schicken wir dir eine kurze E-Mail ohne Angaben zu deinem Match. Du kannst sie in deinem Profil ausschalten.
+              </li>
+              <li>
                 <strong className="text-zinc-200">Matching mit Freigabe:</strong> Aus deinen Antworten berechnet die KI
                 Vorschläge, wer gut zu wem passt (Punktesystem). Aus diesen Vorschlägen entsteht erst dann ein Chat, wenn
                 wir den Vorschlag geprüft und freigegeben haben. Hubs öffnen wir ebenfalls erst nach unserer Prüfung. Zur
