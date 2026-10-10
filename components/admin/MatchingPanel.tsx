@@ -6,7 +6,10 @@ import type { ChatMetrics } from "@/lib/chatRooms";
 type Pair = { a: string; b: string; total: number; text: string; minutes: number | null };
 type Proposal = { id: string; hub: string; track: string; score: number; quality: "good" | "mid"; summary: string; members: string[]; pairs: Pair[] };
 type HubRow = { hub: string; label: string; total: number; complete: number; approved: boolean };
-type Overview = { thresholds: { good: number; mid: number }; hubs: HubRow[]; proposals: Proposal[]; decided: { approved: number; rejected: number } };
+type ReportRow = { id: string; reason: string; note: string | null; createdAt: string; reporter: string; others: string[] };
+type Overview = { thresholds: { good: number; mid: number }; hubs: HubRow[]; proposals: Proposal[]; decided: { approved: number; rejected: number }; reports?: ReportRow[] };
+
+const REASON_LABEL: Record<string, string> = { unangenehm: "Unangenehm oder respektlos", belaestigung: "Belästigung", spam: "Spam oder Werbung", fake: "Fake-Profil", sonstiges: "Etwas anderes" };
 type Report = {
   hub: string;
   label: string;
@@ -78,6 +81,11 @@ export default function MatchingPanel({ metrics }: { metrics: ChatMetrics | null
       setMessage(action === "approve" ? "Freigegeben: Der Chat ist angelegt." : "Abgelehnt: Das Paar wird nicht noch einmal vorgeschlagen.");
       await load();
     }
+  }
+
+  async function reportDone(id: string) {
+    const json = await call({ action: "reportDone", id });
+    if (json) await load();
   }
 
   async function toggleHub(hub: string, approved: boolean) {
@@ -153,6 +161,27 @@ export default function MatchingPanel({ metrics }: { metrics: ChatMetrics | null
         </>
       ) : (
         <p className="mt-4 text-sm text-zinc-400">Die Chat-Tabellen sind noch nicht eingerichtet (supabase/schema.sql, Abschnitt 13).</p>
+      )}
+
+      {overview?.reports && overview.reports.length > 0 && (
+        <div className="mt-7 rounded-2xl border border-rose/30 bg-rose/[0.05] p-4">
+          <p className="text-sm font-medium text-zinc-100">Meldungen aus Chats ({overview.reports.length} offen)</p>
+          <p className="mt-1 text-[11px] text-zinc-400">Nur Grund und Hinweis, Nachrichten liest niemand. Die meldende Person hat den Chat verlassen, das Paar wird nie wieder gematcht.</p>
+          <div className="mt-3 space-y-2">
+            {overview.reports.map((r) => (
+              <div key={r.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs text-zinc-300">
+                <p>
+                  <span className="font-semibold text-rose">{REASON_LABEL[r.reason] ?? r.reason}</span> · {new Date(r.createdAt).toLocaleDateString("de-DE")}
+                </p>
+                <p className="mt-1">Gemeldet von {r.reporter} über {r.others.join(", ") || "–"}</p>
+                {r.note && <p className="mt-1 text-zinc-400">„{r.note}“</p>}
+                <button type="button" disabled={busy} onClick={() => reportDone(r.id)} className={`${pill} mt-2`}>
+                  Erledigt
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="mt-7 border-t border-white/10 pt-5">

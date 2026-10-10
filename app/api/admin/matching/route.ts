@@ -53,6 +53,12 @@ export async function POST(request: Request) {
       return result.ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: result.error }, { status: 409 });
     }
 
+    if (body.action === "reportDone") {
+      if (!isUuid(body.id)) return NextResponse.json({ error: "Ungültige Meldung." }, { status: 400 });
+      const { error } = await db.from("chat_reports").update({ status: "done" }).eq("id", body.id);
+      return error ? NextResponse.json({ error: "Das hat nicht geklappt." }, { status: 500 }) : NextResponse.json({ ok: true });
+    }
+
     if (body.action === "hub") {
       if (typeof body.hub !== "string" || !ALL_HUBS.some((h) => h.id === body.hub)) return NextResponse.json({ error: "Unbekannter Hub." }, { status: 400 });
       const ok = await setHubApproval(db, body.hub, body.approved === true);
@@ -120,6 +126,14 @@ async function overview(db: Db) {
   const nameOf = new Map(((names ?? []) as { user_id: string; profile: { displayName?: string } | null }[]).map((r) => [r.user_id, r.profile?.displayName ?? "–"]));
   const who = (id: string) => `${nameOf.get(id) ?? "–"} (${emailOf.get(id) ?? "?"})`;
 
+  // Offene Meldungen aus Chats (nur Grund und Hinweis, nie Nachrichten)
+  const { data: reportRows } = await db.from("chat_reports").select("id, reporter, others, reason, note, created_at").eq("status", "open").order("created_at", { ascending: false }).limit(50);
+  const reports = (reportRows ?? []) as { id: string; reporter: string; others: string[]; reason: string; note: string | null; created_at: string }[];
+  const reportIds = Array.from(new Set(reports.flatMap((r) => [r.reporter, ...r.others])));
+  const { data: reportNames } = reportIds.length ? await db.from("user_profiles").select("user_id, profile").in("user_id", reportIds) : { data: [] };
+  const reportNameOf = new Map(((reportNames ?? []) as { user_id: string; profile: { displayName?: string } | null }[]).map((r) => [r.user_id, r.profile?.displayName ?? "–"]));
+  const whoReport = (id: string) => `${reportNameOf.get(id) ?? "–"} (${emailOf.get(id) ?? "?"})`;
+
   const { count: approvedCount } = await db.from("match_proposals").select("id", { count: "exact", head: true }).eq("status", "approved");
   const { count: rejectedCount } = await db.from("match_proposals").select("id", { count: "exact", head: true }).eq("status", "rejected");
 
@@ -137,5 +151,13 @@ async function overview(db: Db) {
       pairs: (p.breakdown?.pairs ?? []).map((x) => ({ a: who(x.a), b: who(x.b), total: x.total, text: x.text, minutes: x.minutes })),
     })),
     decided: { approved: approvedCount ?? 0, rejected: rejectedCount ?? 0 },
+    reports: reports.map((r) => ({
+      id: r.id,
+      reason: r.reason,
+      note: r.note,
+      createdAt: r.created_at,
+      reporter: whoReport(r.reporter),
+      others: r.others.map(whoReport),
+    })),
   };
 }

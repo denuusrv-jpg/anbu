@@ -22,6 +22,9 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   const [sparkBusy, setSparkBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [reportNote, setReportNote] = useState("");
   const [feedbackDone, setFeedbackDone] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -140,6 +143,19 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     else setNotice("Verlassen hat nicht geklappt.");
   }
 
+  async function sendReport() {
+    if (!reason) return;
+    if (sample) {
+      setReporting(false);
+      return;
+    }
+    setBusy(true);
+    const { ok, json } = await call(`/api/chats/${roomId}/report`, { reason, note: reportNote });
+    setBusy(false);
+    if (ok) router.push("/dashboard/chats");
+    else setNotice(json?.error ?? "Die Meldung hat nicht geklappt.");
+  }
+
   async function feedback(value: "good" | "ok" | "bad") {
     setFeedbackDone(true);
     if (!sample) await call(`/api/chats/${roomId}/feedback`, { value });
@@ -176,6 +192,12 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             </p>
           </div>
           {!confirmLeave ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {!dissolved && (
+                <button type="button" onClick={() => setReporting((v) => !v)} className="text-xs text-zinc-500 transition-colors hover:text-rose">
+                  Melden
+                </button>
+              )}
             <button
               type="button"
               onClick={() => setConfirmLeave(true)}
@@ -183,6 +205,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             >
               {dissolved ? "Chat entfernen" : "Verlassen"}
             </button>
+            </div>
           ) : (
             <div className="flex shrink-0 items-center gap-2 text-xs">
               <span className="max-w-[9rem] text-right leading-snug text-zinc-400">
@@ -202,6 +225,50 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             </div>
           )}
         </header>
+
+        {reporting && !dissolved && (
+          <div className="mb-3 rounded-2xl border border-rose/30 bg-rose/[0.06] px-4 py-3">
+            <p className="text-sm font-medium text-zinc-100">Was ist passiert?</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
+              Wir lesen keine Nachrichten mit, ein kurzer Hinweis hilft uns. Du verlässt danach den Chat und wirst mit dieser Person nicht noch einmal zusammengebracht.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {[
+                ["unangenehm", "Unangenehm oder respektlos"],
+                ["belaestigung", "Belästigung"],
+                ["spam", "Spam oder Werbung"],
+                ["fake", "Fake-Profil"],
+                ["sonstiges", "Etwas anderes"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setReason(id)}
+                  aria-pressed={reason === id}
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${reason === id ? "border-rose/60 bg-rose/15 text-rose" : "border-white/10 bg-white/5 text-zinc-300 hover:border-rose/40"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={reportNote}
+              onChange={(e) => setReportNote(e.target.value.slice(0, 300))}
+              rows={2}
+              placeholder="Kurzer Hinweis (optional)"
+              aria-label="Kurzer Hinweis zur Meldung"
+              className="mt-2.5 w-full resize-none rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-xs text-white placeholder:text-white/40 focus:border-rose/50 focus:outline-none"
+            />
+            <div className="mt-2.5 flex items-center gap-3">
+              <button type="button" disabled={!reason || busy} onClick={sendReport} className="rounded-full border border-rose/40 bg-rose/10 px-4 py-1.5 text-xs font-semibold text-rose disabled:opacity-40">
+                Melden und Chat verlassen
+              </button>
+              <button type="button" onClick={() => setReporting(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Temporärer Match-Steckbrief, oben fixiert */}
         {detail.steckbrief && (

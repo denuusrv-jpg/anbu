@@ -498,3 +498,43 @@ create table if not exists public.match_proposals (
 );
 create index if not exists match_proposals_status_idx on public.match_proposals (status, created_at desc);
 alter table public.match_proposals enable row level security;
+
+-- ─────────────────────────────────────────────────────────────
+-- 15) Meldungen aus Chats, Benachrichtigungs-Schalter, Schutz der KI-Auswertung
+-- ─────────────────────────────────────────────────────────────
+-- Meldung einer Person aus einem Chat. Bewusst ohne Nachrichteninhalt: nur Grund, optionaler Hinweis und die Beteiligten.
+-- Nur der Server (Service Role) liest und schreibt.
+create table if not exists public.chat_reports (
+  id         uuid primary key default gen_random_uuid(),
+  room_id    uuid,                                   -- ohne Fremdschlüssel: bleibt bestehen, wenn der Raum gelöscht wird
+  reporter   uuid not null references auth.users (id) on delete cascade,
+  others     uuid[] not null default '{}',
+  reason     text not null check (reason in ('unangenehm', 'spam', 'belaestigung', 'fake', 'sonstiges')),
+  note       text check (note is null or char_length(note) <= 300),
+  status     text not null default 'open' check (status in ('open', 'done')),
+  created_at timestamptz not null default now()
+);
+create index if not exists chat_reports_status_idx on public.chat_reports (status, created_at desc);
+alter table public.chat_reports enable row level security;
+
+-- Mail bei neuem Chat (kann im Profil ausgeschaltet werden)
+alter table public.user_profiles add column if not exists notify_matches boolean not null default true;
+
+-- Die KI-Auswertung (Werte-Tags, No-Gos) darf nur der Server schreiben, nie die Person selbst
+create or replace function public.protect_ai_profile() returns trigger language plpgsql as $$
+begin
+  if coalesce(auth.role(), '') <> 'service_role' then
+    if tg_op = 'INSERT' then
+      new.ai_profile := null;
+      new.phase2_done := false;
+    else
+      new.ai_profile := old.ai_profile;
+      new.phase2_done := old.phase2_done;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists protect_ai_profile_trigger on public.user_profiles;
+create trigger protect_ai_profile_trigger before insert or update on public.user_profiles
+  for each row execute function public.protect_ai_profile();

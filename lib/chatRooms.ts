@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getModel, isAiConfigured, takeAiBudget } from "@/lib/ai";
 import { logError } from "@/lib/errorLog";
+import { notifyNewRoom } from "@/lib/notify";
 import { aiIcebreaker, ruleIcebreaker, type IcebreakerContext } from "@/lib/icebreaker";
 import { MAX_ACTIVE_CHATS, matchSummary, pairKey, type Proposal } from "@/lib/matching";
 
@@ -176,6 +177,7 @@ export async function createRoom(
   });
   await db.from("room_messages").insert({ room_id: roomId, user_id: null, kind: "icebreaker", body });
   await logEvent(db, "room_created", input.track, { size: ids.length });
+  await notifyNewRoom(db, ids);
   return { ok: true, roomId };
 }
 

@@ -61,6 +61,7 @@ export type HubProfile = {
   languages?: Choice | null;
   life_phase?: string | null;
   meet_frequency?: string | null;
+  notify_matches?: boolean | null;
 };
 
 export type HubStat = { id: string; label: string; count: number };
@@ -273,6 +274,10 @@ export default function HubDashboard({
   async function changeFrequency(next: string) {
     if (next === profile.meet_frequency) return;
     if (await patch({ meetFrequency: next })) setProfile((p) => ({ ...p, meet_frequency: next }));
+  }
+
+  async function changeNotify(next: boolean) {
+    if (await patch({ notifyMatches: next })) setProfile((p) => ({ ...p, notify_matches: next }));
   }
 
   async function changePhase(next: string) {
@@ -1204,6 +1209,23 @@ export default function HubDashboard({
             )}
           </motion.section>
         )}
+
+        {/* Benachrichtigungen */}
+        <section className={card}>
+          <h2 className="text-sm font-semibold text-zinc-100">Benachrichtigungen</h2>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
+            <input
+              type="checkbox"
+              checked={profile.notify_matches !== false}
+              onChange={(e) => changeNotify(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-[#f2a65a]"
+            />
+            <span>
+              E-Mail, wenn ein neuer Chat auf dich wartet
+              <span className="mt-0.5 block text-xs text-zinc-500">Die Mail enthält keine Angaben zu deinem Match, nur einen Link in dein Profil.</span>
+            </span>
+          </label>
+        </section>
 
         {/* Konto löschen (Soft-Delete, 30 Tage) */}
         <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">

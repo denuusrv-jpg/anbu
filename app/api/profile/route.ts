@@ -80,6 +80,10 @@ export async function PATCH(request: Request) {
       }
       return value;
     };
+    if (body.notifyMatches !== undefined) {
+      if (typeof body.notifyMatches !== "boolean") throw new Invalid("Einstellung ist ungültig.");
+      update.notify_matches = body.notifyMatches;
+    }
     if (body.age !== undefined) update.age = intField(body.age, "Alter");
     if (body.ageMin !== undefined) update.age_min = intField(body.ageMin, "Altersspanne (von)");
     if (body.ageMax !== undefined) update.age_max = intField(body.ageMax, "Altersspanne (bis)");

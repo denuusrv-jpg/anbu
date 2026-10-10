@@ -38,7 +38,7 @@ export default async function Hub() {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency")
+    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, notify_matches")
     .eq("user_id", auth.user.id)
     .maybeSingle();
   if (!profile) redirect("/onboarding");
