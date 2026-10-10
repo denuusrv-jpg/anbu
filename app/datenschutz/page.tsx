@@ -122,6 +122,10 @@ export default function Datenschutz() {
               jederzeit widerrufen kannst. Über Vorschläge für Chats entscheiden wir nach eigener Prüfung, es gibt keine
               ausschließlich automatisierte Entscheidung mit rechtlicher Wirkung.
             </p>
+            <p className="mt-2">
+              Bei der ersten Anmeldung bestätigst du diese Datenschutzbestimmungen mit einem Haken. Wir speichern dafür
+              den Zeitpunkt und die Version der Bestätigung in deinem Konto, damit wir die Einwilligung nachweisen können.
+            </p>
           </section>
 
           <section>

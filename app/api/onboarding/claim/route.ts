@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Invalid, validateAnswers, validateTranscript } from "@/lib/onboardingValidation";
+import { recordConsent } from "@/lib/consent";
 import { saveProfile } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -54,6 +55,8 @@ export async function POST() {
   if (!(await saveProfile(supabase, user, answers, transcript))) {
     return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
   }
+  // Der Entwurf entsteht nur, wenn im Chat die Datenschutzbestimmungen akzeptiert wurden
+  await recordConsent(user.id);
   await db.from("onboarding_drafts").delete().eq("email", email);
   return NextResponse.json({
     status: "claimed",

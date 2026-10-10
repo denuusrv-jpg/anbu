@@ -81,7 +81,7 @@ export default function ReadyWindow({
           <button
             type="button"
             onClick={onResend}
-            className="mt-5 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+            className="mt-5 text-xs text-zinc-300 transition-colors hover:text-white"
           >
             {tx("Link nicht angekommen? Erneut senden oder andere Adresse")}
           </button>

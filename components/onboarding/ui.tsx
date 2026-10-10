@@ -1,9 +1,22 @@
 "use client";
 
+import { Children, createContext, useContext } from "react";
 import { CheckIcon, ArrowRightIcon } from "@/components/Icons";
 import { useTx } from "@/lib/LanguageContext";
 
+// Im Karten-Ablauf (Phase 1) werden Auswahlen als große Glas-Flächen untereinander gezeigt
+const BigChoicesContext = createContext(false);
+
+export function BigChoices({ children }: { children: React.ReactNode }) {
+  return <BigChoicesContext.Provider value>{children}</BigChoicesContext.Provider>;
+}
+
 export function ChipRow({ children }: { children: React.ReactNode }) {
+  const big = useContext(BigChoicesContext);
+  if (big) {
+    const many = Children.count(children) > 6;
+    return <div className={`grid gap-3 ${many ? "sm:grid-cols-2" : ""}`}>{children}</div>;
+  }
   return <div className="flex flex-wrap gap-2">{children}</div>;
 }
 
@@ -20,6 +33,27 @@ export function Chip({
   subtle?: boolean;
   removable?: boolean;
 }) {
+  const big = useContext(BigChoicesContext);
+  if (big) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={selected}
+        className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl border px-5 py-3.5 text-left text-base font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl transition-[border-color,background-color,color,transform] duration-200 active:scale-[0.98] ${
+          selected
+            ? "border-gold/70 bg-gold/15 text-gold"
+            : subtle
+              ? "border-transparent bg-transparent text-zinc-300 hover:text-white"
+              : "border-white/15 bg-white/[0.07] text-zinc-50 hover:border-gold/50 hover:bg-white/10"
+        }`}
+      >
+        <span>{children}</span>
+        {selected && !removable && <CheckIcon className="h-5 w-5 shrink-0" />}
+        {removable && <span aria-hidden className="text-lg leading-none opacity-70">×</span>}
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -29,7 +63,7 @@ export function Chip({
         selected
           ? "border-gold/60 bg-gold/15 text-gold"
           : subtle
-            ? "border-transparent bg-transparent text-zinc-500 hover:text-zinc-300"
+            ? "border-transparent bg-transparent text-zinc-300 hover:text-white"
             : "border-white/10 bg-white/5 text-zinc-200 hover:border-gold/50 hover:text-gold"
       }`}
     >
@@ -105,7 +139,7 @@ export function TextAnswer({
           aria-invalid={error ? true : undefined}
           maxLength={maxLength}
           autoFocus
-          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-white placeholder:text-white/40 focus:outline-none"
         />
         {extra}
         <button
@@ -127,7 +161,7 @@ export function TextAnswer({
 
 // Eingabefeld-Optik für Formulare im Profil
 export const fieldClass =
-  "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3.5 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none";
+  "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3.5 py-2.5 text-base text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none";
 
 export function Field({
   label,
@@ -143,7 +177,7 @@ export function Field({
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-medium text-zinc-300">{tx(label)}</span>
-        {hint && <span className="text-[11px] text-zinc-500">{tx(hint)}</span>}
+        {hint && <span className="text-[11px] text-zinc-300">{tx(hint)}</span>}
       </div>
       {children}
     </div>
@@ -199,7 +233,7 @@ export function LongTextAnswer({
         placeholder={placeholder}
         aria-label={placeholder}
         autoFocus
-        className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
+        className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-base leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
       />
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
@@ -207,7 +241,7 @@ export function LongTextAnswer({
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-zinc-300">
           {value.length}/{maxLength}
         </span>
         <div className="flex items-center gap-3">
@@ -215,7 +249,7 @@ export function LongTextAnswer({
             <button
               type="button"
               onClick={onSkip}
-              className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+              className="text-xs text-zinc-300 transition-colors hover:text-white"
             >
               {tx(skipLabel)}
             </button>

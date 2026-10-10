@@ -282,3 +282,13 @@ input::-webkit-credentials-auto-fill-button {
 :lang(ta) body {
   font-family: var(--font-tamil), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Handy: Eingabefelder mit weniger als 16 px lösen auf dem iPhone beim Antippen einen Zoom aus.
+   Deshalb auf Touch-Geräten überall mindestens 16 px. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

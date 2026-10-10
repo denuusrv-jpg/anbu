@@ -98,10 +98,10 @@ export function CustomEntry({
           aria-label={placeholder}
           enterKeyHint="done"
           maxLength={30}
-          className="w-full bg-transparent px-3 py-1.5 text-sm text-white placeholder:text-white/40 focus:outline-none"
+          className="w-full bg-transparent px-3 py-2 text-base text-white placeholder:text-white/40 focus:outline-none"
         />
       </div>
-      {hint && !error && <p className="px-1 text-[11px] text-zinc-500">{hint}</p>}
+      {hint && !error && <p className="px-1 text-[11px] text-zinc-300">{hint}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {tx(error)}
@@ -245,7 +245,7 @@ export default function ChoiceSelect({
       )}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-300">
             {total === 0
               ? minTotal > 0
                 ? tx("Wähle mindestens eins")

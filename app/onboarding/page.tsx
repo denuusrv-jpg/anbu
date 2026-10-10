@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
+import ConsentGate from "@/components/ConsentGate";
 import OnboardingChat from "@/components/OnboardingChat";
+import { hasConsent } from "@/lib/consent";
 import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
 import { isAiConfigured } from "@/lib/ai";
 import { buildSteckbrief } from "@/lib/steckbrief";
@@ -35,6 +37,7 @@ export default async function Onboarding({
 
   const supabase = await getServerClient();
   const { data } = await supabase.auth.getUser();
+  if (data.user && !hasConsent(data.user)) return <ConsentGate />;
 
   // Gespräch fortsetzen: nur für Angemeldete mit Profil, bereits Gefragtes wird nicht wiederholt
   if (data.user && talk === "1") {

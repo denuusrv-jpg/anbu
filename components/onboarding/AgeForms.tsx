@@ -6,7 +6,7 @@ import { GoldButton } from "@/components/onboarding/ui";
 import { useTx } from "@/lib/LanguageContext";
 
 const input =
-  "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3.5 py-2.5 text-center text-sm text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none";
+  "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3.5 py-3 text-center text-base text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none";
 
 function parseAge(text: string): number | null {
   if (!/^\d{1,2}$/.test(text.trim())) return null;
@@ -15,9 +15,9 @@ function parseAge(text: string): number | null {
 }
 
 // Eigenes Alter (Pflicht)
-export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
+export function AgeInput({ onSubmit, initial }: { onSubmit: (age: number) => void; initial?: number }) {
   const tx = useTx();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initial ? String(initial) : "");
   const [error, setError] = useState("");
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,10 +60,19 @@ export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
 }
 
 // Gewünschte Altersspanne (von, bis), Pflicht. Vorbelegt mit dem eigenen Alter plus/minus fünf Jahre.
-export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: number, max: number) => void }) {
+export function AgeRangeInput({
+  age,
+  onSubmit,
+  initial,
+}: {
+  age: number;
+  onSubmit: (min: number, max: number) => void;
+  /** Beim Zurückgehen: bereits gegebene Antwort wieder einsetzen */
+  initial?: { min: number; max: number };
+}) {
   const tx = useTx();
-  const [from, setFrom] = useState(String(Math.max(MIN_AGE, age - 5)));
-  const [to, setTo] = useState(String(Math.min(MAX_AGE, age + 5)));
+  const [from, setFrom] = useState(String(initial?.min ?? Math.max(MIN_AGE, age - 5)));
+  const [to, setTo] = useState(String(initial?.max ?? Math.min(MAX_AGE, age + 5)));
   const [error, setError] = useState("");
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,7 +104,7 @@ export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: 
           aria-label={tx("Gewünschtes Alter von")}
           className={input}
         />
-        <span className="text-xs text-zinc-500">{tx("bis")}</span>
+        <span className="text-xs text-zinc-300">{tx("bis")}</span>
         <input
           type="text"
           inputMode="numeric"

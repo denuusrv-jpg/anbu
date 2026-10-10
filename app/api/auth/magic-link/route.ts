@@ -46,6 +46,10 @@ export async function POST(request: Request) {
   // Gast aus dem Onboarding-Chat: Antworten als Entwurf zur E-Mail-Adresse ablegen.
   // Nach der Anmeldung per Link werden sie als Profil übernommen (auch auf einem anderen Gerät).
   if (body.draft !== undefined) {
+    // Wer sich über den Chat neu anmeldet, muss vorher die Datenschutzbestimmungen akzeptiert haben
+    if (body.consent !== true) {
+      return NextResponse.json({ error: "Bitte bestätige zuerst die Datenschutzbestimmungen." }, { status: 400 });
+    }
     if (!isServiceRoleConfigured()) {
       return NextResponse.json({ error: "Die Anmeldung ist noch nicht eingerichtet." }, { status: 503 });
     }

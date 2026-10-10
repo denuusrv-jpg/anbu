@@ -14,6 +14,7 @@ export default function TermPicker({
   min,
   placeholder,
   hint,
+  initial,
   onConfirm,
 }: {
   suggestions: Option[];
@@ -23,11 +24,21 @@ export default function TermPicker({
   min: number;
   placeholder: (index: number) => string;
   hint?: string;
+  /** Beim Zurückgehen: bereits gegebene Antwort wieder einsetzen */
+  initial?: Choice;
   onConfirm: (value: Choice) => void;
 }) {
   const tx = useTx();
-  const [ids, setIds] = useState<string[]>([]);
-  const [fields, setFields] = useState<string[]>(() => Array.from({ length: FREE_FIELDS }, () => ""));
+  const [ids, setIds] = useState<string[]>(() =>
+    (initial?.ids ?? []).filter((id) => suggestions.some((o) => o.id === id)),
+  );
+  const [fields, setFields] = useState<string[]>(() => {
+    const words = [
+      ...(initial?.ids ?? []).filter((id) => !suggestions.some((o) => o.id === id)).map((id) => allOptions.find((o) => o.id === id)?.label ?? ""),
+      ...(initial?.custom ?? []),
+    ].filter(Boolean);
+    return Array.from({ length: FREE_FIELDS }, (_, i) => words[i] ?? "");
+  });
   const [error, setError] = useState("");
 
   const typed = fields.map((f) => f.trim()).filter(Boolean);
@@ -99,18 +110,18 @@ export default function TermPicker({
             }}
             placeholder={placeholder(i)}
             aria-label={tx("Eigener Begriff {n}", { n: i + 1 })}
-            className="min-w-0 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-gold/60 focus:outline-none disabled:opacity-40"
+            className="min-w-0 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2.5 text-base text-white placeholder:text-white/35 focus:border-gold/60 focus:outline-none disabled:opacity-40"
           />
         ))}
       </div>
-      {hint && <p className="px-1 text-[11px] leading-relaxed text-zinc-500">{hint}</p>}
+      {hint && <p className="px-1 text-xs leading-relaxed text-zinc-100">{hint}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {error}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-zinc-500">
+        <span className="text-xs text-zinc-100">
           {total < min ? tx("{n} von {max} gewählt (mindestens {min})", { n: total, max, min }) : tx("{n} von {max} gewählt", { n: total, max })}
         </span>
         <GoldButton onClick={confirm} disabled={total < min}>

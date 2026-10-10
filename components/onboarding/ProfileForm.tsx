@@ -185,7 +185,7 @@ export default function ProfileForm({
             {photoError}
           </p>
         )}
-        <p className="text-[11px] leading-relaxed text-zinc-500">
+        <p className="text-[11px] leading-relaxed text-zinc-300">
           Fotos werden auf deinem Gerät verkleinert, versteckte Daten wie der Standort werden entfernt.
         </p>
       </Field>

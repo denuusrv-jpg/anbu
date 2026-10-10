@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import ConsentGate from "@/components/ConsentGate";
+import { hasConsent } from "@/lib/consent";
 import HubDashboard, { type HubProfile, type HubWish } from "@/components/HubDashboard";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
@@ -36,6 +38,7 @@ export default async function Hub() {
   const supabase = await getServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login?next=/dashboard");
+  if (!hasConsent(auth.user)) return <ConsentGate />;
 
   const { data: profile } = await supabase
     .from("user_profiles")
