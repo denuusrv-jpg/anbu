@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       asked: strings(body.asked, 40, 300),
       hints: strings(body.hints, 12, 120),
       track: body.track === "business" ? "business" : "community",
+      language: body.language === "ta" || body.language === "en" ? body.language : "de",
     });
     return question ? NextResponse.json({ question }) : fallback;
   } catch (error) {

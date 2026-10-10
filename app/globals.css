@@ -277,3 +277,8 @@ input::-webkit-credentials-auto-fill-button {
   color: transparent;
   animation: ai-shimmer 11s linear infinite;
 }
+
+/* Tamil: Noto Sans Tamil vor den Systemschriften */
+:lang(ta) body {
+  font-family: var(--font-tamil), ui-sans-serif, system-ui, sans-serif;
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MAX_AGE, MIN_AGE } from "@/lib/onboarding";
 import { GoldButton } from "@/components/onboarding/ui";
+import { useTx } from "@/lib/LanguageContext";
 
 const input =
   "w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3.5 py-2.5 text-center text-sm text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none";
@@ -15,13 +16,14 @@ function parseAge(text: string): number | null {
 
 // Eigenes Alter (Pflicht)
 export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
+  const tx = useTx();
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const age = parseAge(text);
     if (age === null) {
-      setError(`Bitte gib dein Alter als Zahl zwischen ${MIN_AGE} und ${MAX_AGE} an.`);
+      setError(tx("Bitte gib dein Alter als Zahl zwischen {min} und {max} an.", { min: MIN_AGE, max: MAX_AGE }));
       return;
     }
     onSubmit(age);
@@ -38,8 +40,8 @@ export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
           setText(e.target.value.replace(/[^\d]/g, ""));
           setError("");
         }}
-        placeholder="Dein Alter"
-        aria-label="Dein Alter"
+        placeholder={tx("Dein Alter")}
+        aria-label={tx("Dein Alter")}
         aria-invalid={error ? true : undefined}
         className={input}
       />
@@ -50,7 +52,7 @@ export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
       )}
       <div className="flex justify-end">
         <GoldButton type="submit" disabled={!text.trim()}>
-          Weiter
+          {tx("Weiter")}
         </GoldButton>
       </div>
     </form>
@@ -59,6 +61,7 @@ export function AgeInput({ onSubmit }: { onSubmit: (age: number) => void }) {
 
 // Gewünschte Altersspanne (von, bis), Pflicht. Vorbelegt mit dem eigenen Alter plus/minus fünf Jahre.
 export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: number, max: number) => void }) {
+  const tx = useTx();
   const [from, setFrom] = useState(String(Math.max(MIN_AGE, age - 5)));
   const [to, setTo] = useState(String(Math.min(MAX_AGE, age + 5)));
   const [error, setError] = useState("");
@@ -67,11 +70,11 @@ export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: 
     const a = parseAge(from);
     const b = parseAge(to);
     if (a === null || b === null) {
-      setError(`Bitte gib beide Zahlen zwischen ${MIN_AGE} und ${MAX_AGE} an.`);
+      setError(tx("Bitte gib beide Zahlen zwischen {min} und {max} an.", { min: MIN_AGE, max: MAX_AGE }));
       return;
     }
     if (a > b) {
-      setError("„Von“ darf nicht größer sein als „bis“.");
+      setError(tx("„Von“ darf nicht größer sein als „bis“."));
       return;
     }
     onSubmit(a, b);
@@ -88,11 +91,11 @@ export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: 
             setFrom(e.target.value.replace(/[^\d]/g, ""));
             setError("");
           }}
-          placeholder="von"
-          aria-label="Gewünschtes Alter von"
+          placeholder={tx("von")}
+          aria-label={tx("Gewünschtes Alter von")}
           className={input}
         />
-        <span className="text-xs text-zinc-500">bis</span>
+        <span className="text-xs text-zinc-500">{tx("bis")}</span>
         <input
           type="text"
           inputMode="numeric"
@@ -102,8 +105,8 @@ export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: 
             setTo(e.target.value.replace(/[^\d]/g, ""));
             setError("");
           }}
-          placeholder="bis"
-          aria-label="Gewünschtes Alter bis"
+          placeholder={tx("bis")}
+          aria-label={tx("Gewünschtes Alter bis")}
           className={input}
         />
       </div>
@@ -114,7 +117,7 @@ export function AgeRangeInput({ age, onSubmit }: { age: number; onSubmit: (min: 
       )}
       <div className="flex justify-end">
         <GoldButton type="submit" disabled={!from.trim() || !to.trim()}>
-          Weiter
+          {tx("Weiter")}
         </GoldButton>
       </div>
     </form>

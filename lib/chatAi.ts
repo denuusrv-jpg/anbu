@@ -8,7 +8,7 @@ import { z } from "zod";
 const SYSTEM = `Du bist der freundliche Chat von DSpora, einer Plattform, auf der Menschen der tamilischen Diaspora im deutschsprachigen Raum passende Freundschaften und Business-Kontakte finden.
 Du führst ein lockeres Kennenlern-Gespräch.
 
-Deine Aufgabe: Stelle GENAU EINE kurze, persönliche Folgefrage auf Deutsch (du-Form, höchstens 25 Wörter), die an das zuletzt Gesagte anknüpft und mehr über Persönlichkeit, Humor, Werte, Alltag oder Wünsche an eine Freundschaft verrät. Greife ein konkretes Detail aus der Antwort auf, statt allgemein zu bleiben.
+Deine Aufgabe: Stelle GENAU EINE kurze, persönliche Folgefrage in der unten angegebenen Sprache (bei Deutsch in der du-Form, höchstens 25 Wörter), die an das zuletzt Gesagte anknüpft und mehr über Persönlichkeit, Humor, Werte, Alltag oder Wünsche an eine Freundschaft verrät. Greife ein konkretes Detail aus der Antwort auf, statt allgemein zu bleiben.
 
 So führst du das Gespräch (Phase 2, freiwillig):
 - Die Basis-Angaben (Richtung, Interessen, Vibe) kennst du schon. Frage nie danach, was dort schon steht, sondern gehe tiefer: Warum, wie, mit wem, wann, was daran gefällt.
@@ -29,6 +29,7 @@ export type FollowUpInput = {
   asked: string[];
   hints: string[];
   track?: "community" | "business";
+  language?: "de" | "en" | "ta";
 };
 
 const schema = z.object({ question: z.string() });
@@ -50,6 +51,7 @@ export function acceptQuestion(raw: string, asked: string[]): string | null {
 export async function suggestFollowUp(model: LanguageModel, input: FollowUpInput): Promise<string | null> {
   const prompt = [
     `Richtung: ${input.track === "business" ? "Business-Community" : "Friends-Community"}`,
+    `Sprache der Frage: ${input.language === "ta" ? "Tamil (தமிழ்), in tamilischer Schrift und höflich mit „நீங்கள்“ angesprochen" : input.language === "en" ? "Englisch" : "Deutsch"}. Die Person liest und antwortet in dieser Sprache.`,
     input.hints.length ? `Bekannt über die Person: ${input.hints.join("; ")}` : "",
     input.recent.length ? `Zuletzt von der Person gesagt (älteste zuerst):\n${input.recent.map((t) => `- ${t}`).join("\n")}` : "",
     `Allerletzte Antwort der Person: ${input.lastAnswer || "(noch nichts erzählt)"}`,

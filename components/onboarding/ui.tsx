@@ -85,6 +85,7 @@ export function TextAnswer({
   maxLength?: number;
   submitLabel?: string;
 }) {
+  const tx = useTx();
   return (
     <form
       onSubmit={(e) => {
@@ -109,7 +110,7 @@ export function TextAnswer({
         {extra}
         <button
           type="submit"
-          aria-label={submitLabel}
+          aria-label={tx(submitLabel)}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold text-zinc-950 transition hover:bg-gold-light active:scale-95"
         >
           <ArrowRightIcon className="h-4 w-4" />
@@ -117,7 +118,7 @@ export function TextAnswer({
       </div>
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
-          {error}
+          {tx(error)}
         </p>
       )}
     </form>
@@ -175,6 +176,7 @@ export function LongTextAnswer({
   error?: string;
   rows?: number;
 }) {
+  const tx = useTx();
   const length = value.trim().length;
   return (
     <form
@@ -201,7 +203,7 @@ export function LongTextAnswer({
       />
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
-          {error}
+          {tx(error)}
         </p>
       )}
       <div className="flex items-center justify-between gap-3">
@@ -215,11 +217,11 @@ export function LongTextAnswer({
               onClick={onSkip}
               className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
             >
-              {skipLabel}
+              {tx(skipLabel)}
             </button>
           )}
           <GoldButton type="submit" disabled={length < minLength}>
-            {submitLabel}
+            {tx(submitLabel)}
           </GoldButton>
         </div>
       </div>

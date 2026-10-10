@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CUSTOM_PATTERN, FREE_FIELDS, type Choice, type Option } from "@/lib/onboarding";
 import { Chip, ChipRow, GoldButton } from "@/components/onboarding/ui";
+import { useTx } from "@/lib/LanguageContext";
 
 // Auswahl für Interessen und Vibe: vier Vorschläge zum Antippen und acht freie Felder für eigene Wörter.
 // Insgesamt sind höchstens "max" Einträge möglich. Die Zuordnung ähnlicher Wörter (Tennis ~ Padel) übernimmt die App danach selbst.
@@ -24,6 +25,7 @@ export default function TermPicker({
   hint?: string;
   onConfirm: (value: Choice) => void;
 }) {
+  const tx = useTx();
   const [ids, setIds] = useState<string[]>([]);
   const [fields, setFields] = useState<string[]>(() => Array.from({ length: FREE_FIELDS }, () => ""));
   const [error, setError] = useState("");
@@ -50,7 +52,7 @@ export default function TermPicker({
     const custom: string[] = [];
     for (const word of typed) {
       if (!CUSTOM_PATTERN.test(word)) {
-        setError(`„${word}“ ist ungültig: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.`);
+        setError(tx("„{word}“ ist ungültig: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.", { word }));
         return;
       }
       const known = allOptions.find((o) => o.label.toLowerCase() === word.toLowerCase());
@@ -61,11 +63,11 @@ export default function TermPicker({
       }
     }
     if (outIds.length + custom.length < min) {
-      setError(`Bitte gib mindestens ${min} an.`);
+      setError(tx("Bitte gib mindestens {min} an.", { min }));
       return;
     }
     if (outIds.length + custom.length > max) {
-      setError(`Höchstens ${max} Einträge insgesamt.`);
+      setError(tx("Höchstens {max} Einträge insgesamt.", { max }));
       return;
     }
     onConfirm({ ids: outIds, custom });
@@ -76,7 +78,7 @@ export default function TermPicker({
       <ChipRow>
         {suggestions.map((o) => (
           <Chip key={o.id} selected={ids.indexOf(o.id) >= 0} onClick={() => toggle(o.id)}>
-            {o.label}
+            {tx(o.label)}
           </Chip>
         ))}
       </ChipRow>
@@ -96,7 +98,7 @@ export default function TermPicker({
               }
             }}
             placeholder={placeholder(i)}
-            aria-label={`Eigener Begriff ${i + 1}`}
+            aria-label={tx("Eigener Begriff {n}", { n: i + 1 })}
             className="min-w-0 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-sm text-white placeholder:text-white/35 focus:border-gold/60 focus:outline-none disabled:opacity-40"
           />
         ))}
@@ -109,10 +111,10 @@ export default function TermPicker({
       )}
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs text-zinc-500">
-          {total} von {max} gewählt{total < min ? ` (mindestens ${min})` : ""}
+          {total < min ? tx("{n} von {max} gewählt (mindestens {min})", { n: total, max, min }) : tx("{n} von {max} gewählt", { n: total, max })}
         </span>
         <GoldButton onClick={confirm} disabled={total < min}>
-          Weiter
+          {tx("Weiter")}
         </GoldButton>
       </div>
     </div>

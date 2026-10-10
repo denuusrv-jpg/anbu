@@ -1,3 +1,6 @@
+import type { Language } from "@/lib/translations";
+import { translateUi } from "@/lib/uiText";
+
 // Folgefragen zum Freitext im Pfad "Profil anlegen".
 // Regelbasiert: Der Text wird nach Stichwörtern durchsucht, die Frage greift das gefundene Wort auf.
 // Später lässt sich diese Funktion 1:1 durch einen KI-Aufruf ersetzen (gleiche Signatur).
@@ -214,7 +217,9 @@ export function pickFollowUps(text: string, max = 2): FollowUpQuestion[] {
  * 3. allgemeine Fragen. Schon gestellte Fragen (asked) kommen nie noch einmal. Gibt null zurück,
  * wenn alles gefragt wurde.
  */
-export function nextQuestion(latest: string, everything: string, asked: string[]): string | null {
+export function nextQuestion(latest: string, everything: string, asked: string[], language: Language = "de"): string | null {
+  // Die Themenerkennung nutzt deutsche Stichwörter. In anderen Sprachen gibt es nur die allgemeinen, übersetzten Fragen.
+  if (language !== "de") return GENERIC.map((q) => translateUi(q, language)).find((q) => !asked.includes(q)) ?? null;
   const fresh = (list: FollowUpQuestion[]) => list.find((q) => !asked.includes(q.question))?.question ?? null;
   const fromText = (text: string) => {
     const all: FollowUpQuestion[] = [];

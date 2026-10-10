@@ -13,6 +13,8 @@ import { translateUi, type Vars } from "@/lib/uiText";
 type LanguageContextValue = {
   language: Language;
   setLanguage: (lang: Language) => void;
+  /** true, sobald die gespeicherte Sprache gelesen wurde (vorher steht "de" als Platzhalter) */
+  ready: boolean;
   t: Translation;
 };
 
@@ -22,6 +24,7 @@ const STORAGE_KEY = "dspora-language";
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>("de");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -32,6 +35,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       // localStorage nicht verfügbar - Standardsprache bleibt aktiv
     }
+    setReady(true);
   }, []);
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <LanguageContext.Provider
-      value={{ language, setLanguage, t: translations[language] }}
+      value={{ language, setLanguage, ready, t: translations[language] }}
     >
       {children}
     </LanguageContext.Provider>

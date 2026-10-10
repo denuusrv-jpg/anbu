@@ -90,15 +90,15 @@ export function buildSteckbrief(src: SteckbriefSource): Steckbrief {
 
 const clip = (text: string, max = 160) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
-/** Der Steckbrief als Chat-Nachricht (Zeilenumbrüche werden im Chat angezeigt). */
-export function steckbriefText(sb: Steckbrief): string {
+/** Der Steckbrief als Chat-Nachricht (Zeilenumbrüche werden im Chat angezeigt). tx übersetzt die festen Texte und Beschriftungen. */
+export function steckbriefText(sb: Steckbrief, tx: (de: string) => string = (de) => de): string {
   if (sb.lines.length === 0 && sb.facts.length === 0) {
-    return "Bisher weiß ich noch nicht viel über dich. Erzähl mir gern mehr, dann entsteht dein Steckbrief.";
+    return tx("Bisher weiß ich noch nicht viel über dich. Erzähl mir gern mehr, dann entsteht dein Steckbrief.");
   }
-  const parts: string[] = ["Das weiß ich aktuell über dich:"];
-  for (const line of sb.lines) parts.push(`• ${line.label}: ${clip(line.value)}`);
+  const parts: string[] = [tx("Das weiß ich aktuell über dich:")];
+  for (const line of sb.lines) parts.push(`• ${tx(line.label)}: ${clip(line.value.split(", ").map((v) => tx(v)).join(", "))}`);
   if (sb.facts.length > 0) {
-    parts.push("", "Das hast du mir erzählt:");
+    parts.push("", tx("Das hast du mir erzählt:"));
     for (const f of sb.facts) {
       parts.push(f.kind === "free" ? `• ${clip(f.answer)}` : `• ${clip(f.question, 80)} → ${clip(f.answer, 100)}`);
     }
@@ -109,12 +109,12 @@ export function steckbriefText(sb: Steckbrief): string {
 /** Fragt jemand nach dem eigenen Steckbrief / Profil? */
 export function isSteckbriefRequest(text: string): boolean {
   return new RegExp(
-    "(steckbrief|was (wei(ß|ss)t|kennst|hast) du (alles )?(schon |bisher |so )?(über|von|zu) mich|was steht (alles )?in meinem profil|wie sieht (mein|meine) (profil|angaben)|was hast du (dir )?(über mich )?gemerkt|zeig (mir )?(mein )?profil)",
+    "(steckbrief|profile summary|what do you (know|remember)|show me my (profile|summary)|was (wei(ß|ss)t|kennst|hast) du (alles )?(schon |bisher |so )?(über|von|zu) mich|was steht (alles )?in meinem profil|wie sieht (mein|meine) (profil|angaben)|was hast du (dir )?(über mich )?gemerkt|zeig (mir )?(mein )?profil)",
     "i",
   ).test(text);
 }
 
 /** Will jemand etwas aus dem Steckbrief entfernen lassen? */
 export function isRemoveRequest(text: string): boolean {
-  return /^\s*(bitte\s+)?(vergiss|lösche|loesche|entferne|streiche?)\b/i.test(text);
+  return /^\s*(bitte\s+|please\s+)?(vergiss|lösche|loesche|entferne|streiche?|forget|delete|remove)\b/i.test(text);
 }
