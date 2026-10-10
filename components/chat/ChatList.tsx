@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage, useTx } from "@/lib/LanguageContext";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
@@ -9,10 +10,16 @@ import type { RoomSummary } from "@/lib/chatRooms";
 type ListData = { rooms: RoomSummary[]; slotsUsed: number; limit: number };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const times = {
+  de: new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+  ta: new Intl.DateTimeFormat("ta-IN", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }),
+};
 
 // Übersicht der eigenen Chats mit den belegten Plätzen (höchstens 4 gleichzeitig)
 export default function ChatList({ sample }: { sample?: ListData }) {
+  const tx = useTx();
+  const { language } = useLanguage();
   const [data, setData] = useState<ListData | null>(sample ?? null);
   const [error, setError] = useState("");
 
@@ -29,7 +36,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
           setError("");
         }
       } catch {
-        if (alive) setError("Die Chats konnten nicht geladen werden.");
+        if (alive) setError(tx("Die Chats konnten nicht geladen werden."));
       }
     }
     load();
@@ -51,12 +58,12 @@ export default function ChatList({ sample }: { sample?: ListData }) {
         <header className="flex items-center justify-between gap-4">
           <div>
             <Link href={sample ? "#" : "/dashboard"} className="text-xs text-white/70 hover:text-white">
-              ← Profil
+              {tx("← Profil")}
             </Link>
-            <h1 className="mt-2 text-2xl font-bold text-zinc-50 sm:text-3xl">Deine Chats</h1>
+            <h1 className="mt-2 text-2xl font-bold text-zinc-50 sm:text-3xl">{tx("Deine Chats")}</h1>
           </div>
           {data && (
-            <div className="text-right" title="Du kannst höchstens vier Chats gleichzeitig führen">
+            <div className="text-right" title={tx("Du kannst höchstens vier Chats gleichzeitig führen")}>
               <div className="flex justify-end gap-1.5" aria-hidden>
                 {Array.from({ length: data.limit }, (_, i) => (
                   <span
@@ -66,15 +73,14 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                 ))}
               </div>
               <p className="mt-1.5 text-xs text-zinc-500">
-                {data.slotsUsed} von {data.limit} Plätzen belegt
+                {tx("{n} von {max} Plätzen belegt", { n: data.slotsUsed, max: data.limit })}
               </p>
             </div>
           )}
         </header>
 
         <p className="text-xs leading-relaxed text-zinc-500">
-          Du kannst höchstens {data?.limit ?? 4} Chats gleichzeitig führen, damit jedes Gespräch Raum bekommt. Verlässt du einen Chat, wird ein
-          Platz für ein neues Match frei.
+          {tx("Du kannst höchstens {max} Chats gleichzeitig führen, damit jedes Gespräch Raum bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.", { max: data?.limit ?? 4 })}
         </p>
 
         {error && (
@@ -85,10 +91,9 @@ export default function ChatList({ sample }: { sample?: ListData }) {
 
         {data && data.rooms.length === 0 && (
           <div className={`${card} p-8 text-center`}>
-            <h2 className="text-lg font-semibold text-zinc-50">Noch keine Chats</h2>
+            <h2 className="text-lg font-semibold text-zinc-50">{tx("Noch keine Chats")}</h2>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Sobald dein Hub öffnet und wir passende Menschen für dich gefunden haben, startet hier dein erster Chat, mit einem Eisbrecher,
-              der zu euren Gemeinsamkeiten passt.
+              {tx("Sobald dein Hub öffnet und wir passende Menschen für dich gefunden haben, startet hier dein erster Chat, mit einem Eisbrecher, der zu euren Gemeinsamkeiten passt.")}
             </p>
           </div>
         )}
@@ -108,12 +113,12 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-base font-semibold text-zinc-50">
-                      {room.members.filter((m) => !m.isMe).map((m) => m.label).join(", ") || "Allein im Chat"}
+                      {room.members.filter((m) => !m.isMe).map((m) => m.label).join(", ") || tx("Allein im Chat")}
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-500">
-                      {room.kind === "duo" ? "Duo" : `Gruppe · ${room.members.length} Personen`}
-                      {room.track === "business" ? " · Business" : ""}
-                      {room.dissolved ? " · beendet" : ""}
+                      {room.kind === "duo" ? tx("Duo") : tx("Gruppe · {n} Personen", { n: room.members.length })}
+                      {room.track === "business" ? tx(" · Business") : ""}
+                      {room.dissolved ? tx(" · beendet") : ""}
                     </p>
                   </div>
                   {room.unread > 0 && (
@@ -126,7 +131,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                     {room.last.body}
                   </p>
                 )}
-                {room.last && <p className="mt-2 text-[11px] text-zinc-600">{time.format(new Date(room.last.createdAt))}</p>}
+                {room.last && <p className="mt-2 text-[11px] text-zinc-600">{times[language].format(new Date(room.last.createdAt))}</p>}
               </Link>
             </motion.li>
           ))}

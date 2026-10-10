@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon, ArrowRightIcon } from "@/components/Icons";
+import { useTx } from "@/lib/LanguageContext";
 
 export function ChipRow({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-wrap gap-2">{children}</div>;
@@ -136,11 +137,12 @@ export function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  const tx = useTx();
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium text-zinc-300">{label}</span>
-        {hint && <span className="text-[11px] text-zinc-500">{hint}</span>}
+        <span className="text-xs font-medium text-zinc-300">{tx(label)}</span>
+        {hint && <span className="text-[11px] text-zinc-500">{tx(hint)}</span>}
       </div>
       {children}
     </div>

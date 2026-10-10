@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { CheckIcon } from "@/components/Icons";
+import { useTx } from "@/lib/LanguageContext";
 
 export type ReadyKind =
   | "guest" // Link per E-Mail verschickt, noch nicht angemeldet
@@ -28,12 +29,13 @@ export default function ReadyWindow({
   /** true: ohne Vollbild-Hintergrund anzeigen (Admin-Vorschau) */
   inline?: boolean;
 }) {
+  const tx = useTx();
   const text =
     kind === "guest"
-      ? `Wir haben dir einen Link an ${email ?? "deine E-Mail-Adresse"} geschickt. Mit einem Klick darauf wirst du angemeldet und dein Profil wird gespeichert.`
+      ? tx("Wir haben dir einen Link an {email} geschickt. Mit einem Klick darauf wirst du angemeldet und dein Profil wird gespeichert.", { email: email ?? tx("deine E-Mail-Adresse") })
       : kind === "resume"
-        ? "Danke, dass du dich weiter geöffnet hast. Deine Antworten sind gespeichert und helfen uns, dich besser kennenzulernen."
-        : "Dein Profil ist angelegt. Sobald sich in deinen Hubs genug Leute eintragen, öffnet sich dein Hub und wir melden uns bei dir.";
+        ? tx("Danke, dass du dich weiter geöffnet hast. Deine Antworten sind gespeichert und helfen uns, dich besser kennenzulernen.")
+        : tx("Dein Profil ist angelegt. Sobald sich in deinen Hubs genug Leute eintragen, öffnet sich dein Hub und wir melden uns bei dir.");
 
   const primary =
     "cta-premium inline-flex w-full items-center justify-center rounded-full bg-gradient-to-b from-gold-light to-gold px-8 py-3 text-sm font-semibold text-zinc-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_10px_24px_-12px_rgba(242,166,90,0.45)]";
@@ -56,22 +58,22 @@ export default function ReadyWindow({
           <CheckIcon className="h-7 w-7" />
         </div>
         <h2 id="ready-title" className="mt-6 text-3xl font-bold text-zinc-50 uppercase">
-          Du bist startklar!
+          {tx("Du bist startklar!")}
         </h2>
         <p className="mt-4 text-base leading-relaxed text-zinc-400">{text}</p>
 
         <div className="mt-8 flex flex-col gap-3">
           {kind === "guest" ? (
             <Link href="/login" className={primary}>
-              Anmelden
+              {tx("Anmelden")}
             </Link>
           ) : (
             <Link href="/dashboard" className={primary}>
-              Zum Profil
+              {tx("Zum Profil")}
             </Link>
           )}
           <Link href="/" className={secondary}>
-            Webseite besuchen
+            {tx("Webseite besuchen")}
           </Link>
         </div>
 
@@ -81,7 +83,7 @@ export default function ReadyWindow({
             onClick={onResend}
             className="mt-5 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
           >
-            Link nicht angekommen? Erneut senden oder andere Adresse
+            {tx("Link nicht angekommen? Erneut senden oder andere Adresse")}
           </button>
         )}
       </div>

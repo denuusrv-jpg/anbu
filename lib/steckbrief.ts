@@ -59,7 +59,7 @@ export function buildSteckbrief(src: SteckbriefSource): Steckbrief {
   add("Geschlecht", src.gender ? labelOf(src.gender, GENDERS) : undefined);
   add("Verbinden mit", src.matchGender ? labelOf(src.matchGender, MATCH_GENDERS) : undefined);
   add("Alter", src.age ? String(src.age) : undefined);
-  add("Gesuchtes Alter", src.ageMin && src.ageMax ? `${src.ageMin} bis ${src.ageMax}` : undefined);
+  add("Gesuchtes Alter", src.ageMin && src.ageMax ? `${src.ageMin}–${src.ageMax}` : undefined);
   add("Gruppengröße", src.groupSize ? labelOf(src.groupSize, GROUP_SIZES) : undefined);
   add("Art der Freundschaft", src.meetMode ? labelOf(src.meetMode, MEET_MODES) : undefined);
   add("Max. Entfernung (Auto)", src.meetMode === "activities" ? (src.travelMinutes ? (TRAVEL_OPTIONS.find((o) => o.minutes === src.travelMinutes)?.label ?? `${src.travelMinutes} Minuten`) : "Egal") : undefined);

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Language, Translation, translations } from "@/lib/translations";
+import { translateUi, type Vars } from "@/lib/uiText";
 
 type LanguageContextValue = {
   language: Language;
@@ -33,6 +34,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   function setLanguage(lang: Language) {
     setLanguageState(lang);
     try {
@@ -49,6 +54,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       {children}
     </LanguageContext.Provider>
   );
+}
+
+/**
+ * Übersetzung für Oberflächen-Texte im Mitgliederbereich: tx("Deutscher Text", { name }) liefert den Text in der gewählten Sprache.
+ * Fehlt eine Übersetzung, bleibt der deutsche Text stehen. Der Chat selbst (Nachrichten, Gespräch mit der KI) wird nicht übersetzt.
+ */
+export function useTx() {
+  const { language } = useLanguage();
+  return (de: string, vars?: Vars) => translateUi(de, language, vars);
 }
 
 export function useLanguage() {

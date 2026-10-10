@@ -1,5 +1,6 @@
 "use client";
 
+import { useTx } from "@/lib/LanguageContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -37,6 +38,7 @@ export default function ProfileEditor({
   preview?: boolean;
 }) {
   const router = useRouter();
+  const tx = useTx();
   const [form, setForm] = useState<Info>(info);
   const [hobbyDraft, setHobbyDraft] = useState("");
   const [busy, setBusy] = useState("");
@@ -52,12 +54,12 @@ export default function ProfileEditor({
       const res = await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(update) });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setMessage(data?.error ?? "Speichern hat nicht geklappt.");
+        setMessage(tx(data?.error ?? "Speichern hat nicht geklappt."));
         return false;
       }
       return true;
     } catch {
-      setMessage("Keine Verbindung. Bitte versuch es noch einmal.");
+      setMessage(tx("Keine Verbindung. Bitte versuch es noch einmal."));
       return false;
     }
   }
@@ -65,7 +67,7 @@ export default function ProfileEditor({
   async function saveInfo() {
     setMessage("");
     if (!NAME_PATTERN.test(form.displayName.trim())) {
-      setMessage("Spitzname: 2 bis 24 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.");
+      setMessage(tx("Spitzname: 2 bis 24 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen."));
       return;
     }
     setBusy("info");
@@ -74,7 +76,7 @@ export default function ProfileEditor({
     });
     setBusy("");
     if (ok) {
-      setMessage("Gespeichert.");
+      setMessage(tx("Gespeichert."));
       if (!preview) router.refresh();
     }
   }
@@ -83,11 +85,11 @@ export default function ProfileEditor({
     const word = hobbyDraft.trim();
     if (!word) return;
     if (!CUSTOM_PATTERN.test(word)) {
-      setMessage("Hobby: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.");
+      setMessage(tx("Hobby: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen."));
       return;
     }
     if (form.hobbies.length >= MAX_HOBBIES) {
-      setMessage(`Höchstens ${MAX_HOBBIES} Hobbys.`);
+      setMessage(tx("Höchstens {n} Hobbys.", { n: MAX_HOBBIES }));
       return;
     }
     if (form.hobbies.some((h) => h.toLowerCase() === word.toLowerCase())) {
@@ -110,7 +112,7 @@ export default function ProfileEditor({
       if (error) throw error;
       if (await patch({ avatar: true })) router.refresh();
     } catch {
-      setMessage("Das Profilbild konnte nicht hochgeladen werden.");
+      setMessage(tx("Das Profilbild konnte nicht hochgeladen werden."));
     } finally {
       setBusy("");
       if (avatarInput.current) avatarInput.current.value = "";
@@ -134,7 +136,7 @@ export default function ProfileEditor({
     setMessage("");
     const incoming = Array.from(list).filter((f) => f.type.startsWith("image/"));
     const room = MAX_SLIDES - files.length;
-    if (incoming.length > room) setMessage(`Höchstens ${MAX_SLIDES} Bilder pro Beitrag.`);
+    if (incoming.length > room) setMessage(tx("Höchstens {n} Bilder pro Beitrag.", { n: MAX_SLIDES }));
     setFiles((prev) => [...prev, ...incoming.slice(0, room).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
     if (postInput.current) postInput.current.value = "";
   }
@@ -156,14 +158,14 @@ export default function ProfileEditor({
         const data = await res.json().catch(() => null);
         // Hochgeladene Bilder wieder entfernen, wenn der Beitrag nicht angelegt werden konnte
         await storage.remove(files.map((_, i) => `${userId}/posts/${id}/${i + 1}.jpg`));
-        throw new Error(data?.error ?? "Der Beitrag konnte nicht veröffentlicht werden.");
+        throw new Error(tx(data?.error ?? "Der Beitrag konnte nicht veröffentlicht werden."));
       }
       files.forEach((f) => URL.revokeObjectURL(f.url));
       setFiles([]);
       setCaption("");
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Der Beitrag konnte nicht veröffentlicht werden.");
+      setMessage(error instanceof Error ? error.message : tx("Der Beitrag konnte nicht veröffentlicht werden."));
     } finally {
       setBusy("");
     }
@@ -175,7 +177,7 @@ export default function ProfileEditor({
     try {
       const res = await fetch(`/api/profile/posts/${id}`, { method: "DELETE" });
       if (res.ok) router.refresh();
-      else setMessage("Der Beitrag konnte nicht gelöscht werden.");
+      else setMessage(tx("Der Beitrag konnte nicht gelöscht werden."));
     } finally {
       setBusy("");
     }
@@ -187,37 +189,37 @@ export default function ProfileEditor({
     <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-50">Deine Profilseite</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.</p>
+          <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Profilseite")}</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">{tx("So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.")}</p>
         </div>
         {!preview && (
           <Link href={`/profil/${userId}`} className="shrink-0 text-xs text-gold hover:underline">
-            Ansehen
+            {tx("Ansehen")}
           </Link>
         )}
       </div>
 
       {/* Öffentlich / Privat */}
-      <div className="mt-5" role="radiogroup" aria-label="Sichtbarkeit der Profilseite">
+      <div className="mt-5" role="radiogroup" aria-label={tx("Sichtbarkeit der Profilseite")}>
         <ChipRow>
           <Chip selected={visibility === "public"} onClick={() => onVisibility("public")}>
-            Öffentlich
+            {tx("Öffentlich")}
           </Chip>
           {track === "business" && (
             <Chip selected={visibility === "business"} onClick={() => onVisibility("business")}>
-              Nur Business
+              {tx("Nur Business")}
             </Chip>
           )}
           <Chip selected={visibility === "stealth"} onClick={() => onVisibility("stealth")}>
-            Privat
+            {tx("Privat")}
           </Chip>
         </ChipRow>
         <p className="mt-2 text-xs leading-relaxed text-zinc-500">
           {visibility === "public"
-            ? "Alle angemeldeten Mitglieder sehen Name, Alter, Text, Hobbys und Beiträge."
+            ? tx("Alle angemeldeten Mitglieder sehen Name, Alter, Text, Hobbys und Beiträge.")
             : visibility === "business"
-              ? "Business-Mitglieder sehen alles, alle anderen nur Profilbild und Spitzname."
-              : "Nur Profilbild und Spitzname sind sichtbar, und nur für Leute, mit denen du in einem Chat bist."}
+              ? tx("Business-Mitglieder sehen alles, alle anderen nur Profilbild und Spitzname.")
+              : tx("Nur Profilbild und Spitzname sind sichtbar, und nur für Leute, mit denen du in einem Chat bist.")}
         </p>
       </div>
 
@@ -226,19 +228,19 @@ export default function ProfileEditor({
         <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-zinc-900">
           {avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatar} alt="Dein Profilbild" className="h-full w-full object-cover" />
+            <img src={avatar} alt={tx("Dein Profilbild")} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-gold/80">{(form.displayName || "?").slice(0, 1).toUpperCase()}</div>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <input ref={avatarInput} type="file" accept="image/*" className="hidden" onChange={(e) => uploadAvatar(e.target.files?.[0])} aria-label="Profilbild auswählen" />
+          <input ref={avatarInput} type="file" accept="image/*" className="hidden" onChange={(e) => uploadAvatar(e.target.files?.[0])} aria-label={tx("Profilbild auswählen")} />
           <button type="button" disabled={busy === "avatar"} onClick={() => avatarInput.current?.click()} className={pill}>
-            {busy === "avatar" ? "Lade hoch …" : avatar ? "Bild ändern" : "Profilbild hinzufügen"}
+            {busy === "avatar" ? tx("Lade hoch …") : avatar ? tx("Bild ändern") : tx("Profilbild hinzufügen")}
           </button>
           {avatar && (
             <button type="button" disabled={busy === "avatar"} onClick={removeAvatar} className={pill}>
-              Entfernen
+              {tx("Entfernen")}
             </button>
           )}
         </div>
@@ -248,36 +250,36 @@ export default function ProfileEditor({
       <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
         <div>
           <label className="text-xs font-medium text-zinc-300" htmlFor="pf-nick">
-            Spitzname oder Künstlername
+            {tx("Spitzname oder Künstlername")}
           </label>
           <input id="pf-nick" value={form.displayName} maxLength={24} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className={`${fieldClass} mt-1.5`} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-medium text-zinc-300" htmlFor="pf-first">
-              Vorname (optional)
+              {tx("Vorname (optional)")}
             </label>
             <input id="pf-first" value={form.firstName} maxLength={24} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={`${fieldClass} mt-1.5`} />
           </div>
           <div>
             <label className="text-xs font-medium text-zinc-300" htmlFor="pf-last">
-              Nachname (optional)
+              {tx("Nachname (optional)")}
             </label>
             <input id="pf-last" value={form.lastName} maxLength={24} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={`${fieldClass} mt-1.5`} />
           </div>
         </div>
-        <p className="text-[11px] text-zinc-500">Name und Nachname siehst nur du, solange dein Profil privat ist.</p>
+        <p className="text-[11px] text-zinc-500">{tx("Name und Nachname siehst nur du, solange dein Profil privat ist.")}</p>
         <div>
           <div className="flex items-baseline justify-between">
             <label className="text-xs font-medium text-zinc-300" htmlFor="pf-bio">
-              Über mich
+              {tx("Über mich")}
             </label>
             <span className="text-[11px] text-zinc-500">{form.bio.length}/300</span>
           </div>
-          <textarea id="pf-bio" value={form.bio} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 300) })} placeholder="Ein paar Sätze über dich …" className={`${fieldClass} mt-1.5 resize-none`} />
+          <textarea id="pf-bio" value={form.bio} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 300) })} placeholder={tx("Ein paar Sätze über dich …")} className={`${fieldClass} mt-1.5 resize-none`} />
         </div>
         <div>
-          <p className="text-xs font-medium text-zinc-300">Hobbys</p>
+          <p className="text-xs font-medium text-zinc-300">{tx("Hobbys")}</p>
           <div className="mt-1.5 flex gap-2">
             <input
               value={hobbyDraft}
@@ -289,12 +291,12 @@ export default function ProfileEditor({
                   addHobby();
                 }
               }}
-              placeholder="Hobby eintippen, Enter"
-              aria-label="Hobby hinzufügen"
+              placeholder={tx("Hobby eintippen, Enter")}
+              aria-label={tx("Hobby hinzufügen")}
               className={fieldClass}
             />
             <button type="button" onClick={addHobby} className={pill}>
-              Hinzufügen
+              {tx("Hinzufügen")}
             </button>
           </div>
           {form.hobbies.length > 0 && (
@@ -310,16 +312,16 @@ export default function ProfileEditor({
           )}
         </div>
         <button type="button" disabled={busy === "info"} onClick={saveInfo} className="rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-xs font-semibold text-zinc-950 disabled:opacity-50">
-          {busy === "info" ? "Speichere …" : "Speichern"}
+          {busy === "info" ? tx("Speichere …") : tx("Speichern")}
         </button>
       </div>
 
       {/* Beiträge */}
       <div className="mt-6 border-t border-white/10 pt-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-sm font-medium text-zinc-100">Beiträge</p>
+          <p className="text-sm font-medium text-zinc-100">{tx("Beiträge")}</p>
           <span className="text-[11px] text-zinc-500">
-            {posts.length} von {MAX_POSTS}
+            {tx("{n} von {max}", { n: posts.length, max: MAX_POSTS })}
           </span>
         </div>
         {posts.length > 0 && (
@@ -333,10 +335,10 @@ export default function ProfileEditor({
                   type="button"
                   disabled={busy === `del-${p.id}`}
                   onClick={() => removePost(p.id)}
-                  aria-label="Beitrag löschen"
+                  aria-label={tx("Beitrag löschen")}
                   className="absolute inset-x-1.5 bottom-1.5 rounded-full bg-black/70 py-1 text-[11px] text-white opacity-100 transition-opacity hover:bg-rose/80 sm:opacity-0 sm:group-hover:opacity-100"
                 >
-                  Löschen
+                  {tx("Löschen")}
                 </button>
               </div>
             ))}
@@ -345,7 +347,7 @@ export default function ProfileEditor({
 
         {posts.length < MAX_POSTS && (
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs font-medium text-zinc-300">Neuer Beitrag (bis zu {MAX_SLIDES} Bilder zum Wischen)</p>
+            <p className="text-xs font-medium text-zinc-300">{tx("Neuer Beitrag (bis zu {max} Bilder zum Wischen)", { max: MAX_SLIDES })}</p>
             {files.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {files.map((f, i) => (
@@ -367,18 +369,18 @@ export default function ProfileEditor({
                 ))}
               </div>
             )}
-            <input ref={postInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickSlides(e.target.files)} aria-label="Bilder für den Beitrag auswählen" />
+            <input ref={postInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickSlides(e.target.files)} aria-label={tx("Bilder für den Beitrag auswählen")} />
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" disabled={files.length >= MAX_SLIDES} onClick={() => postInput.current?.click()} className={pill}>
-                {files.length === 0 ? "Bilder auswählen" : "Weitere Bilder"}
+                {files.length === 0 ? tx("Bilder auswählen") : tx("Weitere Bilder")}
               </button>
-              {files.length > 0 && <span className="text-[11px] text-zinc-500">{files.length} von {MAX_SLIDES}</span>}
+              {files.length > 0 && <span className="text-[11px] text-zinc-500">{tx("{n} von {max}", { n: files.length, max: MAX_SLIDES })}</span>}
             </div>
             {files.length > 0 && (
               <>
-                <input value={caption} maxLength={200} onChange={(e) => setCaption(e.target.value)} placeholder="Bildunterschrift (optional)" aria-label="Bildunterschrift" className={`${fieldClass} mt-3`} />
+                <input value={caption} maxLength={200} onChange={(e) => setCaption(e.target.value)} placeholder={tx("Bildunterschrift (optional)")} aria-label={tx("Bildunterschrift")} className={`${fieldClass} mt-3`} />
                 <button type="button" disabled={busy === "post"} onClick={publish} className="mt-3 rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-xs font-semibold text-zinc-950 disabled:opacity-50">
-                  {busy === "post" ? "Veröffentliche …" : "Beitrag veröffentlichen"}
+                  {busy === "post" ? tx("Veröffentliche …") : tx("Beitrag veröffentlichen")}
                 </button>
               </>
             )}

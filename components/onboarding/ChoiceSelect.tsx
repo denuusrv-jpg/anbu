@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CUSTOM_PATTERN, MAX_CHOICES, MAX_CUSTOM, type Choice, type Option } from "@/lib/onboarding";
 import { Chip, ChipRow, GoldButton } from "@/components/onboarding/ui";
+import { useTx } from "@/lib/LanguageContext";
 
 export const INVALID_ENTRY = "2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.";
 
@@ -58,6 +59,7 @@ export function CustomEntry({
   onDraftChange?: (value: string) => void;
   hint?: string;
 }) {
+  const tx = useTx();
   const [inner, setInner] = useState("");
   const [error, setError] = useState("");
   const controlled = draftProp !== undefined;
@@ -102,7 +104,7 @@ export function CustomEntry({
       {hint && !error && <p className="px-1 text-[11px] text-zinc-500">{hint}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
-          {error}
+          {tx(error)}
         </p>
       )}
     </div>
@@ -129,6 +131,7 @@ export function ChoiceChips({
   draft?: string;
   onDraftChange?: (value: string) => void;
 }) {
+  const tx = useTx();
   const total = value.ids.length + value.custom.length;
 
   function toggle(id: string) {
@@ -151,7 +154,7 @@ export function ChoiceChips({
       <ChipRow>
         {options.map((o) => (
           <Chip key={o.id} selected={value.ids.includes(o.id)} onClick={() => toggle(o.id)}>
-            {o.label}
+            {tx(o.label)}
           </Chip>
         ))}
         {value.custom.map((c) => (
@@ -202,6 +205,7 @@ export default function ChoiceSelect({
   allowCustom?: boolean;
   maxTotal?: number;
 }) {
+  const tx = useTx();
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const pending = allowCustom && draft.trim() ? 1 : 0;
@@ -244,14 +248,14 @@ export default function ChoiceSelect({
           <span className="text-xs text-zinc-500">
             {total === 0
               ? minTotal > 0
-                ? "Wähle mindestens eins"
-                : "Optional"
-              : `${total} gewählt`}
+                ? tx("Wähle mindestens eins")
+                : tx("Optional")
+              : tx("{n} gewählt", { n: total })}
           </span>
           {extra}
         </div>
         <GoldButton onClick={confirm} disabled={total < minTotal}>
-          {confirmLabel}
+          {tx(confirmLabel)}
         </GoldButton>
       </div>
     </div>

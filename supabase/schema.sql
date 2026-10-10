@@ -555,3 +555,11 @@ create table if not exists public.profile_posts (
 );
 create index if not exists profile_posts_user_idx on public.profile_posts (user_id, created_at desc);
 alter table public.profile_posts enable row level security;
+
+-- 17) Sprache der Oberfläche (de, ta, en), folgt dem Konto auf anderen Geräten
+alter table public.user_profiles add column if not exists ui_language text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'user_profiles_ui_language_check') then
+    alter table public.user_profiles add constraint user_profiles_ui_language_check check (ui_language is null or ui_language in ('de', 'ta', 'en'));
+  end if;
+end $$;

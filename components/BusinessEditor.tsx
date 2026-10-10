@@ -1,5 +1,6 @@
 "use client";
 
+import { useTx } from "@/lib/LanguageContext";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChoiceChips, INVALID_ENTRY, flushDraft } from "@/components/onboarding/ChoiceSelect";
@@ -24,6 +25,7 @@ export default function BusinessEditor({
   onCancel?: () => void;
   title?: string;
 }) {
+  const tx = useTx();
   const [editing, setEditing] = useState(startEditing);
   const [draft, setDraft] = useState(business);
   const [saving, setSaving] = useState(false);
@@ -38,7 +40,7 @@ export default function BusinessEditor({
       return;
     }
     if (draft.role.trim().length < 2) {
-      setError("Bitte gib deine Rolle an.");
+      setError(tx("Bitte gib deine Rolle an."));
       return;
     }
     // Noch nicht mit Enter bestätigte Eingaben automatisch übernehmen
@@ -57,11 +59,11 @@ export default function BusinessEditor({
       sector = SECTORS.find((o) => o.label.toLowerCase() === sectorText.toLowerCase())?.id ?? sectorText;
     }
     if (!sector) {
-      setError("Bitte wähle eine Branche.");
+      setError(tx("Bitte wähle eine Branche."));
       return;
     }
     if (goals.value.ids.length + goals.value.custom.length === 0) {
-      setError("Bitte wähle mindestens ein Ziel.");
+      setError(tx("Bitte wähle mindestens ein Ziel."));
       return;
     }
     setSaving(true);
@@ -88,7 +90,7 @@ export default function BusinessEditor({
             }}
             className="text-xs text-zinc-400 transition-colors hover:text-gold"
           >
-            Bearbeiten
+            {tx("Bearbeiten")}
           </button>
         )}
       </div>
@@ -110,7 +112,7 @@ export default function BusinessEditor({
                 onSelect={(v) => v && setDraft({ ...draft, sector: v })}
                 draft={sectorDraft}
                 onDraftChange={setSectorDraft}
-                customPlaceholder="Andere Branche? Eigene Angabe"
+                customPlaceholder={tx("Andere Branche? Eigene Angabe")}
               />
             </Field>
             <Field label="Aktuelle Rolle">
@@ -118,15 +120,15 @@ export default function BusinessEditor({
                 value={draft.role}
                 onChange={(e) => setDraft({ ...draft, role: e.target.value.slice(0, ROLE_MAX) })}
                 className={fieldClass}
-                placeholder="z. B. Gründerin, Product Manager"
+                placeholder={tx("z. B. Gründerin, Product Manager")}
               />
             </Field>
-            <Field label="Hauptziel" hint="bis zu 3">
+            <Field label="Hauptziel" hint={tx("bis zu 3")}>
               <ChoiceChips
                 options={GOALS}
                 value={draft.goals}
                 onChange={(goals) => setDraft({ ...draft, goals })}
-                customPlaceholder="Ein anderes Ziel?"
+                customPlaceholder={tx("Ein anderes Ziel?")}
                 maxTotal={3}
                 draft={goalDraft}
                 onDraftChange={setGoalDraft}
@@ -154,7 +156,7 @@ export default function BusinessEditor({
                 }}
                 className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
               >
-                Abbrechen
+                {tx("Abbrechen")}
               </button>
               <GoldButton onClick={save} disabled={saving}>
                 {saving ? "Speichere …" : "Speichern"}
@@ -170,9 +172,9 @@ export default function BusinessEditor({
             className="mt-3 space-y-3 text-sm text-zinc-200"
           >
             <p>
-              <span className="text-zinc-500">Branche: </span>
+              <span className="text-zinc-500">{tx("Branche:")} </span>
               {labelOf(business.sector, SECTORS)}
-              <span className="text-zinc-500"> · Rolle: </span>
+              <span className="text-zinc-500"> {tx("· Rolle:")} </span>
               {business.role}
             </p>
             <ChipRow>
@@ -184,7 +186,7 @@ export default function BusinessEditor({
             </ChipRow>
             {business.cv.expertise && (
               <p>
-                <span className="text-zinc-500">Expertise: </span>
+                <span className="text-zinc-500">{tx("Expertise:")} </span>
                 {business.cv.expertise}
               </p>
             )}

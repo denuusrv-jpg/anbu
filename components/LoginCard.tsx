@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import LanguageSwitch from "@/components/LanguageSwitch";
+import { useTx } from "@/lib/LanguageContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -21,6 +24,7 @@ export default function LoginCard({
   next?: string;
   notice?: string;
 }) {
+  const tx = useTx();
   const router = useRouter();
   const target = safeNextPath(next);
   const [email, setEmail] = useState("");
@@ -69,7 +73,7 @@ export default function LoginCard({
     if (!isSupabaseConfigured || status === "sending") return;
     const value = email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(value)) {
-      setError("Bitte gib eine gültige E-Mail-Adresse ein.");
+      setError(tx("Bitte gib eine gültige E-Mail-Adresse ein."));
       return;
     }
     setError("");
@@ -88,14 +92,14 @@ export default function LoginCard({
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         setStatus("idle");
-        setError(data?.error ?? "Das hat leider nicht geklappt. Bitte versuch es noch einmal.");
+        setError(data?.error ?? tx("Das hat leider nicht geklappt. Bitte versuch es noch einmal."));
         return;
       }
       setStatus("sent");
       setCooldown(RESEND_SECONDS);
     } catch {
       setStatus("idle");
-      setError("Keine Verbindung. Bitte versuch es noch einmal.");
+      setError(tx("Keine Verbindung. Bitte versuch es noch einmal."));
     }
   }
 
@@ -105,7 +109,7 @@ export default function LoginCard({
     try {
       const { data, error: err } = await getBrowserClient().auth.signInWithPasskey();
       if (err || !data?.session) {
-        setError("Mit dem Passkey hat es nicht geklappt. Du kannst dir stattdessen einen Link per E-Mail schicken lassen.");
+        setError(tx("Mit dem Passkey hat es nicht geklappt. Du kannst dir stattdessen einen Link per E-Mail schicken lassen."));
         return;
       }
       router.push(target);
@@ -115,15 +119,17 @@ export default function LoginCard({
   }
 
   return (
+    <>
+    <LanguageSwitch className="mb-5" />
     <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
       <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
       <div className="relative">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
           <ShieldIcon />
         </div>
-        <h2 className="mt-5 text-lg font-semibold text-zinc-50">Willkommen zurück</h2>
+        <h2 className="mt-5 text-lg font-semibold text-zinc-50">{tx("Willkommen zurück")}</h2>
         <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
-          Ohne Passwort: Wir schicken dir einen Link oder du nutzt deinen Passkey.
+          {tx("Ohne Passwort: Wir schicken dir einen Link oder du nutzt deinen Passkey.")}
         </p>
 
         {!isSupabaseConfigured ? (
@@ -131,7 +137,7 @@ export default function LoginCard({
             role="status"
             className="mt-6 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300"
           >
-            Die Anmeldung wird gerade eingerichtet und ist bald verfügbar.
+            {tx("Die Anmeldung wird gerade eingerichtet und ist bald verfügbar.")}
           </p>
         ) : (
           <AnimatePresence mode="wait" initial={false}>
@@ -149,16 +155,16 @@ export default function LoginCard({
                   <CheckIcon className="h-5 w-5" />
                 </div>
                 <p className="text-sm leading-relaxed text-zinc-200">
-                  Check dein Postfach: Wir haben dir einen Link an <strong>{email.trim()}</strong> geschickt.
+                  {tx("Check dein Postfach: Wir haben dir einen Link an {email} geschickt.", { email: email.trim() })}
                 </p>
-                <p className="text-xs text-zinc-500">Schau auch im Spam-Ordner nach.</p>
+                <p className="text-xs text-zinc-500">{tx("Schau auch im Spam-Ordner nach.")}</p>
                 <button
                   type="button"
                   onClick={() => sendLink()}
                   disabled={cooldown > 0}
                   className="text-xs text-zinc-400 transition-colors hover:text-gold disabled:opacity-50"
                 >
-                  {cooldown > 0 ? `Erneut senden in ${cooldown} s` : "Link erneut senden"}
+                  {cooldown > 0 ? tx("Erneut senden in {n} s", { n: cooldown }) : tx("Link erneut senden")}
                 </button>
               </motion.div>
             ) : (
@@ -171,7 +177,7 @@ export default function LoginCard({
                 className="mt-6 space-y-3 text-left"
               >
                 <label htmlFor="login-email" className="sr-only">
-                  E-Mail-Adresse
+                  {tx("E-Mail-Adresse")}
                 </label>
                 <input
                   ref={honeypot}
@@ -197,7 +203,7 @@ export default function LoginCard({
                     setEmail(e.target.value);
                     setError("");
                   }}
-                  placeholder="deine@mail.com"
+                  placeholder={tx("deine@mail.com")}
                   aria-invalid={error ? true : undefined}
                   className="w-full rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-center text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none"
                 />
@@ -213,7 +219,7 @@ export default function LoginCard({
                   <>
                     <div className="flex items-center gap-3 text-[11px] text-zinc-500">
                       <span className="h-px flex-1 bg-white/10" />
-                      oder
+                      {tx("oder")}
                       <span className="h-px flex-1 bg-white/10" />
                     </div>
                     <button
@@ -233,10 +239,14 @@ export default function LoginCard({
 
         {error && (
           <p role="alert" className="mt-3 text-xs leading-relaxed text-rose">
-            {error}
+            {tx(error)}
           </p>
         )}
       </div>
     </div>
+    <Link href="/" className="mt-8 text-sm text-zinc-500 hover:text-zinc-300">
+      {tx("← Zurück zur Startseite")}
+    </Link>
+    </>
   );
 }

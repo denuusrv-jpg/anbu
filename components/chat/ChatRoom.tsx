@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage, useTx } from "@/lib/LanguageContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -8,12 +9,18 @@ import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import type { RoomDetail, RoomMessage } from "@/lib/chatRooms";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" });
+const times = {
+  de: new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }),
+  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }),
+  ta: new Intl.DateTimeFormat("ta-IN", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }),
+};
 const POLL_MS = 3000;
 
 // Ein Chat: oben fixiert der Match-Steckbrief, darunter die Nachrichten, der Eisbrecher-Button und das Eingabefeld.
 // Neue Nachrichten werden alle paar Sekunden nachgeladen. Im Vorschau-Modus (sample) wird nichts gesendet.
 export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: RoomDetail }) {
+  const tx = useTx();
+  const { language } = useLanguage();
   const router = useRouter();
   const [detail, setDetail] = useState<RoomDetail | null>(sample ?? null);
   const [messages, setMessages] = useState<RoomMessage[]>(sample?.messages ?? []);
@@ -105,7 +112,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     const { ok, json } = await call(`/api/chats/${roomId}`, { body: value });
     setBusy(false);
     if (!ok) {
-      setNotice(json?.error ?? "Senden hat nicht geklappt.");
+      setNotice(tx(json?.error ?? "Senden hat nicht geklappt."));
       return;
     }
     stick.current = true;
@@ -124,7 +131,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     const { ok, json } = await call(`/api/chats/${roomId}/icebreaker`);
     setSparkBusy(false);
     if (!ok) {
-      setNotice(json?.error ?? "Der Impuls konnte nicht geholt werden.");
+      setNotice(tx(json?.error ?? "Der Impuls konnte nicht geholt werden."));
       return;
     }
     stick.current = true;
@@ -140,7 +147,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     const { ok } = await call(`/api/chats/${roomId}/leave`);
     setBusy(false);
     if (ok) router.push("/dashboard/chats");
-    else setNotice("Verlassen hat nicht geklappt.");
+    else setNotice(tx("Verlassen hat nicht geklappt."));
   }
 
   async function sendReport() {
@@ -153,7 +160,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     const { ok, json } = await call(`/api/chats/${roomId}/report`, { reason, note: reportNote });
     setBusy(false);
     if (ok) router.push("/dashboard/chats");
-    else setNotice(json?.error ?? "Die Meldung hat nicht geklappt.");
+    else setNotice(tx(json?.error ?? "Die Meldung hat nicht geklappt."));
   }
 
   async function feedback(value: "good" | "ok" | "bad") {
@@ -165,7 +172,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     return (
       <main className="relative isolate flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-white/80">
         <FlowingWaveBackground pulses={false} fixed />
-        Chat wird geladen …
+        {tx("Chat wird geladen …")}
       </main>
     );
   }
@@ -183,7 +190,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
         <header className="flex items-center justify-between gap-3 py-4">
           <div className="min-w-0">
             <Link href={sample ? "#" : "/dashboard/chats"} className="text-xs text-zinc-500 hover:text-zinc-300">
-              ← Chats
+              {tx("← Chats")}
             </Link>
             <h1 className="mt-1 truncate text-lg font-semibold text-zinc-50">
               {othersList.length === 0
@@ -192,7 +199,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                     <span key={m.label + i}>
                       {i > 0 && ", "}
                       {m.userId && !sample ? (
-                        <Link href={`/profil/${m.userId}`} className="underline-offset-2 hover:text-gold hover:underline" title="Profil ansehen">
+                        <Link href={`/profil/${m.userId}`} className="underline-offset-2 hover:text-gold hover:underline" title={tx("Profil ansehen")}>
                           {m.label}
                         </Link>
                       ) : (
@@ -202,15 +209,15 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                   ))}
             </h1>
             <p className="text-[11px] text-zinc-500">
-              {detail.room.kind === "duo" ? "Duo" : `Gruppe · ${detail.members.length} Personen`}
-              {detail.room.track === "business" ? " · Business" : ""}
+              {detail.room.kind === "duo" ? tx("Duo") : tx("Gruppe · {n} Personen", { n: detail.members.length })}
+              {detail.room.track === "business" ? tx(" · Business") : ""}
             </p>
           </div>
           {!confirmLeave ? (
             <div className="flex shrink-0 items-center gap-2">
               {!dissolved && (
                 <button type="button" onClick={() => setReporting((v) => !v)} className="text-xs text-zinc-500 transition-colors hover:text-rose">
-                  Melden
+                  {tx("Melden")}
                 </button>
               )}
             <button
@@ -218,16 +225,16 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
               onClick={() => setConfirmLeave(true)}
               className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs text-zinc-300 transition-colors hover:border-rose/40 hover:text-rose"
             >
-              {dissolved ? "Chat entfernen" : "Verlassen"}
+              {dissolved ? tx("Chat entfernen") : tx("Verlassen")}
             </button>
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-2 text-xs">
               <span className="max-w-[9rem] text-right leading-snug text-zinc-400">
-                {dissolved ? "Chat endgültig entfernen?" : "Wirklich verlassen? Der Platz wird frei."}
+                {dissolved ? tx("Chat endgültig entfernen?") : tx("Wirklich verlassen? Der Platz wird frei.")}
               </span>
               <button type="button" onClick={() => setConfirmLeave(false)} className="text-zinc-500 hover:text-zinc-300">
-                Nein
+                {tx("Nein")}
               </button>
               <button
                 type="button"
@@ -235,7 +242,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                 disabled={busy}
                 className="rounded-full border border-rose/40 bg-rose/10 px-3 py-1 font-semibold text-rose disabled:opacity-50"
               >
-                Ja
+                {tx("Ja")}
               </button>
             </div>
           )}
@@ -243,17 +250,17 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
 
         {reporting && !dissolved && (
           <div className="mb-3 rounded-2xl border border-rose/30 bg-rose/[0.06] px-4 py-3">
-            <p className="text-sm font-medium text-zinc-100">Was ist passiert?</p>
+            <p className="text-sm font-medium text-zinc-100">{tx("Was ist passiert?")}</p>
             <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
-              Wir lesen keine Nachrichten mit, ein kurzer Hinweis hilft uns. Du verlässt danach den Chat und wirst mit dieser Person nicht noch einmal zusammengebracht.
+              {tx("Wir lesen keine Nachrichten mit, ein kurzer Hinweis hilft uns. Du verlässt danach den Chat und wirst mit dieser Person nicht noch einmal zusammengebracht.")}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {[
-                ["unangenehm", "Unangenehm oder respektlos"],
-                ["belaestigung", "Belästigung"],
-                ["spam", "Spam oder Werbung"],
-                ["fake", "Fake-Profil"],
-                ["sonstiges", "Etwas anderes"],
+                ["unangenehm", tx("Unangenehm oder respektlos")],
+                ["belaestigung", tx("Belästigung")],
+                ["spam", tx("Spam oder Werbung")],
+                ["fake", tx("Fake-Profil")],
+                ["sonstiges", tx("Etwas anderes")],
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -270,16 +277,16 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
               value={reportNote}
               onChange={(e) => setReportNote(e.target.value.slice(0, 300))}
               rows={2}
-              placeholder="Kurzer Hinweis (optional)"
-              aria-label="Kurzer Hinweis zur Meldung"
+              placeholder={tx("Kurzer Hinweis (optional)")}
+              aria-label={tx("Kurzer Hinweis zur Meldung")}
               className="mt-2.5 w-full resize-none rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-xs text-white placeholder:text-white/40 focus:border-rose/50 focus:outline-none"
             />
             <div className="mt-2.5 flex items-center gap-3">
               <button type="button" disabled={!reason || busy} onClick={sendReport} className="rounded-full border border-rose/40 bg-rose/10 px-4 py-1.5 text-xs font-semibold text-rose disabled:opacity-40">
-                Melden und Chat verlassen
+                {tx("Melden und Chat verlassen")}
               </button>
               <button type="button" onClick={() => setReporting(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
-                Abbrechen
+                {tx("Abbrechen")}
               </button>
             </div>
           </div>
@@ -292,11 +299,11 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: EASE }}
             className="mb-3 rounded-2xl border border-gold/25 bg-gold/[0.06] px-4 py-3 backdrop-blur-xl"
-            aria-label="Match-Steckbrief"
+            aria-label={tx("Match-Steckbrief")}
           >
-            <p className="text-[10px] font-semibold tracking-wide text-gold uppercase">Warum ihr gematcht wurdet</p>
+            <p className="text-[10px] font-semibold tracking-wide text-gold uppercase">{tx("Warum ihr gematcht wurdet")}</p>
             <p className="mt-1 text-sm leading-relaxed text-zinc-200">{detail.steckbrief}</p>
-            <p className="mt-1.5 text-[10px] text-zinc-500">Dieser Steckbrief wird gelöscht, sobald der Chat endet.</p>
+            <p className="mt-1.5 text-[10px] text-zinc-500">{tx("Dieser Steckbrief wird gelöscht, sobald der Chat endet.")}</p>
           </motion.aside>
         )}
 
@@ -338,7 +345,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                     >
                       {m.body}
                     </div>
-                    <p className={`mt-0.5 px-1 text-[10px] text-zinc-600 ${m.mine ? "text-right" : ""}`}>{time.format(new Date(m.createdAt))}</p>
+                    <p className={`mt-0.5 px-1 text-[10px] text-zinc-600 ${m.mine ? "text-right" : ""}`}>{times[language].format(new Date(m.createdAt))}</p>
                   </div>
                 </motion.div>
               ),
@@ -350,12 +357,12 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
         {/* Feedback */}
         {askFeedback && (
           <div className="mb-2 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400">
-            <span>Wie fühlt sich dieser Chat an?</span>
+            <span>{tx("Wie fühlt sich dieser Chat an?")}</span>
             {(
               [
-                ["good", "Gut"],
-                ["ok", "Geht so"],
-                ["bad", "Nicht gut"],
+                ["good", tx("Gut")],
+                ["ok", tx("Geht so")],
+                ["bad", tx("Nicht gut")],
               ] as const
             ).map(([v, label]) => (
               <button
@@ -379,7 +386,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
         {/* Eingabe */}
         {dissolved ? (
           <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm text-zinc-400">
-            Dieser Chat ist beendet. Du kannst ihn oben entfernen, dann ist er endgültig gelöscht.
+            {tx("Dieser Chat ist beendet. Du kannst ihn oben entfernen, dann ist er endgültig gelöscht.")}
           </div>
         ) : (
           <div className="pb-4">
@@ -389,7 +396,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
               disabled={sparkBusy}
               className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-xs font-semibold text-gold transition-colors hover:bg-gold/20 disabled:opacity-60"
             >
-              ✨ {sparkBusy ? "Spark denkt nach …" : "Eisbrecher"}
+              ✨ {sparkBusy ? tx("Spark denkt nach …") : tx("Eisbrecher")}
             </button>
             <form onSubmit={send} className="flex items-end gap-2 rounded-2xl border border-white/10 bg-zinc-900/70 p-1.5 backdrop-blur-xl focus-within:border-gold/60">
               <textarea
@@ -402,14 +409,14 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                   }
                 }}
                 rows={1}
-                placeholder="Schreib eine Nachricht …"
-                aria-label="Nachricht"
+                placeholder={tx("Schreib eine Nachricht …")}
+                aria-label={tx("Nachricht")}
                 className="max-h-32 min-h-[2.5rem] flex-1 resize-none bg-transparent px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={!text.trim() || busy}
-                aria-label="Senden"
+                aria-label={tx("Senden")}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold text-zinc-950 transition hover:bg-gold-light active:scale-95 disabled:opacity-40"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">

@@ -3,6 +3,7 @@
 import { CUSTOM_PATTERN, type Option } from "@/lib/onboarding";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CustomEntry, INVALID_ENTRY } from "@/components/onboarding/ChoiceSelect";
+import { useTx } from "@/lib/LanguageContext";
 
 // Einfachauswahl mit eigener Eingabe: Chip antippen oder eigenen Text tippen und mit Enter übernehmen.
 // onSelect liefert die Id des Chips oder den eigenen Text.
@@ -24,6 +25,7 @@ export default function SingleChoice({
   draft?: string;
   onDraftChange?: (value: string) => void;
 }) {
+  const tx = useTx();
   const isCustom = Boolean(value) && !options.some((o) => o.id === value);
 
   function addCustom(text: string): string | null {
@@ -39,7 +41,7 @@ export default function SingleChoice({
       <ChipRow>
         {options.map((o) => (
           <Chip key={o.id} selected={value === o.id} onClick={() => onSelect(o.id, o.label)}>
-            {o.label}
+            {tx(o.label)}
           </Chip>
         ))}
         {isCustom && (

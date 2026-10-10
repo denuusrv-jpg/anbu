@@ -12,6 +12,9 @@ import type { PostView } from "@/lib/profileMedia";
 import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
+import LanguageSwitch from "@/components/LanguageSwitch";
+import { useLanguage, useTx } from "@/lib/LanguageContext";
+import type { Language } from "@/lib/translations";
 import { getBrowserClient } from "@/lib/supabase/client";
 import {
   ALL_HUBS,
@@ -63,6 +66,7 @@ export type HubProfile = {
   life_phase?: string | null;
   meet_frequency?: string | null;
   notify_matches?: boolean | null;
+  ui_language?: string | null;
 };
 
 export type HubStat = { id: string; label: string; count: number };
@@ -107,6 +111,8 @@ export default function HubDashboard({
   wishes: HubWish[];
 }) {
   const router = useRouter();
+  const tx = useTx();
+  const { language, setLanguage } = useLanguage();
   const [profile, setProfile] = useState(initial);
   const [editing, setEditing] = useState<"interests" | "vibes" | null>(null);
   const [draft, setDraft] = useState<Choice>({ ids: [], custom: [] });
@@ -125,7 +131,7 @@ export default function HubDashboard({
 
   const hubLabels = [profile.region, profile.second_region]
     .filter((h): h is string => Boolean(h))
-    .map((h) => ALL_HUBS.find((r) => r.id === h)?.label ?? h);
+    .map((h) => tx(ALL_HUBS.find((r) => r.id === h)?.label ?? h));
   const [setupBusiness, setSetupBusiness] = useState(false);
   const [editingPlace, setEditingPlace] = useState(false);
   const [placeText, setPlaceText] = useState("");
@@ -155,6 +161,25 @@ export default function HubDashboard({
     extras: profile.extras,
   });
   const lastError = useRef("");
+
+  // Sprache: Wer die Seite auf einem neuen Gerät öffnet, bekommt die im Konto gespeicherte Sprache
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("dspora-language") && initial.ui_language) setLanguage(initial.ui_language as Language);
+    } catch {
+      // ohne localStorage bleibt die Standardsprache
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function saveLanguage(next: Language) {
+    if (preview) return;
+    try {
+      await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language: next }) });
+    } catch {
+      // die Sprache gilt trotzdem auf diesem Gerät
+    }
+  }
   const hasProfile = Boolean(profile.profile);
   const name = profile.profile?.displayName;
 
@@ -180,13 +205,13 @@ export default function HubDashboard({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        lastError.current = data?.error ?? "Speichern hat nicht geklappt.";
+        lastError.current = tx(data?.error ?? "Speichern hat nicht geklappt.");
         setMessage(lastError.current);
         return false;
       }
       return true;
     } catch {
-      setMessage("Keine Verbindung. Bitte versuch es noch einmal.");
+      setMessage(tx("Keine Verbindung. Bitte versuch es noch einmal."));
       return false;
     } finally {
       setSaving(false);
@@ -236,7 +261,7 @@ export default function HubDashboard({
   async function checkPlace() {
     const value = placeText.trim();
     if (value.length < 2) {
-      setPlaceError("Bitte gib deinen Wohnort an.");
+      setPlaceError(tx("Bitte gib deinen Wohnort an."));
       return;
     }
     setPlaceError("");
@@ -249,9 +274,9 @@ export default function HubDashboard({
       });
       const data = await res.json();
       if (data?.place) setPlaceFound(data.place);
-      else setPlaceError("Diesen Ort konnte ich nicht zuordnen. Bitte gib die nächstgrößere Stadt an.");
+      else setPlaceError(tx("Diesen Ort konnte ich nicht zuordnen. Bitte gib die nächstgrößere Stadt an."));
     } catch {
-      setPlaceError("Keine Verbindung. Bitte versuch es noch einmal.");
+      setPlaceError(tx("Keine Verbindung. Bitte versuch es noch einmal."));
     }
   }
 
@@ -297,11 +322,11 @@ export default function HubDashboard({
     const min = num(ageDraft.min);
     const max = num(ageDraft.max);
     if ([age, min, max].some((n) => Number.isNaN(n) || n < MIN_AGE || n > MAX_AGE)) {
-      setMessage(`Bitte gib Zahlen zwischen ${MIN_AGE} und ${MAX_AGE} an.`);
+      setMessage(tx("Bitte gib Zahlen zwischen {min} und {max} an.", { min: MIN_AGE, max: MAX_AGE }));
       return;
     }
     if (min > max) {
-      setMessage("Altersspanne: „von“ darf nicht größer sein als „bis“.");
+      setMessage(tx("Altersspanne: „von“ darf nicht größer sein als „bis“."));
       return;
     }
     if (await patch({ age, ageMin: min, ageMax: max })) setProfile((p) => ({ ...p, age, age_min: min, age_max: max }));
@@ -325,7 +350,7 @@ export default function HubDashboard({
       setProfile((p) => ({ ...p, business: next }));
       return null;
     }
-    return lastError.current || "Speichern hat nicht geklappt.";
+    return lastError.current || tx("Speichern hat nicht geklappt.");
   }
 
   async function switchTrack(next: HubProfile["track"]) {
@@ -339,7 +364,7 @@ export default function HubDashboard({
       return;
     }
     if (!hasProfile) {
-      setMessage("Für den Business-Modus brauchst du ein Profil mit Namen. Lege es zuerst an.");
+      setMessage(tx("Für den Business-Modus brauchst du ein Profil mit Namen. Lege es zuerst an."));
       return;
     }
     if (!profile.business) {
@@ -351,7 +376,7 @@ export default function HubDashboard({
 
   async function activateBusiness(next: BusinessData): Promise<string | null> {
     const ok = await patch({ track: "business", business: next });
-    if (!ok) return lastError.current || "Speichern hat nicht geklappt.";
+    if (!ok) return lastError.current || tx("Speichern hat nicht geklappt.");
     setProfile((p) => ({ ...p, track: "business", mode: "profile", business: next }));
     setSetupBusiness(false);
     return null;
@@ -364,7 +389,7 @@ export default function HubDashboard({
       if (idea.length < 3) return;
       setWishes((list) => [{ id: String(Date.now()), wish: idea, created_at: new Date().toISOString() }, ...list]);
       setWishText("");
-      setWishMessage("Vorschau: nichts wurde gespeichert.");
+      setWishMessage(tx("Vorschau: nichts wurde gespeichert."));
       return;
     }
     const text = wishText.trim();
@@ -379,14 +404,14 @@ export default function HubDashboard({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setWishMessage(data?.error ?? "Das hat nicht geklappt.");
+        setWishMessage(tx(data?.error ?? "Das hat nicht geklappt."));
         return;
       }
       setWishes((list) => [{ id: String(Date.now()), wish: text, created_at: new Date().toISOString() }, ...list]);
       setWishText("");
-      setWishMessage("Danke! Deine Idee ist angekommen.");
+      setWishMessage(tx("Danke! Deine Idee ist angekommen."));
     } catch {
-      setWishMessage("Keine Verbindung. Bitte versuch es noch einmal.");
+      setWishMessage(tx("Keine Verbindung. Bitte versuch es noch einmal."));
     } finally {
       setWishBusy(false);
     }
@@ -405,7 +430,7 @@ export default function HubDashboard({
       router.push("/");
       router.refresh();
     } catch {
-      setDeleteError("Das Konto konnte nicht gelöscht werden. Bitte versuch es noch einmal.");
+      setDeleteError(tx("Das Konto konnte nicht gelöscht werden. Bitte versuch es noch einmal."));
       setDeleting(false);
     }
   }
@@ -423,14 +448,14 @@ export default function HubDashboard({
     try {
       const { error } = await getBrowserClient().auth.registerPasskey();
       if (error) {
-        setPasskeyMessage("Der Passkey konnte nicht angelegt werden.");
+        setPasskeyMessage(tx("Der Passkey konnte nicht angelegt werden."));
         return;
       }
       const { data } = await getBrowserClient().auth.passkey.list();
       setPasskeys(data ?? []);
-      setPasskeyMessage("Passkey hinzugefügt. Ab jetzt kannst du dich mit Face ID oder Touch ID anmelden.");
+      setPasskeyMessage(tx("Passkey hinzugefügt. Ab jetzt kannst du dich mit Face ID oder Touch ID anmelden."));
     } catch {
-      setPasskeyMessage("Der Passkey konnte nicht angelegt werden.");
+      setPasskeyMessage(tx("Der Passkey konnte nicht angelegt werden."));
     }
   }
 
@@ -444,23 +469,23 @@ export default function HubDashboard({
   const intentions = [
     {
       id: "community" as const,
-      label: "Privat",
+      label: tx("Privat"),
       text:
         active === "community"
           ? matchCount > 0
-            ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
-            : "Dein Hub bereitet passende Verbindungen vor"
-          : "Pausiert. Wechsle oben auf „Friends-Community“, um sie zu aktivieren.",
+            ? (matchCount === 1 ? tx("{n} aktiver Chat (höchstens 4)", { n: matchCount }) : tx("{n} aktive Chats (höchstens 4)", { n: matchCount }))
+            : tx("Dein Hub bereitet passende Verbindungen vor")
+          : tx("Pausiert. Wechsle oben auf „Friends-Community“, um sie zu aktivieren."),
     },
     {
       id: "business" as const,
-      label: "Business",
+      label: tx("Business"),
       text:
         active === "business"
           ? matchCount > 0
-            ? `${matchCount} aktive${matchCount === 1 ? "r Chat" : " Chats"} (höchstens 4)`
-            : "Dein Hub bereitet passende Business-Verbindungen vor"
-          : "Nicht aktiv. Wechsle oben auf „Business-Community“, um sie zu aktivieren.",
+            ? (matchCount === 1 ? tx("{n} aktiver Chat (höchstens 4)", { n: matchCount }) : tx("{n} aktive Chats (höchstens 4)", { n: matchCount }))
+            : tx("Dein Hub bereitet passende Business-Verbindungen vor")
+          : tx("Nicht aktiv. Wechsle oben auf „Business-Community“, um sie zu aktivieren."),
     },
   ];
 
@@ -473,19 +498,20 @@ export default function HubDashboard({
         {/* Kopf */}
         <header className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-gold uppercase">DSpora Profil</p>
+            <p className="text-xs font-semibold tracking-wide text-gold uppercase">{tx("DSpora Profil")}</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
-              {name ? `Hey ${name}` : "Willkommen"}
+              {name ? tx("Hey {name}", { name }) : tx("Willkommen")}
             </h1>
             <p className="mt-0.5 text-xs text-white/70">{email}</p>
           </div>
           <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+            <LanguageSwitch onChange={saveLanguage} />
             {isAdmin && (
               <Link
                 href="/admin"
                 className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold shadow-[0_0_24px_-8px_rgba(242,166,90,0.6)] backdrop-blur-md transition-colors hover:bg-gold/20"
               >
-                Admin Dashboard
+                {tx("Admin Dashboard")}
               </Link>
             )}
             <button
@@ -493,7 +519,7 @@ export default function HubDashboard({
               onClick={signOut}
               className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
             >
-              Abmelden
+              {tx("Abmelden")}
             </button>
           </div>
         </header>
@@ -517,12 +543,11 @@ export default function HubDashboard({
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-gold" />
               </span>
               <h2 className="text-lg font-semibold text-zinc-50">
-                {matchCount > 0 ? "Deine Matches warten" : "Dein Hub bereitet Matches vor"}
+                {matchCount > 0 ? tx("Deine Matches warten") : tx("Dein Hub bereitet Matches vor")}
               </h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Wir prüfen die Anmeldungen und öffnen deinen Hub, sobald genug passende Leute dabei sind. Jedes Match
-              schauen wir uns vorher an. Du musst nichts weiter tun.
+              {tx("Wir prüfen die Anmeldungen und öffnen deinen Hub, sobald genug passende Leute dabei sind. Jedes Match schauen wir uns vorher an. Du musst nichts weiter tun.")}
             </p>
 
             {/* Getrennt nach Intention */}
@@ -546,22 +571,22 @@ export default function HubDashboard({
 
             <ul className="mt-5 space-y-3 text-sm">
               <li className="flex items-center gap-2.5 text-zinc-200">
-                <CheckIcon className="h-4 w-4 text-gold" /> Profil und Antworten sind gespeichert
+                <CheckIcon className="h-4 w-4 text-gold" /> {tx("Profil und Antworten sind gespeichert")}
               </li>
               <li className="text-zinc-200">
                 <div className="flex items-center gap-2.5">
                   <CheckIcon className="h-4 w-4 text-gold" />
-                  {hubLabels.length > 1 ? "Hubs" : "Hub"} {hubLabels.join(" + ")}
+                  {hubLabels.length > 1 ? tx("Hubs") : tx("Hub")} {hubLabels.join(" + ")}
                   {profile.city ? ` · ${profile.city}` : ""}
                 </div>
                 {hubs?.map((h) => (
                   <p key={h.id} className="mt-1.5 pl-[26px] text-xs text-zinc-500">
-                    {h.count} {h.count === 1 ? "Anmeldung" : "Anmeldungen"} im Hub {h.label}
+                    {h.count === 1 ? tx("{n} Anmeldung im Hub {hub}", { n: h.count, hub: tx(h.label) }) : tx("{n} Anmeldungen im Hub {hub}", { n: h.count, hub: tx(h.label) })}
                   </p>
                 ))}
               </li>
               <li className="flex items-center gap-2.5 text-zinc-400">
-                <span className="h-4 w-4 rounded-full border border-dashed border-zinc-600" /> Matching: in Vorbereitung
+                <span className="h-4 w-4 rounded-full border border-dashed border-zinc-600" /> {tx("Matching: in Vorbereitung")}
               </li>
             </ul>
           </div>
@@ -594,14 +619,14 @@ export default function HubDashboard({
           transition={{ duration: 0.5, ease: EASE, delay: 0.08 }}
           className={card}
         >
-          <h2 className="text-lg font-semibold text-zinc-50">Dein Profil</h2>
+          <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Profil")}</h2>
 
           {/* Modus-Switch */}
           <div className="mt-5">
-            <p className="text-sm font-medium text-zinc-100">Modus</p>
+            <p className="text-sm font-medium text-zinc-100">{tx("Modus")}</p>
             <div
               role="radiogroup"
-              aria-label="Modus"
+              aria-label={tx("Modus")}
               className="relative mt-2.5 grid grid-cols-2 rounded-full border border-white/10 bg-zinc-950/60 p-1"
             >
               {(
@@ -630,7 +655,7 @@ export default function HubDashboard({
                         transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       />
                     )}
-                    {m.label}
+                    {tx(m.label)}
                   </button>
                 );
               })}
@@ -638,14 +663,14 @@ export default function HubDashboard({
             {setupBusiness && (
               <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/[0.05] p-4">
                 <p className="text-xs leading-relaxed text-zinc-400">
-                  Für den Business-Modus brauchen wir noch ein paar Angaben und dein Light-CV.
+                  {tx("Für den Business-Modus brauchen wir noch ein paar Angaben und dein Light-CV.")}
                 </p>
                 <BusinessEditor
                   business={EMPTY_BUSINESS}
                   onSave={activateBusiness}
                   startEditing
                   onCancel={() => setSetupBusiness(false)}
-                  title="Business-Profil einrichten"
+                  title={tx("Business-Profil einrichten")}
                 />
               </div>
             )}
@@ -654,13 +679,13 @@ export default function HubDashboard({
           {/* Wohnort, Hub und Entfernung */}
           <div className="mt-6 border-t border-white/10 pt-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-100">Art der Freundschaft und Wohnort</p>
+              <p className="text-sm font-medium text-zinc-100">{tx("Art der Freundschaft und Wohnort")}</p>
             </div>
-            <div className="mt-3" role="radiogroup" aria-label="Art der Freundschaft">
+            <div className="mt-3" role="radiogroup" aria-label={tx("Art der Freundschaft")}>
               <ChipRow>
                 {MEET_MODES.map((m) => (
                   <Chip key={m.id} selected={profile.meet_mode === m.id} onClick={() => changeMeetMode(m.id as "online" | "activities")}>
-                    {m.label}
+                    {tx(m.label)}
                   </Chip>
                 ))}
               </ChipRow>
@@ -669,11 +694,11 @@ export default function HubDashboard({
               <div className="mt-4">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-zinc-400">
-                    {profile.city ? `${profile.city} · ` : ""}Hub {hubLabels.join(" + ") || "–"}
+                    {profile.city ? `${profile.city} · ` : ""}{tx("Hub")} {hubLabels.join(" + ") || "–"}
                   </p>
                   {!editingPlace && (
                     <button type="button" onClick={() => { setEditingPlace(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
-                      Ort ändern
+                      {tx("Ort ändern")}
                     </button>
                   )}
                 </div>
@@ -684,44 +709,44 @@ export default function HubDashboard({
                         value={placeText}
                         onChange={(e) => { setPlaceText(e.target.value); setPlaceFound(null); setPlaceError(""); }}
                         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); checkPlace(); } }}
-                        placeholder="Dein Wohnort"
-                        aria-label="Dein Wohnort"
+                        placeholder={tx("Dein Wohnort")}
+                        aria-label={tx("Dein Wohnort")}
                         className={fieldClass}
                       />
                       <button type="button" onClick={checkPlace} className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold">
-                        Prüfen
+                        {tx("Prüfen")}
                       </button>
                     </div>
                     {placeError && <p role="alert" className="text-xs text-rose">{placeError}</p>}
                     {placeFound && (
                       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-3.5 py-2.5 text-xs text-zinc-200">
-                        <span>„{placeFound.name}“ gehört zum Hub {placeFound.hubLabel}.</span>
+                        <span>{tx("„{name}“ gehört zum Hub {hub}.", { name: placeFound.name, hub: tx(placeFound.hubLabel) })}</span>
                         <button type="button" onClick={savePlace} className="rounded-full bg-gold px-3 py-1 font-semibold text-zinc-950">
-                          {saving ? "Speichere …" : "Übernehmen"}
+                          {saving ? tx("Speichere …") : tx("Übernehmen")}
                         </button>
                       </div>
                     )}
                     <button type="button" onClick={() => setEditingPlace(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
-                      Abbrechen
+                      {tx("Abbrechen")}
                     </button>
                   </div>
                 )}
-                <p className="mt-4 text-xs text-zinc-400">Wie weit darf jemand maximal entfernt wohnen? (Fahrzeit mit dem Auto)</p>
-                <div className="mt-2" role="radiogroup" aria-label="Maximale Entfernung">
+                <p className="mt-4 text-xs text-zinc-400">{tx("Wie weit darf jemand maximal entfernt wohnen? (Fahrzeit mit dem Auto)")}</p>
+                <div className="mt-2" role="radiogroup" aria-label={tx("Maximale Entfernung")}>
                   <ChipRow>
                     {TRAVEL_OPTIONS.map((o) => (
                       <Chip key={o.minutes} selected={(profile.travel_minutes ?? 0) === o.minutes} onClick={() => changeTravel(o.minutes)}>
-                        {o.label}
+                        {tx(o.label)}
                       </Chip>
                     ))}
                   </ChipRow>
                 </div>
-                <p className="mt-4 text-xs text-zinc-400">Wie oft würdest du dich realistisch treffen?</p>
-                <div className="mt-2" role="radiogroup" aria-label="Treffhäufigkeit">
+                <p className="mt-4 text-xs text-zinc-400">{tx("Wie oft würdest du dich realistisch treffen?")}</p>
+                <div className="mt-2" role="radiogroup" aria-label={tx("Treffhäufigkeit")}>
                   <ChipRow>
                     {MEET_FREQUENCIES.map((f) => (
                       <Chip key={f.id} selected={profile.meet_frequency === f.id} onClick={() => changeFrequency(f.id)}>
-                        {f.label}
+                        {tx(f.label)}
                       </Chip>
                     ))}
                   </ChipRow>
@@ -732,32 +757,32 @@ export default function HubDashboard({
 
           {/* Alter */}
           <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">Alter und gesuchte Altersspanne</p>
+            <p className="text-sm font-medium text-zinc-100">{tx("Alter und gesuchte Altersspanne")}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <input
                 value={ageDraft.age || (profile.age ? String(profile.age) : "")}
                 onChange={(e) => setAgeDraft((d) => ({ ...d, age: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
                 inputMode="numeric"
-                aria-label="Dein Alter"
-                placeholder="Alter"
+                aria-label={tx("Dein Alter")}
+                placeholder={tx("Alter")}
                 className="w-20 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
               />
-              <span className="text-xs text-zinc-500">Gesucht von</span>
+              <span className="text-xs text-zinc-500">{tx("Gesucht von")}</span>
               <input
                 value={ageDraft.min || (profile.age_min ? String(profile.age_min) : "")}
                 onChange={(e) => setAgeDraft((d) => ({ ...d, min: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
                 inputMode="numeric"
-                aria-label="Gesucht ab"
-                placeholder="von"
+                aria-label={tx("Gesucht ab")}
+                placeholder={tx("von")}
                 className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
               />
-              <span className="text-xs text-zinc-500">bis</span>
+              <span className="text-xs text-zinc-500">{tx("bis")}</span>
               <input
                 value={ageDraft.max || (profile.age_max ? String(profile.age_max) : "")}
                 onChange={(e) => setAgeDraft((d) => ({ ...d, max: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
                 inputMode="numeric"
-                aria-label="Gesucht bis"
-                placeholder="bis"
+                aria-label={tx("Gesucht bis")}
+                placeholder={tx("bis")}
                 className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
               />
               <button
@@ -768,7 +793,7 @@ export default function HubDashboard({
                 }}
                 className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold"
               >
-                {saving ? "Speichere …" : "Speichern"}
+                {saving ? tx("Speichere …") : tx("Speichern")}
               </button>
             </div>
           </div>
@@ -776,10 +801,10 @@ export default function HubDashboard({
           {/* Sprachen und Lebensphase */}
           <div className="mt-6 border-t border-white/10 pt-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-100">Sprachen</p>
+              <p className="text-sm font-medium text-zinc-100">{tx("Sprachen")}</p>
               {!editingLanguages && (
                 <button type="button" onClick={() => { setLangDraft(profile.languages ?? { ids: [], custom: [] }); setEditingLanguages(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
-                  Bearbeiten
+                  {tx("Bearbeiten")}
                 </button>
               )}
             </div>
@@ -791,9 +816,9 @@ export default function HubDashboard({
                   onChange={setLangDraft}
                   onConfirm={saveLanguages}
                   maxTotal={5}
-                  customPlaceholder="Eine andere Sprache? Eigene hinzufügen"
-                  confirmLabel={saving ? "Speichere …" : "Speichern"}
-                  extra={<button type="button" onClick={() => setEditingLanguages(false)} className="text-xs text-zinc-500 hover:text-zinc-300">Abbrechen</button>}
+                  customPlaceholder={tx("Eine andere Sprache? Eigene hinzufügen")}
+                  confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
+                  extra={<button type="button" onClick={() => setEditingLanguages(false)} className="text-xs text-zinc-500 hover:text-zinc-300">{tx("Abbrechen")}</button>}
                 />
               </div>
             ) : (
@@ -807,12 +832,12 @@ export default function HubDashboard({
             )}
             {profile.track !== "business" && (
               <>
-                <p className="mt-5 text-sm font-medium text-zinc-100">Lebensphase</p>
-                <div className="mt-3" role="radiogroup" aria-label="Lebensphase">
+                <p className="mt-5 text-sm font-medium text-zinc-100">{tx("Lebensphase")}</p>
+                <div className="mt-3" role="radiogroup" aria-label={tx("Lebensphase")}>
                   <ChipRow>
                     {PHASES.map((ph) => (
                       <Chip key={ph.id} selected={profile.life_phase === ph.id} onClick={() => changePhase(ph.id)}>
-                        {ph.label}
+                        {tx(ph.label)}
                       </Chip>
                     ))}
                   </ChipRow>
@@ -823,33 +848,33 @@ export default function HubDashboard({
 
           {/* Geschlecht und Wunsch */}
           <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">Geschlecht</p>
-            <p className="mt-0.5 text-xs text-zinc-500">Es zählt, wie du dich selbst identifizierst.</p>
-            <div className="mt-3" role="radiogroup" aria-label="Geschlecht">
+            <p className="text-sm font-medium text-zinc-100">{tx("Geschlecht")}</p>
+            <p className="mt-0.5 text-xs text-zinc-500">{tx("Es zählt, wie du dich selbst identifizierst.")}</p>
+            <div className="mt-3" role="radiogroup" aria-label={tx("Geschlecht")}>
               <ChipRow>
                 {GENDER_CHOICES.map((g) => (
                   <Chip key={g.id} selected={profile.gender === g.id} onClick={() => changeGender(g.id)}>
-                    {g.label}
+                    {tx(g.label)}
                   </Chip>
                 ))}
                 {profile.gender && !GENDER_CHOICES.some((g) => g.id === profile.gender) && (
                   <Chip selected onClick={() => {}}>
-                    {profile.gender === "nonbinary" ? "Nicht-binär / divers" : profile.gender === "na" ? "Keine Angabe" : profile.gender}
+                    {profile.gender === "nonbinary" ? tx("Nicht-binär / divers") : profile.gender === "na" ? tx("Keine Angabe") : profile.gender}
                   </Chip>
                 )}
               </ChipRow>
             </div>
-            <p className="mt-5 text-sm font-medium text-zinc-100">Mit wem möchtest du dich verbinden?</p>
-            <div className="mt-3" role="radiogroup" aria-label="Verbinden mit">
+            <p className="mt-5 text-sm font-medium text-zinc-100">{tx("Mit wem möchtest du dich verbinden?")}</p>
+            <div className="mt-3" role="radiogroup" aria-label={tx("Verbinden mit")}>
               <ChipRow>
                 {(profile.group_size === "duo" ? DUO_WISHES : GROUP_WISHES).map((g) => (
                   <Chip key={g.id} selected={profile.match_gender === g.id} onClick={() => changeMatchGender(g.id)}>
-                    {g.label}
+                    {tx(g.label)}
                   </Chip>
                 ))}
                 {profile.match_gender === "other" && (
                   <Chip selected onClick={() => {}}>
-                    Anderes
+                    {tx("Anderes")}
                   </Chip>
                 )}
               </ChipRow>
@@ -858,8 +883,8 @@ export default function HubDashboard({
 
           {/* Gruppengröße */}
           <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">Gewünschte Gruppengröße</p>
-            <div className="mt-3" role="radiogroup" aria-label="Gruppengröße">
+            <p className="text-sm font-medium text-zinc-100">{tx("Gewünschte Gruppengröße")}</p>
+            <div className="mt-3" role="radiogroup" aria-label={tx("Gruppengröße")}>
               <ChipRow>
                 {GROUP_SIZES.map((g) => (
                   <Chip
@@ -867,7 +892,7 @@ export default function HubDashboard({
                     selected={profile.group_size === g.id}
                     onClick={() => changeGroupSize(g.id)}
                   >
-                    {g.label}
+                    {tx(g.label)}
                   </Chip>
                 ))}
               </ChipRow>
@@ -887,7 +912,7 @@ export default function HubDashboard({
           ).map(({ key, title, options }) => (
             <div key={key} className="mt-6 border-t border-white/10 pt-5">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-zinc-100">{title}</p>
+                <p className="text-sm font-medium text-zinc-100">{tx(title)}</p>
                 {editing !== key && (
                   <button
                     type="button"
@@ -898,7 +923,7 @@ export default function HubDashboard({
                     }}
                     className="text-xs text-zinc-400 transition-colors hover:text-gold"
                   >
-                    Bearbeiten
+                    {tx("Bearbeiten")}
                   </button>
                 )}
               </div>
@@ -918,17 +943,17 @@ export default function HubDashboard({
                       value={draft}
                       onChange={setDraft}
                       onConfirm={saveEdit}
-                      customPlaceholder={key === "interests" ? "Eigenes hinzufügen" : "Eigenen Vibe hinzufügen"}
+                      customPlaceholder={key === "interests" ? tx("Eigenes hinzufügen") : tx("Eigenen Vibe hinzufügen")}
                       maxTotal={key === "interests" ? MAX_INTERESTS : MAX_VIBES}
                       minTotal={key === "interests" ? MIN_INTERESTS : 1}
-                      confirmLabel={saving ? "Speichere …" : "Speichern"}
+                      confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
                       extra={
                         <button
                           type="button"
                           onClick={() => setEditing(null)}
                           className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
                         >
-                          Abbrechen
+                          {tx("Abbrechen")}
                         </button>
                       }
                     />
@@ -942,7 +967,7 @@ export default function HubDashboard({
                     className="mt-3"
                   >
                     <ChipRow>
-                      {choiceLabels(profile[key], options).map((label) => (
+                      {choiceLabels(profile[key], options).map((label) => tx(label)).map((label) => (
                         <span
                           key={label}
                           className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200"
@@ -973,10 +998,9 @@ export default function HubDashboard({
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-zinc-50">Deine Chats</h2>
+              <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Chats")}</h2>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                Du kannst höchstens vier Chats gleichzeitig führen, damit jedes Gespräch echten Fokus bekommt. Verlässt du einen
-                Chat, wird ein Platz für ein neues Match frei.
+                {tx("Du kannst höchstens vier Chats gleichzeitig führen, damit jedes Gespräch echten Fokus bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.")}
               </p>
             </div>
             <div className="shrink-0 text-right">
@@ -985,7 +1009,7 @@ export default function HubDashboard({
                   <span key={i} className={`h-2 w-5 rounded-full ${i < matchCount ? "bg-gold" : "bg-white/10"}`} />
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-zinc-500">{matchCount} von 4</p>
+              <p className="mt-1 text-[11px] text-zinc-500">{tx("{n} von 4", { n: matchCount })}</p>
             </div>
           </div>
           <Link
@@ -994,7 +1018,7 @@ export default function HubDashboard({
           >
             Zu den Chats
             {unreadCount > 0 && (
-              <span className="rounded-full bg-zinc-950/80 px-2 py-0.5 text-[11px] text-gold">{unreadCount} neu</span>
+              <span className="rounded-full bg-zinc-950/80 px-2 py-0.5 text-[11px] text-gold">{tx("{n} neu", { n: unreadCount })}</span>
             )}
           </Link>
         </motion.section>
@@ -1006,28 +1030,26 @@ export default function HubDashboard({
           transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
           className={card}
         >
-          <h2 className="text-lg font-semibold text-zinc-50">Dein Steckbrief</h2>
+          <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Steckbrief")}</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            Das weiß DSpora aktuell über dich. So kann die KI dich immer auf dem neuesten Stand ansprechen. Erzähl ihr
-            jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen. Gefragt wird sie auch im Gespräch
-            („Zeig mir meinen Steckbrief“).
+            {tx("Das weiß DSpora aktuell über dich. So kann die KI dich immer auf dem neuesten Stand ansprechen. Erzähl ihr jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen. Gefragt wird sie auch im Gespräch („Zeig mir meinen Steckbrief“).")}
           </p>
 
           {steckbrief.lines.length > 0 && (
             <dl className="mt-4 space-y-1.5 text-sm">
               {steckbrief.lines.map((l) => (
                 <div key={l.label} className="flex gap-3">
-                  <dt className="w-40 shrink-0 text-zinc-500">{l.label}</dt>
-                  <dd className="min-w-0 text-zinc-200">{l.value}</dd>
+                  <dt className="w-40 shrink-0 text-zinc-500">{tx(l.label)}</dt>
+                  <dd className="min-w-0 text-zinc-200">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
                 </div>
               ))}
             </dl>
           )}
 
           <div className="mt-5 border-t border-white/10 pt-4">
-            <p className="text-sm font-medium text-zinc-100">Das hast du erzählt</p>
+            <p className="text-sm font-medium text-zinc-100">{tx("Das hast du erzählt")}</p>
             {steckbrief.facts.length === 0 ? (
-              <p className="mt-2 text-xs text-zinc-500">Noch nichts. Im Gespräch lernt die KI dich besser kennen.</p>
+              <p className="mt-2 text-xs text-zinc-500">{tx("Noch nichts. Im Gespräch lernt die KI dich besser kennen.")}</p>
             ) : (
               <ul className="mt-3 space-y-2">
                 <AnimatePresence initial={false}>
@@ -1048,8 +1070,8 @@ export default function HubDashboard({
                         type="button"
                         onClick={() => removeFact(f)}
                         disabled={saving}
-                        aria-label="Diese Angabe entfernen"
-                        title="Entfernen"
+                        aria-label={tx("Diese Angabe entfernen")}
+                        title={tx("Entfernen")}
                         className="shrink-0 text-lg leading-none text-zinc-500 transition-colors hover:text-rose disabled:opacity-50"
                       >
                         ×
@@ -1065,7 +1087,7 @@ export default function HubDashboard({
             href={preview ? "#" : "/onboarding?talk=1"}
             className="cta-premium mt-5 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
           >
-            Mit der KI sprechen
+            {tx("Mit der KI sprechen")}
           </Link>
         </motion.section>
 
@@ -1076,17 +1098,17 @@ export default function HubDashboard({
           transition={{ duration: 0.5, ease: EASE, delay: 0.12 }}
           className={card}
         >
-          <h2 className="text-lg font-semibold text-zinc-50">Deine Ideen für DSpora</h2>
+          <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Ideen für DSpora")}</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            Was wünschst du dir? Welche Features sollten wir unbedingt einbauen? Wir lesen jede Idee.
+            {tx("Was wünschst du dir? Welche Features sollten wir unbedingt einbauen? Wir lesen jede Idee.")}
           </p>
           <form onSubmit={submitWish} className="mt-4 space-y-2.5">
             <textarea
               value={wishText}
               onChange={(e) => setWishText(e.target.value.slice(0, 1500))}
               rows={3}
-              placeholder="Meine Idee …"
-              aria-label="Idee für DSpora"
+              placeholder={tx("Meine Idee …")}
+              aria-label={tx("Idee für DSpora")}
               className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-3">
@@ -1096,7 +1118,7 @@ export default function HubDashboard({
                 disabled={wishBusy || wishText.trim().length < 3}
                 className="cta-premium rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-sm font-semibold text-zinc-950 transition-opacity disabled:opacity-40"
               >
-                {wishBusy ? "Sende …" : "Idee senden"}
+                {wishBusy ? tx("Sende …") : tx("Idee senden")}
               </button>
             </div>
           </form>
@@ -1106,7 +1128,7 @@ export default function HubDashboard({
                 <li key={w.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-200">{w.wish}</p>
                   <p className="mt-1 text-[11px] text-zinc-500">
-                    {new Date(w.created_at).toLocaleDateString("de-DE", { dateStyle: "medium" })}
+                    {new Date(w.created_at).toLocaleDateString(language === "ta" ? "ta-IN" : language === "en" ? "en-GB" : "de-DE", { dateStyle: "medium" })}
                   </p>
                 </li>
               ))}
@@ -1122,10 +1144,9 @@ export default function HubDashboard({
             transition={{ duration: 0.5, ease: EASE, delay: 0.16 }}
             className={card}
           >
-            <h2 className="text-lg font-semibold text-zinc-50">Schneller anmelden</h2>
+            <h2 className="text-lg font-semibold text-zinc-50">{tx("Schneller anmelden")}</h2>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-              Mit einem Passkey meldest du dich per Face ID, Touch ID oder Schlüsselbund an. Ein Passwort gibt es bei
-              DSpora nicht.
+              {tx("Mit einem Passkey meldest du dich per Face ID, Touch ID oder Schlüsselbund an. Ein Passwort gibt es bei DSpora nicht.")}
             </p>
             {passkeys && passkeys.length > 0 && (
               <ul className="mt-4 space-y-2">
@@ -1137,7 +1158,7 @@ export default function HubDashboard({
                     <span>
                       {p.friendly_name || "Passkey"}
                       <span className="ml-2 text-xs text-zinc-500">
-                        {new Date(p.created_at).toLocaleDateString("de-DE")}
+                        {new Date(p.created_at).toLocaleDateString(language === "ta" ? "ta-IN" : language === "en" ? "en-GB" : "de-DE")}
                       </span>
                     </span>
                     <button
@@ -1145,14 +1166,14 @@ export default function HubDashboard({
                       onClick={() => removePasskey(p.id)}
                       className="text-xs text-zinc-500 transition-colors hover:text-rose"
                     >
-                      Entfernen
+                      {tx("Entfernen")}
                     </button>
                   </li>
                 ))}
               </ul>
             )}
             <div className="mt-4">
-              <Chip onClick={addPasskey}>Passkey hinzufügen</Chip>
+              <Chip onClick={addPasskey}>{tx("Passkey hinzufügen")}</Chip>
             </div>
             {passkeyMessage && (
               <p role="status" className="mt-3 text-xs text-zinc-400">
@@ -1164,7 +1185,7 @@ export default function HubDashboard({
 
         {/* Benachrichtigungen */}
         <section className={card}>
-          <h2 className="text-sm font-semibold text-zinc-100">Benachrichtigungen</h2>
+          <h2 className="text-sm font-semibold text-zinc-100">{tx("Benachrichtigungen")}</h2>
           <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
             <input
               type="checkbox"
@@ -1173,32 +1194,31 @@ export default function HubDashboard({
               className="mt-0.5 h-4 w-4 accent-[#f2a65a]"
             />
             <span>
-              E-Mail, wenn ein neuer Chat auf dich wartet
-              <span className="mt-0.5 block text-xs text-zinc-500">Die Mail enthält keine Angaben zu deinem Match, nur einen Link in dein Profil.</span>
+              {tx("E-Mail, wenn ein neuer Chat auf dich wartet")}
+              <span className="mt-0.5 block text-xs text-zinc-500">{tx("Die Mail enthält keine Angaben zu deinem Match, nur einen Link in dein Profil.")}</span>
             </span>
           </label>
         </section>
 
         {/* Konto löschen (Soft-Delete, 30 Tage) */}
         <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">
-          <h2 className="text-sm font-semibold text-zinc-300">Konto löschen</h2>
+          <h2 className="text-sm font-semibold text-zinc-300">{tx("Konto löschen")}</h2>
           {!confirmDelete ? (
             <>
               <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                Dein Konto wird sofort gesperrt. Deine Daten bleiben noch 30 Tage gespeichert, falls du es dir anders
-                überlegst oder Hilfe brauchst. Danach werden sie endgültig gelöscht.
+                {tx("Dein Konto wird sofort gesperrt. Deine Daten bleiben noch 30 Tage gespeichert, falls du es dir anders überlegst oder Hilfe brauchst. Danach werden sie endgültig gelöscht.")}
               </p>
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 className="mt-4 rounded-full border border-white/10 px-4 py-1.5 text-xs text-zinc-400 transition-colors hover:border-rose/50 hover:text-rose"
               >
-                Konto löschen …
+                {tx("Konto löschen …")}
               </button>
             </>
           ) : (
             <div className="mt-3 space-y-3">
-              <p className="text-sm leading-relaxed text-zinc-300">Möchtest du dein Konto wirklich löschen?</p>
+              <p className="text-sm leading-relaxed text-zinc-300">{tx("Möchtest du dein Konto wirklich löschen?")}</p>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -1206,14 +1226,14 @@ export default function HubDashboard({
                   disabled={deleting}
                   className="rounded-full bg-rose/90 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  {deleting ? "Lösche …" : "Ja, Konto löschen"}
+                  {deleting ? tx("Lösche …") : tx("Ja, Konto löschen")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(false)}
                   className="text-xs text-zinc-400 transition-colors hover:text-zinc-200"
                 >
-                  Abbrechen
+                  {tx("Abbrechen")}
                 </button>
               </div>
               {deleteError && (
@@ -1227,10 +1247,10 @@ export default function HubDashboard({
 
         <footer className="flex items-center justify-between px-1 pt-2 text-xs text-white/70">
           <Link href="/onboarding" className="transition-colors hover:text-white">
-            Chat erneut durchspielen
+            {tx("Chat erneut durchspielen")}
           </Link>
           <Link href="/" className="transition-colors hover:text-white">
-            Zur Startseite
+            {tx("Zur Startseite")}
           </Link>
         </footer>
       </div>

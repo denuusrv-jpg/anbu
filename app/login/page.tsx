@@ -1,4 +1,3 @@
-import Link from "next/link";
 import LoginCard from "@/components/LoginCard";
 import { safeNextPath } from "@/lib/supabase/config";
 
@@ -23,9 +22,6 @@ export default async function Login({
             : undefined
         }
       />
-      <Link href="/" className="mt-8 text-sm text-zinc-500 hover:text-zinc-300">
-        ← Zurück zur Startseite
-      </Link>
     </main>
   );
 }

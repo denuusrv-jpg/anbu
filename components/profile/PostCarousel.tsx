@@ -1,9 +1,11 @@
 "use client";
 
+import { useTx } from "@/lib/LanguageContext";
 import { useRef, useState } from "react";
 
 // Beitrag mit mehreren Bildern: wischen, Pfeile oder Punkte
 export default function PostCarousel({ slides, alt }: { slides: string[]; alt: string }) {
+  const tx = useTx();
   const [index, setIndex] = useState(0);
   const touch = useRef<number | null>(null);
   const go = (next: number) => setIndex(Math.max(0, Math.min(slides.length - 1, next)));
@@ -25,12 +27,12 @@ export default function PostCarousel({ slides, alt }: { slides: string[]; alt: s
       {slides.length > 1 && (
         <>
           {index > 0 && (
-            <button type="button" onClick={() => go(index - 1)} aria-label="Vorheriges Bild" className="absolute top-1/2 left-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm">
+            <button type="button" onClick={() => go(index - 1)} aria-label={tx("Vorheriges Bild")} className="absolute top-1/2 left-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm">
               ‹
             </button>
           )}
           {index < slides.length - 1 && (
-            <button type="button" onClick={() => go(index + 1)} aria-label="Nächstes Bild" className="absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm">
+            <button type="button" onClick={() => go(index + 1)} aria-label={tx("Nächstes Bild")} className="absolute top-1/2 right-2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm">
               ›
             </button>
           )}

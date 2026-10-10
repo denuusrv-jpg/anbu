@@ -1,5 +1,6 @@
 "use client";
 
+import { useTx } from "@/lib/LanguageContext";
 import { useState } from "react";
 import {
   ACHIEVEMENT_MAX,
@@ -23,6 +24,7 @@ export function LightCvFields({
   value: LightCv;
   onChange: (next: LightCv) => void;
 }) {
+  const tx = useTx();
   const achievement = (i: number) => value.achievements[i] ?? "";
   const link = (i: number) => value.links[i] ?? "";
 
@@ -38,12 +40,12 @@ export function LightCvFields({
         <input
           value={value.expertise ?? ""}
           onChange={(e) => onChange({ ...value, expertise: e.target.value.slice(0, EXPERTISE_MAX) })}
-          placeholder="Worin bist du richtig gut? z. B. Produktstrategie, Fullstack, Vertrieb"
+          placeholder={tx("Worin bist du richtig gut? z. B. Produktstrategie, Fullstack, Vertrieb")}
           className={fieldClass}
         />
       </Field>
 
-      <Field label="Deine Top-3-Erfolge" hint="kurz, optional">
+      <Field label="Deine Top-3-Erfolge" hint={tx("kurz, optional")}>
         <div className="space-y-2">
           {Array.from({ length: MAX_ACHIEVEMENTS }, (_, i) => (
             <input
@@ -65,7 +67,7 @@ export function LightCvFields({
         </div>
       </Field>
 
-      <Field label="Links" hint="Portfolio, GitHub, Website, optional">
+      <Field label="Links" hint={tx("Portfolio, GitHub, Website, optional")}>
         <div className="space-y-2">
           {Array.from({ length: MAX_LINKS }, (_, i) => (
             <input
@@ -100,6 +102,7 @@ export function cleanCv(cv: LightCv): { cv: LightCv; error?: string } {
 
 // Light-CV als Schritt im Chat
 export function LightCvForm({ onSubmit }: { onSubmit: (cv: LightCv) => void }) {
+  const tx = useTx();
   const [cv, setCv] = useState<LightCv>(EMPTY_CV);
   const [error, setError] = useState("");
 
@@ -129,7 +132,7 @@ export function LightCvForm({ onSubmit }: { onSubmit: (cv: LightCv) => void }) {
         </p>
       )}
       <div className="sticky bottom-0 -mx-1 flex justify-end bg-gradient-to-t from-zinc-950 via-zinc-950/85 to-transparent px-1 pt-4 pb-1">
-        <GoldButton type="submit">Weiter</GoldButton>
+        <GoldButton type="submit">{tx("Weiter")}</GoldButton>
       </div>
     </form>
   );

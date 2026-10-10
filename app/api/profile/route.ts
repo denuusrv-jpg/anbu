@@ -117,6 +117,10 @@ export async function PATCH(request: Request) {
       update.profile = next;
       update.mode = "profile";
     }
+    if (body.language !== undefined) {
+      if (body.language !== "de" && body.language !== "ta" && body.language !== "en") throw new Invalid("Sprache ist ungültig.");
+      update.ui_language = body.language;
+    }
     if (body.notifyMatches !== undefined) {
       if (typeof body.notifyMatches !== "boolean") throw new Invalid("Einstellung ist ungültig.");
       update.notify_matches = body.notifyMatches;
