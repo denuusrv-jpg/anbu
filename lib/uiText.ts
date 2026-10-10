@@ -666,3 +666,18 @@ register({
 register({
   "2 bis 24 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.": ["2 to 24 characters, only letters, numbers and simple characters.", "2 முதல் 24 எழுத்துகள், எழுத்துகள், எண்கள் மற்றும் எளிய குறியீடுகள் மட்டும்."],
 });
+
+// ——— Übersetzen im Chat ———
+register({
+  "Übersetzen": ["Translate", "மொழிபெயர்"],
+  "Übersetze …": ["Translating …", "மொழிபெயர்க்கிறது …"],
+  "Übersetzt aus {lang}": ["Translated from {lang}", "{lang} மொழியிலிருந்து மொழிபெயர்க்கப்பட்டது"],
+  "Übersetzung ausblenden": ["Hide translation", "மொழிபெயர்ப்பை மறை"],
+  "Übersetzung fehlgeschlagen": ["Translation failed", "மொழிபெயர்ப்பு தோல்வியடைந்தது"],
+  "Schon in deiner Sprache": ["Already in your language", "ஏற்கனவே உங்கள் மொழியில்"],
+  "Automatisch übersetzen": ["Translate automatically", "தானாக மொழிபெயர்"],
+  "Übersetzt per KI, nur die einzelne Nachricht wird dafür an die KI geschickt.": ["Translated by AI; only the single message is sent to the AI for this.", "AI மூலம் மொழிபெயர்க்கப்படுகிறது; இதற்காக தனிப்பட்ட செய்தி மட்டுமே AI க்கு அனுப்பப்படுகிறது."],
+  "einer anderen Sprache": ["another language", "வேறொரு மொழி"],
+  "Dein Match hat den Chat verlassen. Dieser Chat ist beendet.": ["Your match has left the chat. This chat has ended.", "உங்கள் இணைப்பு அரட்டையை விட்டு வெளியேறியது. இந்த அரட்டை முடிந்தது."],
+  "Eine Person hat den Chat verlassen.": ["One person has left the chat.", "ஒருவர் அரட்டையை விட்டு வெளியேறினார்."],
+});

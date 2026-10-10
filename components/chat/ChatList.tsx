@@ -128,7 +128,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                 {room.last && (
                   <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-zinc-400">
                     {room.last.kind === "icebreaker" ? "✨ " : ""}
-                    {room.last.body}
+                    {room.last.kind === "system" ? tx(room.last.body) : room.last.body}
                   </p>
                 )}
                 {room.last && <p className="mt-2 text-[11px] text-zinc-600">{times[language].format(new Date(room.last.createdAt))}</p>}

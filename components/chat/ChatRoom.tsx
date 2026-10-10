@@ -32,6 +32,10 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   const [reporting, setReporting] = useState(false);
   const [reason, setReason] = useState("");
   const [reportNote, setReportNote] = useState("");
+  // Übersetzungen auf Wunsch (pro Nachricht) und optional automatisch für Nachrichten der anderen
+  type Tr = { state: "loading" | "done" | "error"; text?: string; from?: string; same?: boolean; hidden?: boolean };
+  const [tr, setTr] = useState<Record<string, Tr>>({});
+  const [autoTr, setAutoTr] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
@@ -150,6 +154,46 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     else setNotice(tx("Verlassen hat nicht geklappt."));
   }
 
+  // Übersetzung in die gewählte Sprache. key = Nachrichten-Id oder "steckbrief"
+  async function translate(key: string) {
+    if (tr[key]?.state === "loading") return;
+    setTr((t) => ({ ...t, [key]: { state: "loading" } }));
+    if (sample) {
+      setTr((t) => ({ ...t, [key]: { state: "done", text: language === "ta" ? "இது ஒரு மாதிரி மொழிபெயர்ப்பு." : "This is a sample translation.", from: "de" } }));
+      return;
+    }
+    const { ok, json } = await call(`/api/chats/${roomId}/translate`, key === "steckbrief" ? { steckbrief: true, target: language } : { messageId: key, target: language });
+    if (!ok) {
+      setTr((t) => ({ ...t, [key]: { state: "error" } }));
+      return;
+    }
+    setTr((t) => ({ ...t, [key]: { state: "done", text: json.translation as string, from: json.from as string, same: Boolean(json.same) } }));
+  }
+
+  // "Automatisch übersetzen": gemerkt auf diesem Gerät, übersetzt neue Nachrichten der anderen nacheinander
+  useEffect(() => {
+    try {
+      setAutoTr(localStorage.getItem("dspora-auto-translate") === "1");
+    } catch {
+      // ohne localStorage bleibt es aus
+    }
+  }, []);
+  useEffect(() => {
+    if (!autoTr || sample) return;
+    const next = messages.find((m) => m.kind === "user" && !m.mine && !tr[m.id]);
+    if (next) translate(next.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTr, messages, tr]);
+
+  function toggleAuto(value: boolean) {
+    setAutoTr(value);
+    try {
+      localStorage.setItem("dspora-auto-translate", value ? "1" : "0");
+    } catch {
+      // egal
+    }
+  }
+
   async function sendReport() {
     if (!reason) return;
     if (sample) {
@@ -178,6 +222,32 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   }
 
   const othersList = detail.members.filter((m) => !m.isMe);
+  const langName = (code?: string) => (code === "de" ? tx("Deutsch") : code === "en" ? tx("Englisch") : code === "ta" ? tx("Tamil") : tx("einer anderen Sprache"));
+  const renderTr = (key: string, align: "left" | "center" = "left") => {
+    const t = tr[key];
+    if (!t || t.hidden) return null;
+    const cls = `mt-1 px-1 text-xs ${align === "center" ? "text-center" : ""}`;
+    if (t.state === "loading") return <p className={`${cls} text-zinc-500`}>{tx("Übersetze …")}</p>;
+    if (t.state === "error") return <p className={`${cls} text-rose`}>{tx("Übersetzung fehlgeschlagen")}</p>;
+    if (t.same) return autoTr ? null : <p className={`${cls} text-zinc-500`}>{tx("Schon in deiner Sprache")}</p>;
+    return (
+      <div className={`${cls} text-zinc-300`}>
+        <p className="leading-relaxed whitespace-pre-wrap italic">{t.text}</p>
+        <p className="mt-0.5 text-[10px] text-zinc-500">
+          {tx("Übersetzt aus {lang}", { lang: langName(t.from) })} ·{" "}
+          <button type="button" onClick={() => setTr((x) => ({ ...x, [key]: { ...t, hidden: true } }))} className="underline-offset-2 hover:text-zinc-300 hover:underline">
+            {tx("Übersetzung ausblenden")}
+          </button>
+        </p>
+      </div>
+    );
+  };
+  const trLink = (key: string) =>
+    !tr[key] || tr[key].hidden || tr[key].state === "error" ? (
+      <button type="button" onClick={() => translate(key)} title={tx("Übersetzt per KI, nur die einzelne Nachricht wird dafür an die KI geschickt.")} className="mt-0.5 px-1 text-[10px] text-zinc-500 underline-offset-2 transition-colors hover:text-gold hover:underline">
+        {tx("Übersetzen")}
+      </button>
+    ) : null;
   const dissolved = detail.room.dissolved;
   const userMessages = messages.filter((m) => m.kind === "user").length;
   const askFeedback = !dissolved && !detail.myFeedback && !feedbackDone && userMessages >= 6;
@@ -303,8 +373,17 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
           >
             <p className="text-[10px] font-semibold tracking-wide text-gold uppercase">{tx("Warum ihr gematcht wurdet")}</p>
             <p className="mt-1 text-sm leading-relaxed text-zinc-200">{detail.steckbrief}</p>
+            {trLink("steckbrief")}
+            {renderTr("steckbrief")}
             <p className="mt-1.5 text-[10px] text-zinc-500">{tx("Dieser Steckbrief wird gelöscht, sobald der Chat endet.")}</p>
           </motion.aside>
+        )}
+
+        {!sample && (
+          <label className="mb-1 flex cursor-pointer items-center justify-end gap-2 px-1 text-[11px] text-zinc-500">
+            <input type="checkbox" checked={autoTr} onChange={(e) => toggleAuto(e.target.checked)} className="h-3 w-3 accent-[#f2a65a]" />
+            {tx("Automatisch übersetzen")}
+          </label>
         )}
 
         {/* Nachrichten */}
@@ -321,10 +400,12 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                 >
                   <p className="text-[10px] font-semibold tracking-wide text-gold uppercase">✨ Spark</p>
                   <p className="mt-1 text-sm leading-relaxed text-zinc-100">{m.body}</p>
+                  {trLink(m.id)}
+                  {renderTr(m.id, "center")}
                 </motion.div>
               ) : m.kind === "system" ? (
                 <p key={m.id} className="text-center text-xs text-zinc-500">
-                  {m.body}
+                  {tx(m.body)}
                 </p>
               ) : (
                 <motion.div
@@ -346,6 +427,8 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                       {m.body}
                     </div>
                     <p className={`mt-0.5 px-1 text-[10px] text-zinc-600 ${m.mine ? "text-right" : ""}`}>{times[language].format(new Date(m.createdAt))}</p>
+                    {!m.mine && trLink(m.id)}
+                    {!m.mine && renderTr(m.id)}
                   </div>
                 </motion.div>
               ),

@@ -62,6 +62,12 @@ export default function Datenschutz() {
                 Kontos werden sie mit gelöscht.
               </li>
               <li>
+                <strong className="text-zinc-200">Übersetzen im Chat (auf Wunsch):</strong> Wenn du bei einer Nachricht auf
+                „Übersetzen“ tippst oder „Automatisch übersetzen“ einschaltest, schicken wir den Text dieser einen Nachricht
+                zur Übersetzung an Anthropic (Claude), ersatzweise an OpenAI. Namen und der übrige Chat gehen nicht mit, wir
+                speichern die Übersetzung nicht. Ohne deine Anfrage wird keine Nachricht übersetzt.
+              </li>
+              <li>
                 <strong className="text-zinc-200">Meldungen und Benachrichtigungen:</strong> Meldest du eine Person aus einem
                 Chat, speichern wir den Grund, deinen optionalen Hinweis und die Beteiligten, damit wir prüfen können, ob wir
                 eingreifen müssen. Nachrichteninhalte lesen wir dabei nicht. Wenn ein neuer Chat für dich bereitsteht,
