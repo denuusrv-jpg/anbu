@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import TextSizeControl from "@/components/TextSizeControl";
 import { useTx } from "@/lib/LanguageContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -33,6 +34,7 @@ export default function LoginCard({
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [notRegistered, setNotRegistered] = useState(false);
 
   // Bot-Schutz: unsichtbares Honeypot-Feld und Zeit seit dem Anzeigen des Formulars
   const honeypot = useRef<HTMLInputElement>(null);
@@ -77,6 +79,7 @@ export default function LoginCard({
       return;
     }
     setError("");
+    setNotRegistered(false);
     setStatus("sending");
     try {
       const res = await fetch("/api/auth/magic-link", {
@@ -92,6 +95,7 @@ export default function LoginCard({
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         setStatus("idle");
+        setNotRegistered(Boolean(data?.notRegistered));
         setError(data?.error ?? tx("Das hat leider nicht geklappt. Bitte versuch es noch einmal."));
         return;
       }
@@ -120,9 +124,12 @@ export default function LoginCard({
 
   return (
     <>
-    <LanguageSwitch className="mb-5" />
+    <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+      <LanguageSwitch />
+      <TextSizeControl />
+    </div>
     <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
-      <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full glow-gold" />
       <div className="relative">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
           <ShieldIcon />
@@ -202,6 +209,7 @@ export default function LoginCard({
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setError("");
+                    setNotRegistered(false);
                   }}
                   placeholder={tx("deine@mail.com")}
                   aria-invalid={error ? true : undefined}
@@ -238,9 +246,17 @@ export default function LoginCard({
         )}
 
         {error && (
-          <p role="alert" className="mt-3 text-xs leading-relaxed text-rose">
+          <p role="alert" className="mt-3 text-sm leading-relaxed text-rose">
             {tx(error)}
           </p>
+        )}
+        {notRegistered && (
+          <Link
+            href="/onboarding"
+            className="cta-premium mt-4 inline-flex w-full justify-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-3 text-sm font-semibold text-zinc-950"
+          >
+            {tx("Jetzt registrieren")}
+          </Link>
         )}
       </div>
     </div>

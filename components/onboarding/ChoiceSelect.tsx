@@ -80,7 +80,7 @@ export function CustomEntry({
 
   return (
     <div className="space-y-1.5">
-      <div className="rounded-2xl border border-white/10 bg-zinc-950/60 p-1.5 focus-within:border-gold/60">
+      <div className="flex items-center gap-1.5 rounded-2xl border border-white/10 bg-zinc-950/60 p-1.5 focus-within:border-gold/60">
         <input
           type="text"
           value={draft}
@@ -96,12 +96,21 @@ export function CustomEntry({
           }}
           placeholder={placeholder}
           aria-label={placeholder}
-          enterKeyHint="done"
+          enterKeyHint="enter"
           maxLength={30}
-          className="w-full bg-transparent px-3 py-2 text-base text-white placeholder:text-white/40 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base text-white placeholder:text-white/55 focus:outline-none"
         />
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!draft.trim()}
+          aria-label={tx("Hinzufügen")}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold text-xl leading-none font-semibold text-zinc-950 transition-opacity disabled:opacity-30"
+        >
+          +
+        </button>
       </div>
-      {hint && !error && <p className="px-1 text-xs text-zinc-300">{hint}</p>}
+      {!error && <p className="px-1 text-xs text-zinc-300">{hint ?? tx("Mit Enter oder + hinzufügen, dann erscheint es oben als Auswahl.")}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {tx(error)}

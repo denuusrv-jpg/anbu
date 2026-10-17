@@ -115,6 +115,11 @@ export default function TermPicker({
         ))}
       </div>
       {hint && <p className="px-1 text-xs leading-relaxed text-zinc-100">{hint}</p>}
+      {atMax && (
+        <p className="px-1 text-sm font-medium text-gold">
+          {tx("Maximum erreicht: {max} insgesamt, Vorschläge und eigene Wörter zusammen.", { max })}
+        </p>
+      )}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {error}

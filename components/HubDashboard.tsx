@@ -13,6 +13,7 @@ import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
 import LanguageButton from "@/components/LanguageButton";
+import TextSizeControl from "@/components/TextSizeControl";
 import Sheet from "@/components/ui/Sheet";
 import Slider from "@/components/ui/Slider";
 import { CustomEntry } from "@/components/onboarding/ChoiceSelect";
@@ -542,6 +543,7 @@ export default function HubDashboard({
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <LanguageButton onChange={saveLanguage} />
+            <TextSizeControl />
             {isAdmin && (
               <Link
                 href="/admin"
@@ -568,7 +570,7 @@ export default function HubDashboard({
           className={`${card} relative overflow-hidden`}
         >
           <motion.div
-            className="pointer-events-none absolute -top-16 -right-16 h-52 w-52 rounded-full bg-gold/25 blur-3xl"
+            className="pointer-events-none absolute -top-16 -right-16 h-52 w-52 rounded-full glow-gold"
             animate={{ opacity: [0.35, 0.8, 0.35], scale: [1, 1.15, 1] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -899,7 +901,7 @@ export default function HubDashboard({
               onChange={setLangDraft}
               onConfirm={saveLanguages}
               maxTotal={5}
-              customPlaceholder={tx("Eine andere Sprache? Eigene hinzufügen")}
+              customPlaceholder={tx("Andere Sprache + Enter")}
               confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
             />
             {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
@@ -935,7 +937,7 @@ export default function HubDashboard({
               </ChipRow>
             </div>
             <div className="mt-3">
-              <CustomEntry placeholder={tx("Anderes: schreib es selbst")} onAdd={addCustomGender} />
+              <CustomEntry placeholder={tx("Eigene Angabe + Enter")} onAdd={addCustomGender} />
             </div>
             <p className="mt-6 text-sm font-medium text-zinc-100">{tx("Mit wem möchtest du dich verbinden?")}</p>
             <div className="mt-2.5" role="radiogroup" aria-label={tx("Verbinden mit")}>
@@ -980,7 +982,7 @@ export default function HubDashboard({
                 value={draft}
                 onChange={setDraft}
                 onConfirm={saveEdit}
-                customPlaceholder={key === "interests" ? tx("Eigenes hinzufügen") : tx("Eigenen Vibe hinzufügen")}
+                customPlaceholder={key === "interests" ? tx("Eigenes + Enter") : tx("Eigenen Vibe + Enter")}
                 maxTotal={key === "interests" ? MAX_INTERESTS : MAX_VIBES}
                 minTotal={key === "interests" ? MIN_INTERESTS : 1}
                 confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}

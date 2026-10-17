@@ -152,8 +152,8 @@ export const TRAVEL_OPTIONS: { minutes: number; label: string }[] = [
 
 // Vorschläge im Chat (vier pro Frage), der Rest wird frei eingegeben
 export const INTEREST_SUGGESTIONS: Record<"community" | "business", string[]> = {
-  community: ["gym", "musik", "reisen", "essen"],
-  business: ["sport", "reisen", "essen", "kultur"],
+  community: ["gym", "musik", "reisen", "essen", "tanzen"],
+  business: ["sport", "reisen", "essen", "kultur", "tanzen"],
 };
 export const VIBE_SUGGESTIONS: Record<"community" | "business", string[]> = {
   community: ["entspannt", "humorvoll", "spontan", "tiefgruendig"],

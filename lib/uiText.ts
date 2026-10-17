@@ -760,3 +760,40 @@ register({
   "Neuen Beitrag erstellen": ["Create new post", "புதிய பதிவை உருவாக்கு"],
   "Neuer Beitrag": ["New post", "புதிய பதிவு"],
 });
+
+// ——— Anmeldung, Postleitzahl, Schriftgröße, Eingabehinweise ———
+register({
+  "Dein Profil ist noch nicht fertig": ["Your profile is not finished yet", "உங்கள் சுயவிவரம் இன்னும் முடிக்கப்படவில்லை"],
+  "Beantworte kurz die Fragen (etwa 2 Minuten), damit wir passende Leute für dich finden. Danach landest du immer direkt in deinem Profil.": ["Answer a few quick questions (about 2 minutes) so we can find the right people for you. After that you always land directly in your profile.", "உங்களுக்குப் பொருத்தமானவர்களைக் கண்டறிய சில சிறிய கேள்விகளுக்குப் பதிலளிக்கவும் (சுமார் 2 நிமிடங்கள்). அதன் பிறகு எப்போதும் நேரடியாக உங்கள் சுயவிவரத்திற்கு வருவீர்கள்."],
+  "Fragen beantworten": ["Answer questions", "கேள்விகளுக்குப் பதிலளி"],
+  "Schriftgröße": ["Text size", "எழுத்து அளவு"],
+  "Kleiner": ["Smaller", "சிறியது"],
+  "Größer": ["Larger", "பெரியது"],
+  "Noch größer": ["Even larger", "இன்னும் பெரியது"],
+  "Andere Sprache eintippen, dann Enter drücken": ["Type another language, then press Enter", "வேறு மொழியை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Eigene Angabe eintippen, dann Enter drücken": ["Type your own answer, then press Enter", "உங்கள் சொந்த பதிலை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Eigenes eintippen, dann Enter drücken": ["Type your own, then press Enter", "உங்கள் சொந்தத்தை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Eigenen Vibe eintippen, dann Enter drücken": ["Type your own vibe, then press Enter", "உங்கள் சொந்த உணர்வை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Eigene Branche eintippen, dann Enter drücken": ["Type your own industry, then press Enter", "உங்கள் சொந்தத் துறையை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Eigenes Ziel eintippen, dann Enter drücken": ["Type your own goal, then press Enter", "உங்கள் சொந்த இலக்கை உள்ளிட்டு Enter அழுத்தவும்"],
+  "Jetzt registrieren": ["Register now", "இப்போது பதிவு செய்"],
+  "Diese E-Mail-Adresse ist noch nicht registriert. Lege zuerst dein Profil an, das dauert etwa 2 Minuten.": ["This email address is not registered yet. Create your profile first, it takes about 2 minutes.", "இந்த மின்னஞ்சல் முகவரி இன்னும் பதிவு செய்யப்படவில்லை. முதலில் உங்கள் சுயவிவரத்தை உருவாக்குங்கள், இதற்கு சுமார் 2 நிமிடங்கள் ஆகும்."],
+  "Wie lautet deine Postleitzahl? Ich ordne dich damit dem nächsten Hub zu.": ["What is your postal code? I will use it to assign you to the nearest hub.", "உங்கள் அஞ்சல் குறியீடு என்ன? அதைக் கொண்டு உங்களை அருகிலுள்ள ஹப்புடன் இணைப்பேன்."],
+  "Bitte gib deine Postleitzahl mit {n} Ziffern an.": ["Please enter your postal code with {n} digits.", "உங்கள் அஞ்சல் குறியீட்டை {n} இலக்கங்களுடன் உள்ளிடவும்."],
+  "Diese Postleitzahl konnte ich leider nicht zuordnen. Prüfe sie oder gib stattdessen deinen Ort ein.": ["Sorry, I could not match this postal code. Check it or enter your town instead.", "மன்னிக்கவும், இந்த அஞ்சல் குறியீட்டைப் பொருத்த முடியவில்லை. அதைச் சரிபார்க்கவும் அல்லது அதற்குப் பதிலாக உங்கள் ஊரை உள்ளிடவும்."],
+  "Die Postleitzahl {plz} gehört zu „{name}“. Ich ordne dich dem Hub {hub} zu. Passt das?": ["The postal code {plz} belongs to “{name}”. I assign you to the hub {hub}. Is that right?", "அஞ்சல் குறியீடு {plz} “{name}” க்குச் சொந்தமானது. உங்களை ஹப் {hub} உடன் இணைக்கிறேன். சரியா?"],
+  "Land": ["Country", "நாடு"],
+  "Deutschland": ["Germany", "ஜெர்மனி"],
+  "Österreich": ["Austria", "ஆஸ்திரியா"],
+  "Schweiz": ["Switzerland", "சுவிட்சர்லாந்து"],
+  "Deine Postleitzahl": ["Your postal code", "உங்கள் அஞ்சல் குறியீடு"],
+  "Maximum erreicht: {max} insgesamt, Vorschläge und eigene Wörter zusammen.": ["Maximum reached: {max} in total, suggestions and your own words together.", "அதிகபட்சம் எட்டப்பட்டது: பரிந்துரைகளும் சொந்த வார்த்தைகளும் சேர்த்து மொத்தம் {max}."],
+});
+
+register({ "Andere Sprache + Enter": ["Other language + Enter", "வேறு மொழி + Enter"] });
+register({ "Eigene Angabe + Enter": ["Your own answer + Enter", "உங்கள் சொந்த பதில் + Enter"] });
+register({ "Eigene Branche + Enter": ["Your own industry + Enter", "உங்கள் சொந்தத் துறை + Enter"] });
+register({ "Eigenes Ziel + Enter": ["Your own goal + Enter", "உங்கள் சொந்த இலக்கு + Enter"] });
+register({ "Eigenes + Enter": ["Your own + Enter", "உங்கள் சொந்தம் + Enter"] });
+register({ "Eigenen Vibe + Enter": ["Your own vibe + Enter", "உங்கள் சொந்த உணர்வு + Enter"] });
+register({ "Mit Enter oder + hinzufügen, dann erscheint es oben als Auswahl.": ["Add with Enter or +, then it appears above as a choice.", "Enter அல்லது + மூலம் சேர்க்கவும், அது மேலே தேர்வாகத் தோன்றும்."] });

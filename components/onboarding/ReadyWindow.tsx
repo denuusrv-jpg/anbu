@@ -52,7 +52,7 @@ export default function ReadyWindow({
       transition={{ duration: 0.5, ease: EASE }}
       className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/80 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_40px_100px_-30px_rgba(0,0,0,0.9)] backdrop-blur-2xl sm:p-10"
     >
-      <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-gold/20 blur-3xl" />
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full glow-gold" />
       <div className="relative">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/10 text-gold shadow-[0_0_30px_-8px_rgba(242,166,90,0.6)]">
           <CheckIcon className="h-7 w-7" />

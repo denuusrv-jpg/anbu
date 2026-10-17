@@ -112,7 +112,7 @@ export default function BusinessEditor({
                 onSelect={(v) => v && setDraft({ ...draft, sector: v })}
                 draft={sectorDraft}
                 onDraftChange={setSectorDraft}
-                customPlaceholder={tx("Andere Branche? Eigene Angabe")}
+                customPlaceholder={tx("Eigene Branche + Enter")}
               />
             </Field>
             <Field label="Aktuelle Rolle">
@@ -128,7 +128,7 @@ export default function BusinessEditor({
                 options={GOALS}
                 value={draft.goals}
                 onChange={(goals) => setDraft({ ...draft, goals })}
-                customPlaceholder={tx("Ein anderes Ziel?")}
+                customPlaceholder={tx("Eigenes Ziel + Enter")}
                 maxTotal={3}
                 draft={goalDraft}
                 onDraftChange={setGoalDraft}

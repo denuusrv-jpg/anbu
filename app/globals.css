@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 html {
+  font-size: calc(100% * var(--text-scale, 1));
   /* Oberste Bildschirmhöhe in der Farbe des Hero-Bereichs, danach dunkel: beim Überscrollen oben bleibt es farbig, nicht schwarz */
   background: linear-gradient(to bottom, #7d1b5b 0, #7d1b5b 100vh, #09090b 100vh) #09090b;
   scroll-behavior: smooth;
@@ -290,7 +291,7 @@ input::-webkit-credentials-auto-fill-button {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
   textarea,
   select {
-    font-size: 16px;
+    font-size: max(16px, 1rem);
   }
 }
 
@@ -299,4 +300,13 @@ input::-webkit-credentials-auto-fill-button {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Sanfter Lichtschein ohne Weichzeichner-Filter: "blur" auf großen Flächen unter Glas-Karten erzeugt auf dem iPhone schwarze Kästen */
+.glow-gold {
+  background: radial-gradient(closest-side, rgba(242, 166, 90, 0.24), rgba(242, 166, 90, 0.08) 55%, transparent 100%);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }

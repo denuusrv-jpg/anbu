@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import ConsentGate from "@/components/ConsentGate";
+import NoProfile from "@/components/NoProfile";
+import { isFirstLogin } from "@/lib/firstLogin";
 import { hasConsent } from "@/lib/consent";
 import HubDashboard, { type HubProfile, type HubWish } from "@/components/HubDashboard";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -45,7 +47,11 @@ export default async function Hub() {
     .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, notify_matches, has_avatar, ui_language")
     .eq("user_id", auth.user.id)
     .maybeSingle();
-  if (!profile) redirect("/onboarding");
+  if (!profile) {
+    // Nur direkt nach der Registrierung geht es automatisch in den Fragenkatalog, danach immer ins Profil
+    if (isFirstLogin(auth.user)) redirect("/onboarding");
+    return <NoProfile email={auth.user.email ?? ""} />;
+  }
   // Gelöschtes Konto (Soft-Delete): kein Zugriff mehr, solange die Frist läuft
   if (profile.deleted_at) {
     await supabase.auth.signOut();

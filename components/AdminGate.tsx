@@ -97,7 +97,7 @@ export default function AdminGate() {
             exit={{ opacity: 0, y: 8, scale: 0.98 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
+            <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full glow-gold" />
             <div className="relative">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gold/10 text-gold">
                 <ShieldIcon />

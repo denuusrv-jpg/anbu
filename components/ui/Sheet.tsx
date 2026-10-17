@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useTx } from "@/lib/LanguageContext";
+import { scrollFieldIntoView } from "@/lib/scrollIntoViewOnFocus";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -26,6 +27,21 @@ export default function Sheet({
   // Wird an document.body gehängt: Karten mit Weichzeichner/Transform würden sonst das "fixed" einschließen
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // Handy: Das Pop-up endet über der Tastatur (sichtbare Höhe), damit Eingabefelder nicht verdeckt werden
+  const [view, setView] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setView({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +62,8 @@ export default function Sheet({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[140] flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center sm:p-6"
+          className="fixed inset-x-0 z-[140] flex items-end justify-center bg-black/65 sm:items-center sm:p-6"
+          style={view ? { top: view.top, height: view.height } : { top: 0, bottom: 0 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -61,7 +78,7 @@ export default function Sheet({
             exit={{ y: "100%" }}
             transition={{ duration: 0.35, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
-            className={`flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-3xl border bg-zinc-900 shadow-[0_-30px_80px_-30px_rgba(0,0,0,0.9)] sm:rounded-3xl ${
+            className={`flex max-h-[92%] w-full max-w-lg flex-col rounded-t-3xl border bg-zinc-900 shadow-[0_-30px_80px_-30px_rgba(0,0,0,0.9)] sm:rounded-3xl ${
               tone === "danger" ? "border-rose/30" : "border-white/10"
             }`}
           >
@@ -79,7 +96,9 @@ export default function Sheet({
                 ×
               </button>
             </div>
-            <div className="overflow-y-auto px-6 pt-2 pb-8">{children}</div>
+            <div onFocusCapture={scrollFieldIntoView} className="overflow-y-auto overscroll-contain px-6 pt-2 pb-[max(2rem,env(safe-area-inset-bottom))]">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       )}

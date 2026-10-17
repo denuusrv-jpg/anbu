@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import TextSizeControl from "@/components/TextSizeControl";
+import { scrollFieldIntoView } from "@/lib/scrollIntoViewOnFocus";
 import { useLanguage, useTx } from "@/lib/LanguageContext";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -200,6 +202,9 @@ export default function OnboardingChat({
   const [canBack, setCanBack] = useState(false);
   const [prefill, setPrefill] = useState<Partial<OnboardingAnswers> | null>(null);
   const [consent, setConsent] = useState(false);
+  // Wohnort: Postleitzahl (mit Land) oder, falls die nicht erkannt wird, der Ortsname
+  const [postalCountry, setPostalCountry] = useState<"DE" | "AT" | "CH">("DE");
+  const [cityByName, setCityByName] = useState(false);
   const [talkOn, setTalkOn] = useState(Boolean(resume));
   const [noticeOpen, setNoticeOpen] = useState(false);
 
@@ -465,12 +470,17 @@ export default function OnboardingChat({
       askLanguages();
       return;
     }
-    ask([t("In welcher Stadt wohnst du? Ich ordne dich dann dem nächsten Hub zu.")], "city");
+    ask([t("Wie lautet deine Postleitzahl? Ich ordne dich damit dem nächsten Hub zu.")], "city");
   }
 
   async function submitCity() {
     const value = text.trim();
-    if (value.length < 2) {
+    const digits = postalCountry === "DE" ? 5 : 4;
+    if (!cityByName && !new RegExp(`^\\d{${digits}}$`).test(value)) {
+      setInputError(tx("Bitte gib deine Postleitzahl mit {n} Ziffern an.", { n: digits }));
+      return;
+    }
+    if (cityByName && value.length < 2) {
       setInputError(tx("Bitte gib deinen Wohnort an."));
       return;
     }
@@ -484,7 +494,7 @@ export default function OnboardingChat({
       const res = await fetch("/api/geo/resolve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ city: value }),
+        body: JSON.stringify({ city: value, country: postalCountry }),
         signal: AbortSignal.timeout(12000),
       });
       const data = await res.json();
@@ -495,6 +505,12 @@ export default function OnboardingChat({
     if (!alive.current) return;
     setTyping(false);
     if (!place) {
+      if (!cityByName) {
+        // Postleitzahl nicht erkannt: Ort per Name als Ausweg anbieten
+        setCityByName(true);
+        await ask([t("Diese Postleitzahl konnte ich leider nicht zuordnen. Prüfe sie oder gib stattdessen deinen Ort ein.")], "city");
+        return;
+      }
       await ask([t("Diesen Ort konnte ich leider nicht zuordnen. Bitte gib die nächstgrößere Stadt in deiner Nähe ein.")], "city");
       return;
     }
@@ -503,7 +519,9 @@ export default function OnboardingChat({
       [
         place.hub === "warteliste"
           ? t("Ich habe „{name}“ gefunden. In deiner Nähe gibt es noch keinen Hub. Du kommst auf die Warteliste, und wir melden uns, sobald es einen gibt. Passt das so?", { name: place.name })
-          : t("Ich habe „{name}“ gefunden und ordne dich dem Hub {hub} zu. Passt das?", { name: place.name, hub: tx(place.hubLabel) }),
+          : cityByName
+            ? t("Ich habe „{name}“ gefunden und ordne dich dem Hub {hub} zu. Passt das?", { name: place.name, hub: tx(place.hubLabel) })
+            : t("Die Postleitzahl {plz} gehört zu „{name}“. Ich ordne dich dem Hub {hub} zu. Passt das?", { plz: value, name: place.name, hub: tx(place.hubLabel) }),
       ],
       "cityConfirm",
     );
@@ -1130,7 +1148,7 @@ export default function OnboardingChat({
           options={GENDER_CHOICES}
           value={chosenGender}
           onSelect={pickGender}
-          customPlaceholder={tx("Anderes: schreib es selbst")}
+          customPlaceholder={tx("Eigene Angabe + Enter")}
         />
       )}
 
@@ -1138,7 +1156,7 @@ export default function OnboardingChat({
         <SingleChoice
           options={wishKind === "duo" ? DUO_WISHES : GROUP_WISHES}
           onSelect={pickMatchGender}
-          customPlaceholder={tx("Anderes: schreib es selbst")}
+          customPlaceholder={tx("Eigene Angabe + Enter")}
         />
       )}
 
@@ -1164,16 +1182,43 @@ export default function OnboardingChat({
       )}
 
       {step === "city" && (
-        <TextAnswer
-          value={text}
-          onChange={(v) => {
-            setText(v);
-            setInputError("");
-          }}
-          onSubmit={() => submitCity()}
-          placeholder={tx("Dein Wohnort")}
-          error={inputError}
-        />
+        <div className="space-y-3">
+          {!cityByName && (
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={tx("Land")}>
+              {(
+                [
+                  { id: "DE", label: "Deutschland" },
+                  { id: "AT", label: "Österreich" },
+                  { id: "CH", label: "Schweiz" },
+                ] as const
+              ).map((c) => (
+                <Chip
+                  key={c.id}
+                  selected={postalCountry === c.id}
+                  onClick={() => {
+                    setPostalCountry(c.id);
+                    setInputError("");
+                    setText((v) => v.slice(0, c.id === "DE" ? 5 : 4));
+                  }}
+                >
+                  {tx(c.label)}
+                </Chip>
+              ))}
+            </div>
+          )}
+          <TextAnswer
+            value={text}
+            onChange={(v) => {
+              setText(cityByName ? v : v.replace(/\D/g, ""));
+              setInputError("");
+            }}
+            onSubmit={() => submitCity()}
+            placeholder={cityByName ? tx("Dein Wohnort") : tx("Deine Postleitzahl")}
+            inputMode={cityByName ? "text" : "numeric"}
+            maxLength={cityByName ? 60 : postalCountry === "DE" ? 5 : 4}
+            error={inputError}
+          />
+        </div>
       )}
 
       {step === "cityConfirm" && (
@@ -1212,12 +1257,12 @@ export default function OnboardingChat({
           onChange={setLangs}
           onConfirm={confirmLanguages}
           maxTotal={5}
-          customPlaceholder={tx("Eine andere Sprache? Eigene hinzufügen")}
+          customPlaceholder={tx("Andere Sprache + Enter")}
         />
       )}
 
       {step === "lifePhase" && (
-        <SingleChoice options={PHASES} onSelect={pickPhase} customPlaceholder={tx("Etwas anderes? Eigene Angabe")} />
+        <SingleChoice options={PHASES} onSelect={pickPhase} customPlaceholder={tx("Eigene Angabe + Enter")} />
       )}
 
       {step === "sector" && (
@@ -1225,7 +1270,7 @@ export default function OnboardingChat({
           options={SECTORS}
           value={chosenSector}
           onSelect={pickSector}
-          customPlaceholder={tx("Andere Branche? Eigene Angabe")}
+          customPlaceholder={tx("Eigene Branche + Enter")}
         />
       )}
 
@@ -1249,7 +1294,7 @@ export default function OnboardingChat({
           value={goals}
           onChange={setGoals}
           onConfirm={confirmGoals}
-          customPlaceholder={tx("Ein anderes Ziel? Eigenes hinzufügen")}
+          customPlaceholder={tx("Eigenes Ziel + Enter")}
           maxTotal={3}
         />
       )}
@@ -1444,22 +1489,23 @@ export default function OnboardingChat({
   return (
     <div
       ref={rootRef}
+      onFocusCapture={scrollFieldIntoView}
       className="fixed inset-x-0 top-[var(--app-top,0px)] isolate flex h-[var(--app-h,100dvh)] items-center justify-center overflow-hidden bg-zinc-950 sm:static sm:h-auto sm:min-h-[100dvh] sm:p-6"
     >
-      <FlowingWaveBackground pulses={false} />
+      <FlowingWaveBackground pulses={false} fixed />
       <div className="relative flex h-full w-full max-w-xl flex-col overflow-hidden border-white/10 bg-zinc-950/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_40px_100px_-30px_rgba(0,0,0,0.6)] backdrop-blur-md sm:h-[min(780px,calc(100dvh-3rem))] sm:rounded-3xl sm:border">
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full glow-gold" />
 
         {/* Kopfzeile */}
-        <header className="relative flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <header className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/10 px-5 py-4">
           {cards && canBack && BACK_STEPS.includes(step) ? (
-            <button type="button" onClick={goBack} className="text-sm text-zinc-200 transition-colors hover:text-white">
+            <button type="button" onClick={goBack} className="justify-self-start text-sm whitespace-nowrap text-zinc-200 transition-colors hover:text-white">
               {tx("← Zurück")}
             </button>
           ) : (
             <Link
               href={mode === "test" ? "/admin" : "/"}
-              className="text-xs text-zinc-300 transition-colors hover:text-white"
+              className="justify-self-start text-sm whitespace-nowrap text-zinc-200 transition-colors hover:text-white"
             >
               {cards ? tx("← Startseite") : tx("← Zurück")}
             </Link>
@@ -1473,7 +1519,7 @@ export default function OnboardingChat({
               </span>
             )}
           </div>
-          <span className="w-24 text-right text-xs text-zinc-300">{headerLabel}</span>
+          <span className="justify-self-end text-sm whitespace-nowrap text-zinc-200">{headerLabel}</span>
           <div className="absolute inset-x-0 bottom-0 h-px bg-white/5">
             <motion.div
               className="h-full bg-gold/70"
@@ -1485,8 +1531,9 @@ export default function OnboardingChat({
         </header>
 
         {/* Sprache (immer Deutsch, தமிழ், English) */}
-        <div className="relative flex justify-center border-b border-white/5 py-1.5">
+        <div className="relative flex flex-wrap items-center justify-center gap-2 border-b border-white/5 px-3 py-1.5">
           <LanguageSwitch className="scale-90" />
+          <TextSizeControl className="scale-90" />
         </div>
 
         {cards ? (

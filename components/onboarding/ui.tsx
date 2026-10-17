@@ -108,6 +108,7 @@ export function TextAnswer({
   extra,
   maxLength = 60,
   submitLabel = "Senden",
+  inputMode,
 }: {
   inputRef?: React.RefObject<HTMLInputElement | null>;
   value: string;
@@ -118,6 +119,7 @@ export function TextAnswer({
   extra?: React.ReactNode;
   maxLength?: number;
   submitLabel?: string;
+  inputMode?: "text" | "numeric";
 }) {
   const tx = useTx();
   return (
@@ -132,6 +134,7 @@ export function TextAnswer({
         <input
           ref={inputRef}
           type="text"
+          inputMode={inputMode}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}

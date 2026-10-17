@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 const vertexShader = /* glsl */ `
@@ -142,6 +142,23 @@ function WavePlane({ pulses }: { pulses: boolean }) {
 // fixed=true: Hintergrund bleibt beim Scrollen stehen (lange Seiten)
 // pulses=false: derselbe Hintergrund ohne die pulsierenden Verbindungs-Impulse (z. B. hinter dem Chat)
 export default function FlowingWaveBackground({ pulses = true, fixed = false }: { pulses?: boolean; fixed?: boolean }) {
+  // Seiten mit diesem Hintergrund (Profil, Chat, Fragenkatalog): Statusleiste und Fläche hinter den Browser-Leisten
+  // in der Weinrot-Farbe des Hintergrunds statt Schwarz. Die Startseite (pulses) regelt das über ihre eigene Theme-Color.
+  useEffect(() => {
+    if (pulses) return;
+    const color = "#4a1630";
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const html = document.documentElement;
+    const previousMeta = meta?.getAttribute("content") ?? null;
+    const previousBackground = html.style.background;
+    meta?.setAttribute("content", color);
+    html.style.background = color;
+    return () => {
+      if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
+      html.style.background = previousBackground;
+    };
+  }, [pulses]);
+
   return (
     <div className={`pointer-events-none ${fixed ? "fixed" : "absolute"} inset-0 -z-10 overflow-hidden`}>
       <Canvas

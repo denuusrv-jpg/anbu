@@ -65,7 +65,7 @@ export default function AiMatchingCard() {
       >
         {/* Dezentes Leuchten */}
         <motion.div
-          className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 rounded-full bg-gold/20 blur-3xl"
+          className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 rounded-full glow-gold"
           style={{ x: "-50%" }}
           variants={glowVariant}
         />

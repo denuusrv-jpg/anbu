@@ -42,6 +42,8 @@ export async function POST(request: Request) {
   }
 
   let next = safeNextPath(typeof body.next === "string" ? body.next : null);
+  // Neue Konten entstehen nur über die Registrierung im Chat (mit Entwurf). Beim reinen Anmelden gibt es keins.
+  const registering = body.draft !== undefined;
 
   // Gast aus dem Onboarding-Chat: Antworten als Entwurf zur E-Mail-Adresse ablegen.
   // Nach der Anmeldung per Link werden sie als Profil übernommen (auch auf einem anderen Gerät).
@@ -76,10 +78,17 @@ export async function POST(request: Request) {
   const { error } = await anon.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: registering,
       emailRedirectTo: `${siteOrigin(request)}/auth/confirm?next=${encodeURIComponent(next)}`,
     },
   });
+
+  if (error && !registering && (error.code === "otp_disabled" || /signups? not allowed/i.test(error.message))) {
+    return NextResponse.json(
+      { error: "Diese E-Mail-Adresse ist noch nicht registriert. Lege zuerst dein Profil an, das dauert etwa 2 Minuten.", notRegistered: true },
+      { status: 404 },
+    );
+  }
 
   if (error) {
     const limited = error.code === "over_email_send_rate_limit" || error.status === 429;

@@ -66,7 +66,7 @@ export default function AdminCopilot({ examples }: { examples: string[] }) {
       aria-label="Admin-Copilot"
       className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:p-6"
     >
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" />
+      <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full glow-gold" />
       <div className="relative">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gold/10 text-gold">
