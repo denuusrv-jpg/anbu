@@ -75,7 +75,7 @@ export default function GroupSizeCard({
       <span className="relative mt-4 inline-flex w-fit items-center rounded-lg border border-gold/20 bg-zinc-950/80 px-3 py-1 text-[11px] font-medium tracking-wide text-gold shadow-[0_0_16px_-4px_rgba(242,166,90,0.6)]">
         <Translated text={group.size} />
       </span>
-      <p className="px-6 pt-4 pb-6 text-sm leading-relaxed text-zinc-400">
+      <p className="px-6 pt-4 pb-6 text-sm leading-relaxed text-zinc-300">
         <Translated text={group.description} />
       </p>
     </motion.div>

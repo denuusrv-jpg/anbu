@@ -57,18 +57,18 @@ export default function WaitlistForm() {
   }
 
   return (
-    <div className="relative mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
+    <div className="relative mx-auto mt-8 flex w-full max-w-md flex-row gap-3">
       <button
         type="button"
         onClick={handleLogin}
-        className="cta-premium w-full whitespace-nowrap rounded-full border border-zinc-800 bg-zinc-900/70 px-6 py-3 text-sm font-semibold text-white transition [--sheen-alpha:0.18] hover:border-gold"
+        className="cta-premium min-w-0 flex-1 rounded-full border border-zinc-800 bg-zinc-900/70 px-4 py-3.5 text-sm font-semibold text-white transition [--sheen-alpha:0.18] hover:border-gold"
       >
         <Translated text={t.waitlist.login} />
       </button>
       <button
         type="button"
         onClick={scrollToErfahreMehr}
-        className="cta-premium w-full whitespace-nowrap rounded-full bg-gold px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-gold-light"
+        className="cta-premium min-w-0 flex-1 rounded-full bg-gold px-4 py-3.5 text-sm font-semibold text-zinc-950 transition hover:bg-gold-light"
       >
         <Translated text={t.waitlist.register} />
       </button>

@@ -72,7 +72,7 @@ export default function ContactForm() {
               <h3 className="text-lg font-semibold text-zinc-50">
                 Danke für deine Nachricht!
               </h3>
-              <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
+              <p className="max-w-sm text-sm leading-relaxed text-zinc-300">
                 Wir melden uns so schnell wie möglich bei dir zurück.
               </p>
             </motion.div>
@@ -86,7 +86,7 @@ export default function ContactForm() {
             >
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-1.5 text-left">
-                  <label htmlFor="name" className="text-xs font-medium text-zinc-400">
+                  <label htmlFor="name" className="text-xs font-medium text-zinc-300">
                     Name (optional)
                   </label>
                   <input
@@ -97,7 +97,7 @@ export default function ContactForm() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5 text-left">
-                  <label htmlFor="email" className="text-xs font-medium text-zinc-400">
+                  <label htmlFor="email" className="text-xs font-medium text-zinc-300">
                     Deine E-Mail
                   </label>
                   <input
@@ -113,7 +113,7 @@ export default function ContactForm() {
               </div>
 
               <div className="flex flex-col gap-1.5 text-left">
-                <label htmlFor="message" className="text-xs font-medium text-zinc-400">
+                <label htmlFor="message" className="text-xs font-medium text-zinc-300">
                   Deine Nachricht
                 </label>
                 <textarea

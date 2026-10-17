@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 html {
-  background-color: #09090b;
+  /* Oberste Bildschirmhöhe in der Farbe des Hero-Bereichs, danach dunkel: beim Überscrollen oben bleibt es farbig, nicht schwarz */
+  background: linear-gradient(to bottom, #7d1b5b 0, #7d1b5b 100vh, #09090b 100vh) #09090b;
   scroll-behavior: smooth;
 }
 

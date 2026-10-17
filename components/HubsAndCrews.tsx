@@ -65,7 +65,7 @@ export default function HubsAndCrews() {
           <h2 className="text-2xl font-semibold text-zinc-50 sm:text-3xl">
             <Translated text={t.groups.heading} />
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
             <Translated text={t.groups.subheading} />
           </p>
         </div>
