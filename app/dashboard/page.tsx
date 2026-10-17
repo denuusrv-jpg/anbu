@@ -24,10 +24,10 @@ export default async function Hub() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 py-16 text-center">
         <div className="max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
           <h1 className="text-xl font-semibold text-zinc-50">Dein Hub kommt bald</h1>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-3 text-sm leading-relaxed text-zinc-300">
             Die Anmeldung wird gerade eingerichtet. Danach findest du hier deinen persönlichen Bereich.
           </p>
-          <Link href="/" className="mt-6 inline-block text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href="/" className="mt-6 inline-block text-sm text-zinc-400 hover:text-white">
             ← Zurück zur Startseite
           </Link>
         </div>

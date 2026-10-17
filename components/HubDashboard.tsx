@@ -12,7 +12,10 @@ import type { PostView } from "@/lib/profileMedia";
 import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
-import LanguageSwitch from "@/components/LanguageSwitch";
+import LanguageButton from "@/components/LanguageButton";
+import Sheet from "@/components/ui/Sheet";
+import Slider from "@/components/ui/Slider";
+import { CustomEntry } from "@/components/onboarding/ChoiceSelect";
 import { useLanguage, useTx } from "@/lib/LanguageContext";
 import type { Language } from "@/lib/translations";
 import { getBrowserClient } from "@/lib/supabase/client";
@@ -23,6 +26,7 @@ import {
   GROUP_SIZES,
   GROUP_WISHES,
   INTERESTS,
+  CUSTOM_PATTERN,
   LANGUAGES,
   MAX_AGE,
   MAX_INTERESTS,
@@ -35,6 +39,7 @@ import {
   TRAVEL_OPTIONS,
   VIBES,
   choiceLabels,
+  labelOf,
   type BusinessData,
   type Choice,
   type OnboardingAnswers,
@@ -79,6 +84,25 @@ const EMPTY_BUSINESS: BusinessData = {
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Zeile in der Profil-Liste: zeigt kurz den aktuellen Stand, ein Tippen öffnet ein Pop-up zum Ändern
+function SettingRow({ title, summary, onClick }: { title: string; summary: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-14 w-full items-center justify-between gap-4 border-t border-white/10 py-3.5 text-left transition-colors first:border-t-0 hover:text-gold"
+    >
+      <span className="shrink-0 text-sm font-medium text-zinc-50">{title}</span>
+      <span className="flex min-w-0 items-center gap-2 text-sm text-zinc-300">
+        <span className="min-w-0 truncate">{summary}</span>
+        <span aria-hidden className="text-xl leading-none text-zinc-400">
+          ›
+        </span>
+      </span>
+    </button>
+  );
+}
 
 export type HubWish = { id: string; wish: string; created_at: string };
 
@@ -125,7 +149,8 @@ export default function HubDashboard({
   const [wishText, setWishText] = useState("");
   const [wishMessage, setWishMessage] = useState("");
   const [wishBusy, setWishBusy] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sheet, setSheet] = useState<"place" | "age" | "phase" | "gender" | "group" | "facts" | "delete" | null>(null);
+  const [deleteStep, setDeleteStep] = useState<"intro" | "sent">("intro");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -133,7 +158,6 @@ export default function HubDashboard({
     .filter((h): h is string => Boolean(h))
     .map((h) => tx(ALL_HUBS.find((r) => r.id === h)?.label ?? h));
   const [setupBusiness, setSetupBusiness] = useState(false);
-  const [editingPlace, setEditingPlace] = useState(false);
   const [placeText, setPlaceText] = useState("");
   const [placeFound, setPlaceFound] = useState<{ name: string; lat: number; lng: number; hub: string; hubLabel: string } | null>(null);
   const [placeError, setPlaceError] = useState("");
@@ -236,6 +260,14 @@ export default function HubDashboard({
     if (await patch({ gender: next })) setProfile((p) => ({ ...p, gender: next }));
   }
 
+  // Eigene Angabe zum Geschlecht (Freitext): gibt eine Fehlermeldung zurück oder null
+  function addCustomGender(text: string): string | null {
+    if (!CUSTOM_PATTERN.test(text)) return "2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen.";
+    const known = GENDER_CHOICES.find((g) => g.label.toLowerCase() === text.toLowerCase());
+    void changeGender(known ? known.id : text);
+    return null;
+  }
+
   async function changeMatchGender(next: string) {
     if (next === profile.match_gender) return;
     if (await patch({ matchGender: next })) setProfile((p) => ({ ...p, match_gender: next }));
@@ -284,7 +316,6 @@ export default function HubDashboard({
     if (!placeFound) return;
     if (await patch({ place: placeFound })) {
       setProfile((p) => ({ ...p, city: placeFound.name, region: placeFound.hub }));
-      setEditingPlace(false);
       setPlaceFound(null);
       setPlaceText("");
       if (!preview) router.refresh();
@@ -329,7 +360,10 @@ export default function HubDashboard({
       setMessage(tx("Altersspanne: „von“ darf nicht größer sein als „bis“."));
       return;
     }
-    if (await patch({ age, ageMin: min, ageMax: max })) setProfile((p) => ({ ...p, age, age_min: min, age_max: max }));
+    if (await patch({ age, ageMin: min, ageMax: max })) {
+      setProfile((p) => ({ ...p, age, age_min: min, age_max: max }));
+      setSheet(null);
+    }
   }
 
   async function saveLanguages(chosen: Choice) {
@@ -417,20 +451,22 @@ export default function HubDashboard({
     }
   }
 
-  async function deleteAccount() {
+  // Konto löschen, Schritt 1: Bestätigungslink per E-Mail anfordern. Gelöscht wird erst nach dem Klick auf den Link.
+  async function requestDelete() {
     if (preview) {
-      setConfirmDelete(false);
+      setDeleteStep("sent");
       return;
     }
     setDeleting(true);
     setDeleteError("");
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
-      if (!res.ok) throw new Error("failed");
-      router.push("/");
-      router.refresh();
-    } catch {
-      setDeleteError(tx("Das Konto konnte nicht gelöscht werden. Bitte versuch es noch einmal."));
+      const res = await fetch("/api/account/delete/request", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ?? "failed");
+      setDeleteStep("sent");
+    } catch (e) {
+      setDeleteError(e instanceof Error && e.message !== "failed" ? tx(e.message) : tx("Die Mail konnte nicht gesendet werden. Bitte versuch es noch einmal."));
+    } finally {
       setDeleting(false);
     }
   }
@@ -489,27 +525,27 @@ export default function HubDashboard({
     },
   ];
 
-  const card = "rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7";
+  const card = "rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7";
 
   return (
     <main className="relative isolate min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
       <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         {/* Kopf */}
-        <header className="flex items-center justify-between gap-4">
+        <header className="space-y-4">
           <div>
             <p className="text-xs font-semibold tracking-wide text-gold uppercase">{tx("DSpora Profil")}</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
               {name ? tx("Hey {name}", { name }) : tx("Willkommen")}
             </h1>
-            <p className="mt-0.5 text-xs text-white/70">{email}</p>
+            <p className="mt-0.5 truncate text-sm text-zinc-300">{email}</p>
           </div>
-          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-            <LanguageSwitch onChange={saveLanguage} />
+          <div className="flex flex-wrap items-center gap-2.5">
+            <LanguageButton onChange={saveLanguage} />
             {isAdmin && (
               <Link
                 href="/admin"
-                className="rounded-full border border-gold/40 bg-gold/10 px-4 py-1.5 text-xs font-semibold text-gold shadow-[0_0_24px_-8px_rgba(242,166,90,0.6)] backdrop-blur-md transition-colors hover:bg-gold/20"
+                className="rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold shadow-[0_0_24px_-8px_rgba(242,166,90,0.6)] backdrop-blur-md transition-colors hover:bg-gold/20"
               >
                 {tx("Admin Dashboard")}
               </Link>
@@ -517,7 +553,7 @@ export default function HubDashboard({
             <button
               type="button"
               onClick={signOut}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-zinc-300 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
+              className="rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-medium text-zinc-100 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
             >
               {tx("Abmelden")}
             </button>
@@ -546,8 +582,8 @@ export default function HubDashboard({
                 {matchCount > 0 ? tx("Deine Matches warten") : tx("Dein Hub bereitet Matches vor")}
               </h2>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              {tx("Wir prüfen die Anmeldungen und öffnen deinen Hub, sobald genug passende Leute dabei sind. Jedes Match schauen wir uns vorher an. Du musst nichts weiter tun.")}
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+              {tx("Sobald sich 100 Personen in deinem Hub eingetragen haben, öffnet sich dein Hub und die Matches entstehen automatisch. Du musst nichts weiter tun.")}
             </p>
 
             {/* Getrennt nach Intention */}
@@ -559,10 +595,10 @@ export default function HubDashboard({
                     active === i.id ? "border-gold/40 bg-gold/[0.07]" : "border-white/10 bg-white/[0.03]"
                   }`}
                 >
-                  <p className={`text-xs font-semibold tracking-wide uppercase ${active === i.id ? "text-gold" : "text-zinc-500"}`}>
+                  <p className={`text-xs font-semibold tracking-wide uppercase ${active === i.id ? "text-gold" : "text-zinc-400"}`}>
                     {i.label}
                   </p>
-                  <p className={`mt-1 text-sm leading-snug ${active === i.id ? "text-zinc-100" : "text-zinc-500"}`}>
+                  <p className={`mt-1 text-sm leading-snug ${active === i.id ? "text-zinc-100" : "text-zinc-400"}`}>
                     {i.text}
                   </p>
                 </div>
@@ -580,12 +616,12 @@ export default function HubDashboard({
                   {profile.city ? ` · ${profile.city}` : ""}
                 </div>
                 {hubs?.map((h) => (
-                  <p key={h.id} className="mt-1.5 pl-[26px] text-xs text-zinc-500">
+                  <p key={h.id} className="mt-1.5 pl-[26px] text-xs text-zinc-400">
                     {h.count === 1 ? tx("{n} Anmeldung im Hub {hub}", { n: h.count, hub: tx(h.label) }) : tx("{n} Anmeldungen im Hub {hub}", { n: h.count, hub: tx(h.label) })}
                   </p>
                 ))}
               </li>
-              <li className="flex items-center gap-2.5 text-zinc-400">
+              <li className="flex items-center gap-2.5 text-zinc-300">
                 <span className="h-4 w-4 rounded-full border border-dashed border-zinc-600" /> {tx("Matching: in Vorbereitung")}
               </li>
             </ul>
@@ -645,7 +681,7 @@ export default function HubDashboard({
                     disabled={saving}
                     onClick={() => switchTrack(m.id)}
                     className={`relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 sm:text-sm ${
-                      on ? "text-zinc-950" : "text-zinc-400 hover:text-zinc-200"
+                      on ? "text-zinc-950" : "text-zinc-300 hover:text-white"
                     }`}
                   >
                     {on && (
@@ -662,7 +698,7 @@ export default function HubDashboard({
             </div>
             {setupBusiness && (
               <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/[0.05] p-4">
-                <p className="text-xs leading-relaxed text-zinc-400">
+                <p className="text-xs leading-relaxed text-zinc-300">
                   {tx("Für den Business-Modus brauchen wir noch ein paar Angaben und dein Light-CV.")}
                 </p>
                 <BusinessEditor
@@ -676,12 +712,93 @@ export default function HubDashboard({
             )}
           </div>
 
-          {/* Wohnort, Hub und Entfernung */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-100">{tx("Art der Freundschaft und Wohnort")}</p>
-            </div>
-            <div className="mt-3" role="radiogroup" aria-label={tx("Art der Freundschaft")}>
+          {/* Einstellungen als Liste: Tippen öffnet ein Pop-up */}
+          <div className="mt-6">
+            <SettingRow
+              title={tx("Freundschaft und Wohnort")}
+              summary={
+                profile.meet_mode === "online"
+                  ? tx("Nur online schreiben")
+                  : `${profile.city ? `${profile.city} · ` : ""}${hubLabels.join(" + ") || "–"}`
+              }
+              onClick={() => { setSheet("place"); setMessage(""); }}
+            />
+            <SettingRow
+              title={tx("Alter")}
+              summary={profile.age ? `${profile.age} · ${tx("gesucht")} ${profile.age_min ?? "?"}–${profile.age_max ?? "?"}` : "–"}
+              onClick={() => { setAgeDraft({ age: "", min: "", max: "" }); setSheet("age"); setMessage(""); }}
+            />
+            <SettingRow
+              title={tx("Sprachen")}
+              summary={choiceLabels(profile.languages ?? { ids: [], custom: [] }, LANGUAGES).map((l) => tx(l)).join(", ") || "–"}
+              onClick={() => { setLangDraft(profile.languages ?? { ids: [], custom: [] }); setEditingLanguages(true); setMessage(""); }}
+            />
+            {profile.track !== "business" && (
+              <SettingRow
+                title={tx("Lebensphase")}
+                summary={profile.life_phase ? tx(labelOf(profile.life_phase, PHASES)) : "–"}
+                onClick={() => { setSheet("phase"); setMessage(""); }}
+              />
+            )}
+            <SettingRow
+              title={tx("Geschlecht und Wunsch")}
+              summary={
+                [
+                  profile.gender
+                    ? profile.gender === "nonbinary"
+                      ? tx("Nicht-binär / divers")
+                      : profile.gender === "na"
+                        ? tx("Keine Angabe")
+                        : tx(labelOf(profile.gender, GENDER_CHOICES))
+                    : "",
+                  profile.match_gender
+                    ? profile.match_gender === "other"
+                      ? tx("Anderes")
+                      : tx(labelOf(profile.match_gender, [...DUO_WISHES, ...GROUP_WISHES]))
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "–"
+              }
+              onClick={() => { setSheet("gender"); setMessage(""); }}
+            />
+            <SettingRow
+              title={tx("Gruppengröße")}
+              summary={profile.group_size ? tx(labelOf(profile.group_size, GROUP_SIZES)) : "–"}
+              onClick={() => { setSheet("group"); setMessage(""); }}
+            />
+            {(
+              [
+                { key: "interests", title: "Interessen", options: INTERESTS },
+                { key: "vibes", title: "Vibe", options: VIBES },
+              ] as const
+            ).map(({ key, title, options }) => {
+              const labels = choiceLabels(profile[key], options).map((l) => tx(l));
+              return (
+                <SettingRow
+                  key={key}
+                  title={tx(title)}
+                  summary={labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ") || "–"}
+                  onClick={() => { setDraft(profile[key]); setEditing(key); setMessage(""); }}
+                />
+              );
+            })}
+          </div>
+
+          {profile.track === "business" && profile.business && (
+            <BusinessEditor business={profile.business} onSave={saveBusiness} />
+          )}
+
+          {message && !sheet && !editing && !editingLanguages && (
+            <p role="alert" className="mt-4 text-sm text-rose">
+              {message}
+            </p>
+          )}
+
+          {/* Pop-ups zum Ändern */}
+          <Sheet open={sheet === "place"} onClose={() => setSheet(null)} title={tx("Freundschaft und Wohnort")}>
+            <p className="text-sm text-zinc-300">{tx("Art der Freundschaft")}</p>
+            <div className="mt-2.5" role="radiogroup" aria-label={tx("Art der Freundschaft")}>
               <ChipRow>
                 {MEET_MODES.map((m) => (
                   <Chip key={m.id} selected={profile.meet_mode === m.id} onClick={() => changeMeetMode(m.id as "online" | "activities")}>
@@ -691,48 +808,34 @@ export default function HubDashboard({
               </ChipRow>
             </div>
             {profile.meet_mode !== "online" && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-zinc-400">
-                    {profile.city ? `${profile.city} · ` : ""}{tx("Hub")} {hubLabels.join(" + ") || "–"}
-                  </p>
-                  {!editingPlace && (
-                    <button type="button" onClick={() => { setEditingPlace(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
-                      {tx("Ort ändern")}
-                    </button>
-                  )}
+              <>
+                <p className="mt-6 text-sm text-zinc-300">
+                  {profile.city ? `${profile.city} · ` : ""}{tx("Hub")} {hubLabels.join(" + ") || "–"}
+                </p>
+                <div className="mt-2.5 flex gap-2">
+                  <input
+                    value={placeText}
+                    onChange={(e) => { setPlaceText(e.target.value); setPlaceFound(null); setPlaceError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); checkPlace(); } }}
+                    placeholder={tx("Neuer Wohnort")}
+                    aria-label={tx("Dein Wohnort")}
+                    className={fieldClass}
+                  />
+                  <button type="button" onClick={checkPlace} className="shrink-0 rounded-full border border-white/15 bg-white/[0.06] px-5 text-sm font-medium text-zinc-100 hover:border-gold/50">
+                    {tx("Prüfen")}
+                  </button>
                 </div>
-                {editingPlace && (
-                  <div className="mt-3 space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        value={placeText}
-                        onChange={(e) => { setPlaceText(e.target.value); setPlaceFound(null); setPlaceError(""); }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); checkPlace(); } }}
-                        placeholder={tx("Dein Wohnort")}
-                        aria-label={tx("Dein Wohnort")}
-                        className={fieldClass}
-                      />
-                      <button type="button" onClick={checkPlace} className="shrink-0 rounded-full border border-white/10 bg-white/5 px-4 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold">
-                        {tx("Prüfen")}
-                      </button>
-                    </div>
-                    {placeError && <p role="alert" className="text-xs text-rose">{placeError}</p>}
-                    {placeFound && (
-                      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-3.5 py-2.5 text-xs text-zinc-200">
-                        <span>{tx("„{name}“ gehört zum Hub {hub}.", { name: placeFound.name, hub: tx(placeFound.hubLabel) })}</span>
-                        <button type="button" onClick={savePlace} className="rounded-full bg-gold px-3 py-1 font-semibold text-zinc-950">
-                          {saving ? tx("Speichere …") : tx("Übernehmen")}
-                        </button>
-                      </div>
-                    )}
-                    <button type="button" onClick={() => setEditingPlace(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
-                      {tx("Abbrechen")}
+                {placeError && <p role="alert" className="mt-2 text-sm text-rose">{placeError}</p>}
+                {placeFound && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-sm text-zinc-100">
+                    <span>{tx("„{name}“ gehört zum Hub {hub}.", { name: placeFound.name, hub: tx(placeFound.hubLabel) })}</span>
+                    <button type="button" onClick={savePlace} className="rounded-full bg-gold px-4 py-1.5 font-semibold text-zinc-950">
+                      {saving ? tx("Speichere …") : tx("Übernehmen")}
                     </button>
                   </div>
                 )}
-                <p className="mt-4 text-xs text-zinc-400">{tx("Wie weit darf jemand maximal entfernt wohnen? (Fahrzeit mit dem Auto)")}</p>
-                <div className="mt-2" role="radiogroup" aria-label={tx("Maximale Entfernung")}>
+                <p className="mt-6 text-sm text-zinc-300">{tx("Wie weit darf jemand maximal entfernt wohnen? (Fahrzeit mit dem Auto)")}</p>
+                <div className="mt-2.5" role="radiogroup" aria-label={tx("Maximale Entfernung")}>
                   <ChipRow>
                     {TRAVEL_OPTIONS.map((o) => (
                       <Chip key={o.minutes} selected={(profile.travel_minutes ?? 0) === o.minutes} onClick={() => changeTravel(o.minutes)}>
@@ -741,8 +844,8 @@ export default function HubDashboard({
                     ))}
                   </ChipRow>
                 </div>
-                <p className="mt-4 text-xs text-zinc-400">{tx("Wie oft würdest du dich realistisch treffen?")}</p>
-                <div className="mt-2" role="radiogroup" aria-label={tx("Treffhäufigkeit")}>
+                <p className="mt-6 text-sm text-zinc-300">{tx("Wie oft würdest du dich realistisch treffen?")}</p>
+                <div className="mt-2.5" role="radiogroup" aria-label={tx("Treffhäufigkeit")}>
                   <ChipRow>
                     {MEET_FREQUENCIES.map((f) => (
                       <Chip key={f.id} selected={profile.meet_frequency === f.id} onClick={() => changeFrequency(f.id)}>
@@ -751,106 +854,73 @@ export default function HubDashboard({
                     ))}
                   </ChipRow>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Alter */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">{tx("Alter und gesuchte Altersspanne")}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <input
-                value={ageDraft.age || (profile.age ? String(profile.age) : "")}
-                onChange={(e) => setAgeDraft((d) => ({ ...d, age: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
-                inputMode="numeric"
-                aria-label={tx("Dein Alter")}
-                placeholder={tx("Alter")}
-                className="w-20 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
-              />
-              <span className="text-xs text-zinc-500">{tx("Gesucht von")}</span>
-              <input
-                value={ageDraft.min || (profile.age_min ? String(profile.age_min) : "")}
-                onChange={(e) => setAgeDraft((d) => ({ ...d, min: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
-                inputMode="numeric"
-                aria-label={tx("Gesucht ab")}
-                placeholder={tx("von")}
-                className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
-              />
-              <span className="text-xs text-zinc-500">{tx("bis")}</span>
-              <input
-                value={ageDraft.max || (profile.age_max ? String(profile.age_max) : "")}
-                onChange={(e) => setAgeDraft((d) => ({ ...d, max: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
-                inputMode="numeric"
-                aria-label={tx("Gesucht bis")}
-                placeholder={tx("bis")}
-                className="w-16 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2 text-center text-sm text-white focus:border-gold/60 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setAgeDraft((d) => ({ age: d.age || String(profile.age ?? ""), min: d.min || String(profile.age_min ?? ""), max: d.max || String(profile.age_max ?? "") }));
-                  saveAges();
-                }}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 hover:border-gold/50 hover:text-gold"
-              >
-                {saving ? tx("Speichere …") : tx("Speichern")}
-              </button>
-            </div>
-          </div>
-
-          {/* Sprachen und Lebensphase */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-100">{tx("Sprachen")}</p>
-              {!editingLanguages && (
-                <button type="button" onClick={() => { setLangDraft(profile.languages ?? { ids: [], custom: [] }); setEditingLanguages(true); setMessage(""); }} className="text-xs text-zinc-400 transition-colors hover:text-gold">
-                  {tx("Bearbeiten")}
-                </button>
-              )}
-            </div>
-            {editingLanguages ? (
-              <div className="mt-3">
-                <ChoiceSelect
-                  options={LANGUAGES}
-                  value={langDraft}
-                  onChange={setLangDraft}
-                  onConfirm={saveLanguages}
-                  maxTotal={5}
-                  customPlaceholder={tx("Eine andere Sprache? Eigene hinzufügen")}
-                  confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
-                  extra={<button type="button" onClick={() => setEditingLanguages(false)} className="text-xs text-zinc-500 hover:text-zinc-300">{tx("Abbrechen")}</button>}
-                />
-              </div>
-            ) : (
-              <div className="mt-3">
-                <ChipRow>
-                  {choiceLabels(profile.languages ?? { ids: [], custom: [] }, LANGUAGES).map((label) => (
-                    <span key={label} className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200">{label}</span>
-                  ))}
-                </ChipRow>
-              </div>
-            )}
-            {profile.track !== "business" && (
-              <>
-                <p className="mt-5 text-sm font-medium text-zinc-100">{tx("Lebensphase")}</p>
-                <div className="mt-3" role="radiogroup" aria-label={tx("Lebensphase")}>
-                  <ChipRow>
-                    {PHASES.map((ph) => (
-                      <Chip key={ph.id} selected={profile.life_phase === ph.id} onClick={() => changePhase(ph.id)}>
-                        {tx(ph.label)}
-                      </Chip>
-                    ))}
-                  </ChipRow>
-                </div>
               </>
             )}
-          </div>
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+          </Sheet>
 
-          {/* Geschlecht und Wunsch */}
-          <div className="mt-6 border-t border-white/10 pt-5">
+          <Sheet open={sheet === "age"} onClose={() => setSheet(null)} title={tx("Alter und gesuchte Altersspanne")}>
+            <div className="grid grid-cols-3 gap-3">
+              {(
+                [
+                  { key: "age", label: "Dein Alter", value: profile.age },
+                  { key: "min", label: "Gesucht ab", value: profile.age_min },
+                  { key: "max", label: "Gesucht bis", value: profile.age_max },
+                ] as const
+              ).map((f) => (
+                <label key={f.key} className="block text-sm text-zinc-300">
+                  {tx(f.label)}
+                  <input
+                    value={ageDraft[f.key] || (f.value ? String(f.value) : "")}
+                    onChange={(e) => setAgeDraft((d) => ({ ...d, [f.key]: e.target.value.replace(/\D/g, "").slice(0, 2) }))}
+                    inputMode="numeric"
+                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-3 text-center text-base text-white focus:border-gold/60 focus:outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+            <button
+              type="button"
+              onClick={() => {
+                setAgeDraft((d) => ({ age: d.age || String(profile.age ?? ""), min: d.min || String(profile.age_min ?? ""), max: d.max || String(profile.age_max ?? "") }));
+                saveAges();
+              }}
+              className="cta-premium mt-6 w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-3 text-sm font-semibold text-zinc-950"
+            >
+              {saving ? tx("Speichere …") : tx("Speichern")}
+            </button>
+          </Sheet>
+
+          <Sheet open={editingLanguages} onClose={() => setEditingLanguages(false)} title={tx("Sprachen")}>
+            <ChoiceSelect
+              options={LANGUAGES}
+              value={langDraft}
+              onChange={setLangDraft}
+              onConfirm={saveLanguages}
+              maxTotal={5}
+              customPlaceholder={tx("Eine andere Sprache? Eigene hinzufügen")}
+              confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
+            />
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+          </Sheet>
+
+          <Sheet open={sheet === "phase"} onClose={() => setSheet(null)} title={tx("Lebensphase")}>
+            <div role="radiogroup" aria-label={tx("Lebensphase")}>
+              <ChipRow>
+                {PHASES.map((ph) => (
+                  <Chip key={ph.id} selected={profile.life_phase === ph.id} onClick={() => changePhase(ph.id)}>
+                    {tx(ph.label)}
+                  </Chip>
+                ))}
+              </ChipRow>
+            </div>
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+          </Sheet>
+
+          <Sheet open={sheet === "gender"} onClose={() => setSheet(null)} title={tx("Geschlecht und Wunsch")}>
             <p className="text-sm font-medium text-zinc-100">{tx("Geschlecht")}</p>
-            <p className="mt-0.5 text-xs text-zinc-500">{tx("Es zählt, wie du dich selbst identifizierst.")}</p>
-            <div className="mt-3" role="radiogroup" aria-label={tx("Geschlecht")}>
+            <div className="mt-2.5" role="radiogroup" aria-label={tx("Geschlecht")}>
               <ChipRow>
                 {GENDER_CHOICES.map((g) => (
                   <Chip key={g.id} selected={profile.gender === g.id} onClick={() => changeGender(g.id)}>
@@ -864,8 +934,11 @@ export default function HubDashboard({
                 )}
               </ChipRow>
             </div>
-            <p className="mt-5 text-sm font-medium text-zinc-100">{tx("Mit wem möchtest du dich verbinden?")}</p>
-            <div className="mt-3" role="radiogroup" aria-label={tx("Verbinden mit")}>
+            <div className="mt-3">
+              <CustomEntry placeholder={tx("Anderes: schreib es selbst")} onAdd={addCustomGender} />
+            </div>
+            <p className="mt-6 text-sm font-medium text-zinc-100">{tx("Mit wem möchtest du dich verbinden?")}</p>
+            <div className="mt-2.5" role="radiogroup" aria-label={tx("Verbinden mit")}>
               <ChipRow>
                 {(profile.group_size === "duo" ? DUO_WISHES : GROUP_WISHES).map((g) => (
                   <Chip key={g.id} selected={profile.match_gender === g.id} onClick={() => changeMatchGender(g.id)}>
@@ -879,114 +952,42 @@ export default function HubDashboard({
                 )}
               </ChipRow>
             </div>
-          </div>
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+          </Sheet>
 
-          {/* Gruppengröße */}
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <p className="text-sm font-medium text-zinc-100">{tx("Gewünschte Gruppengröße")}</p>
-            <div className="mt-3" role="radiogroup" aria-label={tx("Gruppengröße")}>
+          <Sheet open={sheet === "group"} onClose={() => setSheet(null)} title={tx("Gewünschte Gruppengröße")}>
+            <div role="radiogroup" aria-label={tx("Gruppengröße")}>
               <ChipRow>
                 {GROUP_SIZES.map((g) => (
-                  <Chip
-                    key={g.id}
-                    selected={profile.group_size === g.id}
-                    onClick={() => changeGroupSize(g.id)}
-                  >
+                  <Chip key={g.id} selected={profile.group_size === g.id} onClick={() => changeGroupSize(g.id)}>
                     {tx(g.label)}
                   </Chip>
                 ))}
               </ChipRow>
             </div>
-          </div>
+            {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+          </Sheet>
 
-          {profile.track === "business" && profile.business && (
-            <BusinessEditor business={profile.business} onSave={saveBusiness} />
-          )}
-
-          {/* Interessen & Vibes */}
           {(
             [
               { key: "interests", title: "Interessen", options: INTERESTS },
               { key: "vibes", title: "Vibe", options: VIBES },
             ] as const
           ).map(({ key, title, options }) => (
-            <div key={key} className="mt-6 border-t border-white/10 pt-5">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-zinc-100">{tx(title)}</p>
-                {editing !== key && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft(profile[key]);
-                      setEditing(key);
-                      setMessage("");
-                    }}
-                    className="text-xs text-zinc-400 transition-colors hover:text-gold"
-                  >
-                    {tx("Bearbeiten")}
-                  </button>
-                )}
-              </div>
-
-              <AnimatePresence mode="wait" initial={false}>
-                {editing === key ? (
-                  <motion.div
-                    key="edit"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="mt-3"
-                  >
-                    <ChoiceSelect
-                      options={options}
-                      value={draft}
-                      onChange={setDraft}
-                      onConfirm={saveEdit}
-                      customPlaceholder={key === "interests" ? tx("Eigenes hinzufügen") : tx("Eigenen Vibe hinzufügen")}
-                      maxTotal={key === "interests" ? MAX_INTERESTS : MAX_VIBES}
-                      minTotal={key === "interests" ? MIN_INTERESTS : 1}
-                      confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
-                      extra={
-                        <button
-                          type="button"
-                          onClick={() => setEditing(null)}
-                          className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
-                        >
-                          {tx("Abbrechen")}
-                        </button>
-                      }
-                    />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="view"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.25 }}
-                    className="mt-3"
-                  >
-                    <ChipRow>
-                      {choiceLabels(profile[key], options).map((label) => tx(label)).map((label) => (
-                        <span
-                          key={label}
-                          className="rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-zinc-200"
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </ChipRow>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <Sheet key={key} open={editing === key} onClose={() => setEditing(null)} title={tx(title)}>
+              <ChoiceSelect
+                options={options}
+                value={draft}
+                onChange={setDraft}
+                onConfirm={saveEdit}
+                customPlaceholder={key === "interests" ? tx("Eigenes hinzufügen") : tx("Eigenen Vibe hinzufügen")}
+                maxTotal={key === "interests" ? MAX_INTERESTS : MAX_VIBES}
+                minTotal={key === "interests" ? MIN_INTERESTS : 1}
+                confirmLabel={saving ? tx("Speichere …") : tx("Speichern")}
+              />
+              {message && <p role="alert" className="mt-4 text-sm text-rose">{message}</p>}
+            </Sheet>
           ))}
-
-          {message && (
-            <p role="alert" className="mt-4 text-xs text-rose">
-              {message}
-            </p>
-          )}
         </motion.section>
 
         {/* Chats mit Matches */}
@@ -999,7 +1000,7 @@ export default function HubDashboard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Chats")}</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
                 {tx("Du kannst höchstens vier Chats gleichzeitig führen, damit jedes Gespräch echten Fokus bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.")}
               </p>
             </div>
@@ -1009,7 +1010,7 @@ export default function HubDashboard({
                   <span key={i} className={`h-2 w-5 rounded-full ${i < matchCount ? "bg-gold" : "bg-white/10"}`} />
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-zinc-500">{tx("{n} von 4", { n: matchCount })}</p>
+              <p className="mt-1 text-xs text-zinc-400">{tx("{n} von 4", { n: matchCount })}</p>
             </div>
           </div>
           <Link
@@ -1018,7 +1019,7 @@ export default function HubDashboard({
           >
             Zu den Chats
             {unreadCount > 0 && (
-              <span className="rounded-full bg-zinc-950/80 px-2 py-0.5 text-[11px] text-gold">{tx("{n} neu", { n: unreadCount })}</span>
+              <span className="rounded-full bg-zinc-950/80 px-2 py-0.5 text-xs text-gold">{tx("{n} neu", { n: unreadCount })}</span>
             )}
           </Link>
         </motion.section>
@@ -1031,40 +1032,54 @@ export default function HubDashboard({
           className={card}
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Steckbrief")}</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-            {tx("Das weiß DSpora aktuell über dich. So kann die KI dich immer auf dem neuesten Stand ansprechen. Erzähl ihr jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen. Gefragt wird sie auch im Gespräch („Zeig mir meinen Steckbrief“).")}
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+            {tx("Das weiß DSpora aktuell über dich. Erzähl der KI jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen.")}
           </p>
 
           {steckbrief.lines.length > 0 && (
-            <dl className="mt-4 space-y-1.5 text-sm">
-              {steckbrief.lines.map((l) => (
-                <div key={l.label} className="flex gap-3">
-                  <dt className="w-40 shrink-0 text-zinc-500">{tx(l.label)}</dt>
-                  <dd className="min-w-0 text-zinc-200">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
-                </div>
-              ))}
-            </dl>
+            <>
+              <dl className="mt-4 space-y-2 text-sm">
+                {steckbrief.lines.slice(0, 4).map((l) => (
+                  <div key={l.label} className="flex gap-3">
+                    <dt className="w-32 shrink-0 text-zinc-300">{tx(l.label)}</dt>
+                    <dd className="min-w-0 text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                  </div>
+                ))}
+              </dl>
+              {steckbrief.lines.length > 4 && (
+                <button type="button" onClick={() => setSheet("facts")} className="mt-3 text-sm font-medium text-gold hover:underline">
+                  {tx("Alle Angaben ansehen")}
+                </button>
+              )}
+              <Sheet open={sheet === "facts"} onClose={() => setSheet(null)} title={tx("Dein Steckbrief")}>
+                <dl className="space-y-3 text-sm">
+                  {steckbrief.lines.map((l) => (
+                    <div key={l.label}>
+                      <dt className="text-zinc-300">{tx(l.label)}</dt>
+                      <dd className="mt-0.5 text-base text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </Sheet>
+            </>
           )}
 
           <div className="mt-5 border-t border-white/10 pt-4">
-            <p className="text-sm font-medium text-zinc-100">{tx("Das hast du erzählt")}</p>
+            <p className="text-sm font-medium text-zinc-50">{tx("Das hast du erzählt")}</p>
             {steckbrief.facts.length === 0 ? (
-              <p className="mt-2 text-xs text-zinc-500">{tx("Noch nichts. Im Gespräch lernt die KI dich besser kennen.")}</p>
+              <p className="mt-2 text-sm text-zinc-300">{tx("Noch nichts. Im Gespräch lernt die KI dich besser kennen.")}</p>
             ) : (
-              <ul className="mt-3 space-y-2">
-                <AnimatePresence initial={false}>
-                  {steckbrief.facts.map((f) => (
-                    <motion.li
+              <div className="mt-3">
+                <Slider
+                  label={tx("Das hast du erzählt")}
+                  slides={steckbrief.facts.map((f) => (
+                    <div
                       key={`${f.kind}-${f.question}-${f.answer}`}
-                      layout="position"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5"
+                      className="flex min-h-28 items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3.5"
                     >
-                      <div className="min-w-0 flex-1 text-sm">
-                        {f.kind === "follow" && <p className="text-xs text-zinc-500">{f.question}</p>}
-                        <p className="break-words text-zinc-200">{f.answer}</p>
+                      <div className="min-w-0 flex-1">
+                        {f.kind === "follow" && <p className="text-sm text-zinc-300">{f.question}</p>}
+                        <p className="mt-1 text-base leading-relaxed break-words text-zinc-50">{f.answer}</p>
                       </div>
                       <button
                         type="button"
@@ -1072,14 +1087,14 @@ export default function HubDashboard({
                         disabled={saving}
                         aria-label={tx("Diese Angabe entfernen")}
                         title={tx("Entfernen")}
-                        className="shrink-0 text-lg leading-none text-zinc-500 transition-colors hover:text-rose disabled:opacity-50"
+                        className="-mt-1 -mr-1 flex h-10 w-10 shrink-0 items-center justify-center text-2xl leading-none text-zinc-300 transition-colors hover:text-rose disabled:opacity-50"
                       >
                         ×
                       </button>
-                    </motion.li>
+                    </div>
                   ))}
-                </AnimatePresence>
-              </ul>
+                />
+              </div>
             )}
           </div>
 
@@ -1099,7 +1114,7 @@ export default function HubDashboard({
           className={card}
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Ideen für DSpora")}</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
             {tx("Was wünschst du dir? Welche Features sollten wir unbedingt einbauen? Wir lesen jede Idee.")}
           </p>
           <form onSubmit={submitWish} className="mt-4 space-y-2.5">
@@ -1112,7 +1127,7 @@ export default function HubDashboard({
               className="w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-white/40 focus:border-gold/60 focus:outline-none"
             />
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-zinc-500">{wishMessage}</span>
+              <span className="text-xs text-zinc-400">{wishMessage}</span>
               <button
                 type="submit"
                 disabled={wishBusy || wishText.trim().length < 3}
@@ -1123,16 +1138,19 @@ export default function HubDashboard({
             </div>
           </form>
           {wishes.length > 0 && (
-            <ul className="mt-5 space-y-2 border-t border-white/10 pt-4">
-              {wishes.map((w) => (
-                <li key={w.id} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-zinc-200">{w.wish}</p>
-                  <p className="mt-1 text-[11px] text-zinc-500">
-                    {new Date(w.created_at).toLocaleDateString(language === "ta" ? "ta-IN" : language === "en" ? "en-GB" : "de-DE", { dateStyle: "medium" })}
-                  </p>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-5 border-t border-white/10 pt-4">
+              <Slider
+                label={tx("Deine Ideen für DSpora")}
+                slides={wishes.map((w) => (
+                  <div key={w.id} className="min-h-24 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3.5">
+                    <p className="text-base leading-relaxed whitespace-pre-wrap text-zinc-50">{w.wish}</p>
+                    <p className="mt-1.5 text-sm text-zinc-300">
+                      {new Date(w.created_at).toLocaleDateString(language === "ta" ? "ta-IN" : language === "en" ? "en-GB" : "de-DE", { dateStyle: "medium" })}
+                    </p>
+                  </div>
+                ))}
+              />
+            </div>
           )}
         </motion.section>
 
@@ -1145,7 +1163,7 @@ export default function HubDashboard({
             className={card}
           >
             <h2 className="text-lg font-semibold text-zinc-50">{tx("Schneller anmelden")}</h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+            <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
               {tx("Mit einem Passkey meldest du dich per Face ID, Touch ID oder Schlüsselbund an. Ein Passwort gibt es bei DSpora nicht.")}
             </p>
             {passkeys && passkeys.length > 0 && (
@@ -1157,14 +1175,14 @@ export default function HubDashboard({
                   >
                     <span>
                       {p.friendly_name || "Passkey"}
-                      <span className="ml-2 text-xs text-zinc-500">
+                      <span className="ml-2 text-xs text-zinc-400">
                         {new Date(p.created_at).toLocaleDateString(language === "ta" ? "ta-IN" : language === "en" ? "en-GB" : "de-DE")}
                       </span>
                     </span>
                     <button
                       type="button"
                       onClick={() => removePasskey(p.id)}
-                      className="text-xs text-zinc-500 transition-colors hover:text-rose"
+                      className="text-xs text-zinc-400 transition-colors hover:text-rose"
                     >
                       {tx("Entfernen")}
                     </button>
@@ -1176,7 +1194,7 @@ export default function HubDashboard({
               <Chip onClick={addPasskey}>{tx("Passkey hinzufügen")}</Chip>
             </div>
             {passkeyMessage && (
-              <p role="status" className="mt-3 text-xs text-zinc-400">
+              <p role="status" className="mt-3 text-xs text-zinc-300">
                 {passkeyMessage}
               </p>
             )}
@@ -1195,55 +1213,73 @@ export default function HubDashboard({
             />
             <span>
               {tx("E-Mail, wenn ein neuer Chat auf dich wartet")}
-              <span className="mt-0.5 block text-xs text-zinc-500">{tx("Die Mail enthält keine Angaben zu deinem Match, nur einen Link in dein Profil.")}</span>
+              <span className="mt-0.5 block text-xs text-zinc-400">{tx("Die Mail enthält keine Angaben zu deinem Match, nur einen Link in dein Profil.")}</span>
             </span>
           </label>
         </section>
 
-        {/* Konto löschen (Soft-Delete, 30 Tage) */}
-        <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">
-          <h2 className="text-sm font-semibold text-zinc-300">{tx("Konto löschen")}</h2>
-          {!confirmDelete ? (
+        {/* Konto löschen: Pop-up mit Warnung, danach Bestätigung per E-Mail */}
+        <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7">
+          <h2 className="text-sm font-semibold text-zinc-100">{tx("Konto löschen")}</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+            {tx("Du kannst dein Konto und alle Daten jederzeit löschen. Zur Sicherheit bestätigst du das noch einmal per E-Mail.")}
+          </p>
+          <button
+            type="button"
+            onClick={() => { setDeleteStep("intro"); setDeleteError(""); setSheet("delete"); }}
+            className="mt-4 rounded-full border border-white/15 px-5 py-2.5 text-sm text-zinc-200 transition-colors hover:border-rose/60 hover:text-rose"
+          >
+            {tx("Konto löschen …")}
+          </button>
+        </section>
+
+        <Sheet open={sheet === "delete"} onClose={() => setSheet(null)} title={tx("Konto wirklich löschen?")} tone="danger">
+          {deleteStep === "intro" ? (
             <>
-              <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
-                {tx("Dein Konto wird sofort gesperrt. Deine Daten bleiben noch 30 Tage gespeichert, falls du es dir anders überlegst oder Hilfe brauchst. Danach werden sie endgültig gelöscht.")}
+              <p className="text-base leading-relaxed text-zinc-100">{tx("Bist du sicher? Das passiert, wenn du dein Konto löschst:")}</p>
+              <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-200">
+                <li>{tx("Dein Konto wird gesperrt und du verlässt alle Chats.")}</li>
+                <li>{tx("Dein Profil, deine Antworten und deine Fotos sind für andere nicht mehr sichtbar.")}</li>
+                <li>{tx("Nach 30 Tagen werden alle deine Daten endgültig gelöscht.")}</li>
+              </ul>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-300">
+                {tx("Im nächsten Schritt schicken wir dir einen Bestätigungslink an {email}. Erst wenn du darauf klickst, wird das Konto gelöscht.", { email })}
+              </p>
+              {deleteError && <p role="alert" className="mt-3 text-sm text-rose">{deleteError}</p>}
+              <div className="mt-6 grid gap-3">
+                <button
+                  type="button"
+                  onClick={requestDelete}
+                  disabled={deleting}
+                  className="w-full rounded-full bg-rose px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {deleting ? tx("Sende …") : tx("Bestätigungs-E-Mail senden")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSheet(null)}
+                  className="w-full rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-medium text-zinc-100"
+                >
+                  {tx("Nein, Konto behalten")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-base leading-relaxed text-zinc-100">{tx("Wir haben dir eine E-Mail an {email} geschickt.", { email })}</p>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+                {tx("Klicke darin auf „Löschen bestätigen“. Der Link ist eine Stunde gültig. Schau auch im Spam-Ordner nach. Wenn du nicht klickst, bleibt dein Konto unverändert.")}
               </p>
               <button
                 type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="mt-4 rounded-full border border-white/10 px-4 py-1.5 text-xs text-zinc-400 transition-colors hover:border-rose/50 hover:text-rose"
+                onClick={() => setSheet(null)}
+                className="mt-6 w-full rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-medium text-zinc-100"
               >
-                {tx("Konto löschen …")}
+                {tx("Schließen")}
               </button>
             </>
-          ) : (
-            <div className="mt-3 space-y-3">
-              <p className="text-sm leading-relaxed text-zinc-300">{tx("Möchtest du dein Konto wirklich löschen?")}</p>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={deleteAccount}
-                  disabled={deleting}
-                  className="rounded-full bg-rose/90 px-4 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                  {deleting ? tx("Lösche …") : tx("Ja, Konto löschen")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-zinc-400 transition-colors hover:text-zinc-200"
-                >
-                  {tx("Abbrechen")}
-                </button>
-              </div>
-              {deleteError && (
-                <p role="alert" className="text-xs text-rose">
-                  {deleteError}
-                </p>
-              )}
-            </div>
           )}
-        </section>
+        </Sheet>
 
         <footer className="flex items-center justify-between px-1 pt-2 text-xs text-white/70">
           <Link href="/onboarding" className="transition-colors hover:text-white">

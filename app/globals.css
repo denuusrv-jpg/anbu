@@ -292,3 +292,10 @@ input::-webkit-credentials-auto-fill-button {
     font-size: 16px;
   }
 }
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

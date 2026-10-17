@@ -37,8 +37,8 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
             </div>
             <div className="min-w-0">
               <h1 className="truncate text-2xl font-bold text-zinc-50 sm:text-3xl">{data.displayName}</h1>
-              {data.realName && <p className="mt-0.5 text-sm text-zinc-400">{data.realName}</p>}
-              {meta && <p className="mt-0.5 text-xs text-zinc-500">{meta}</p>}
+              {data.realName && <p className="mt-0.5 text-sm text-zinc-300">{data.realName}</p>}
+              {meta && <p className="mt-0.5 text-xs text-zinc-400">{meta}</p>}
               {data.state === "self" && (
                 <Link href="/dashboard" className="mt-2 inline-block text-xs text-gold hover:underline">
                   {tx("Profil bearbeiten")}
@@ -48,7 +48,7 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
           </div>
 
           {data.state === "limited" ? (
-            <p className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-zinc-400">
+            <p className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-zinc-300">
               {tx("Dieses Profil ist privat. Mehr als Profilbild und Spitzname siehst du nicht.")}
             </p>
           ) : (
@@ -70,7 +70,7 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
         {data.state !== "limited" && (
           <section aria-label={tx("Beiträge")}>
             {data.posts.length === 0 ? (
-              <p className="rounded-3xl border border-white/10 bg-zinc-950/75 px-6 py-8 text-center text-sm text-zinc-400 backdrop-blur-md">{tx("Noch keine Beiträge.")}</p>
+              <p className="rounded-3xl border border-white/10 bg-zinc-950/75 px-6 py-8 text-center text-sm text-zinc-300 backdrop-blur-md">{tx("Noch keine Beiträge.")}</p>
             ) : (
               <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                 {data.posts.map((p) => (
@@ -92,7 +92,7 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
             <PostCarousel slides={post.slides} alt={post.caption ?? tx("Beitrag von {name}", { name: data.displayName })} />
             <div className="flex items-start justify-between gap-3 p-4">
               <p className="text-sm leading-relaxed text-zinc-200">{post.caption ?? ""}</p>
-              <button type="button" onClick={() => setOpen(null)} className="shrink-0 text-xs text-zinc-400 hover:text-zinc-200">
+              <button type="button" onClick={() => setOpen(null)} className="shrink-0 text-xs text-zinc-300 hover:text-white">
                 {tx("Schließen")}
               </button>
             </div>

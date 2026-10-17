@@ -17,17 +17,23 @@ function content(name: string) {
   return { text, html };
 }
 
-async function send(to: string, name: string): Promise<void> {
+/** Mail über Resend (Absender info@dspora.de). Ohne RESEND_API_KEY passiert nichts und es wird false zurückgegeben. */
+export async function sendMail(to: string, subject: string, text: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
-  if (!key) return;
-  const { text, html } = content(name);
+  if (!key) return false;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: "DSpora <info@dspora.de>", to: [to], subject: "Dein neuer Chat auf DSpora wartet", text, html }),
+    body: JSON.stringify({ from: "DSpora <info@dspora.de>", to: [to], subject, text, html }),
     signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}`);
+  return true;
+}
+
+async function send(to: string, name: string): Promise<void> {
+  const { text, html } = content(name);
+  await sendMail(to, "Dein neuer Chat auf DSpora wartet", text, html);
 }
 
 /** Alle Mitglieder eines neuen Chats benachrichtigen (Fehler werden nur protokolliert und blockieren nichts). */

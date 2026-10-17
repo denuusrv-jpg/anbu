@@ -4,7 +4,7 @@ export default function Impressum() {
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 text-zinc-300 sm:px-8">
       <div className="mx-auto max-w-2xl">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
           ← Zurück
         </Link>
 

@@ -165,7 +165,7 @@ export default function ProfileForm({
               type="button"
               onClick={() => fileRef.current?.click()}
               aria-label="Foto hinzufügen"
-              className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/20 bg-white/[0.03] text-zinc-400 transition-colors hover:border-gold/60 hover:text-gold"
+              className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-white/20 bg-white/[0.03] text-zinc-300 transition-colors hover:border-gold/60 hover:text-gold"
             >
               <CameraIcon />
               <span className="text-[10px]">Hinzufügen</span>
@@ -185,7 +185,7 @@ export default function ProfileForm({
             {photoError}
           </p>
         )}
-        <p className="text-[11px] leading-relaxed text-zinc-300">
+        <p className="text-xs leading-relaxed text-zinc-300">
           Fotos werden auf deinem Gerät verkleinert, versteckte Daten wie der Standort werden entfernt.
         </p>
       </Field>

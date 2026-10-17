@@ -1,0 +1,89 @@
+"use client";
+
+import { useEffect, useId, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { useTx } from "@/lib/LanguageContext";
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Pop-up: auf dem Handy ein Fenster von unten (Bottom-Sheet), am Desktop mittig. Schließt per Tippen daneben, Esc oder Knopf.
+export default function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  tone = "default",
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  tone?: "default" | "danger";
+}) {
+  const tx = useTx();
+  const titleId = useId();
+  // Wird an document.body gehängt: Karten mit Weichzeichner/Transform würden sonst das "fixed" einschließen
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[140] flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ duration: 0.35, ease: EASE }}
+            onClick={(e) => e.stopPropagation()}
+            className={`flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-3xl border bg-zinc-900 shadow-[0_-30px_80px_-30px_rgba(0,0,0,0.9)] sm:rounded-3xl ${
+              tone === "danger" ? "border-rose/30" : "border-white/10"
+            }`}
+          >
+            <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/20 sm:hidden" />
+            <div className="flex items-center justify-between gap-4 px-6 pt-4 pb-2">
+              <h2 id={titleId} className={`text-lg font-semibold ${tone === "danger" ? "text-rose" : "text-zinc-50"}`}>
+                {title}
+              </h2>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={tx("Schließen")}
+                className="-mr-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-zinc-300 transition-colors hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 pt-2 pb-8">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}

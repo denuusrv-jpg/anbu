@@ -101,7 +101,7 @@ export function CustomEntry({
           className="w-full bg-transparent px-3 py-2 text-base text-white placeholder:text-white/40 focus:outline-none"
         />
       </div>
-      {hint && !error && <p className="px-1 text-[11px] text-zinc-300">{hint}</p>}
+      {hint && !error && <p className="px-1 text-xs text-zinc-300">{hint}</p>}
       {error && (
         <p role="alert" className="px-1 text-xs text-rose">
           {tx(error)}

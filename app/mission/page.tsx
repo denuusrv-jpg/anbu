@@ -6,7 +6,7 @@ export default function Mission() {
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 sm:px-8">
       <div className="mx-auto max-w-3xl">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
           ← Zurück
         </Link>
 
@@ -18,7 +18,7 @@ export default function Mission() {
           <h1 className="mt-5 text-3xl font-bold text-zinc-50 uppercase sm:text-4xl">
             Unsere Mission
           </h1>
-          <p className="mx-auto mt-4 text-base leading-relaxed text-zinc-400 sm:text-lg">
+          <p className="mx-auto mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg">
             Warum es DSpora gibt – und wofür wir stehen.
           </p>
         </div>

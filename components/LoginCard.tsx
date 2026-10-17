@@ -128,7 +128,7 @@ export default function LoginCard({
           <ShieldIcon />
         </div>
         <h2 className="mt-5 text-lg font-semibold text-zinc-50">{tx("Willkommen zurück")}</h2>
-        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
           {tx("Ohne Passwort: Wir schicken dir einen Link oder du nutzt deinen Passkey.")}
         </p>
 
@@ -157,12 +157,12 @@ export default function LoginCard({
                 <p className="text-sm leading-relaxed text-zinc-200">
                   {tx("Check dein Postfach: Wir haben dir einen Link an {email} geschickt.", { email: email.trim() })}
                 </p>
-                <p className="text-xs text-zinc-500">{tx("Schau auch im Spam-Ordner nach.")}</p>
+                <p className="text-xs text-zinc-400">{tx("Schau auch im Spam-Ordner nach.")}</p>
                 <button
                   type="button"
                   onClick={() => sendLink()}
                   disabled={cooldown > 0}
-                  className="text-xs text-zinc-400 transition-colors hover:text-gold disabled:opacity-50"
+                  className="text-xs text-zinc-300 transition-colors hover:text-gold disabled:opacity-50"
                 >
                   {cooldown > 0 ? tx("Erneut senden in {n} s", { n: cooldown }) : tx("Link erneut senden")}
                 </button>
@@ -217,7 +217,7 @@ export default function LoginCard({
 
                 {passkeySupported && (
                   <>
-                    <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                    <div className="flex items-center gap-3 text-xs text-zinc-400">
                       <span className="h-px flex-1 bg-white/10" />
                       {tx("oder")}
                       <span className="h-px flex-1 bg-white/10" />
@@ -244,7 +244,7 @@ export default function LoginCard({
         )}
       </div>
     </div>
-    <Link href="/" className="mt-8 text-sm text-zinc-500 hover:text-zinc-300">
+    <Link href="/" className="mt-8 text-sm text-zinc-400 hover:text-white">
       {tx("← Zurück zur Startseite")}
     </Link>
     </>

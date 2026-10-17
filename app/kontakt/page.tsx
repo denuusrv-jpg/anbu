@@ -23,7 +23,7 @@ export default function Kontakt() {
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 sm:px-8">
       <div className="mx-auto max-w-3xl">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
           ← Zurück
         </Link>
 
@@ -35,7 +35,7 @@ export default function Kontakt() {
           <h1 className="mt-5 text-3xl font-bold text-zinc-50 uppercase sm:text-4xl">
             Schreib uns
           </h1>
-          <p className="mx-auto mt-4 text-base leading-relaxed text-zinc-400 sm:text-lg">
+          <p className="mx-auto mt-4 text-base leading-relaxed text-zinc-300 sm:text-lg">
             Fragen, Feedback oder eine Idee? Wähle unten kurz das passende
             Thema und schick uns eine Nachricht.
           </p>
@@ -55,7 +55,7 @@ export default function Kontakt() {
                 <p className="text-sm font-medium text-zinc-100">
                   {faq.question}
                 </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
                   {faq.answer}
                 </p>
               </div>

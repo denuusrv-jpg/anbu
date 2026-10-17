@@ -227,15 +227,15 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
     const t = tr[key];
     if (!t || t.hidden) return null;
     const cls = `mt-1 px-1 text-xs ${align === "center" ? "text-center" : ""}`;
-    if (t.state === "loading") return <p className={`${cls} text-zinc-500`}>{tx("Übersetze …")}</p>;
+    if (t.state === "loading") return <p className={`${cls} text-zinc-400`}>{tx("Übersetze …")}</p>;
     if (t.state === "error") return <p className={`${cls} text-rose`}>{tx("Übersetzung fehlgeschlagen")}</p>;
-    if (t.same) return autoTr ? null : <p className={`${cls} text-zinc-500`}>{tx("Schon in deiner Sprache")}</p>;
+    if (t.same) return autoTr ? null : <p className={`${cls} text-zinc-400`}>{tx("Schon in deiner Sprache")}</p>;
     return (
       <div className={`${cls} text-zinc-300`}>
         <p className="leading-relaxed whitespace-pre-wrap italic">{t.text}</p>
-        <p className="mt-0.5 text-[10px] text-zinc-500">
+        <p className="mt-0.5 text-[10px] text-zinc-400">
           {tx("Übersetzt aus {lang}", { lang: langName(t.from) })} ·{" "}
-          <button type="button" onClick={() => setTr((x) => ({ ...x, [key]: { ...t, hidden: true } }))} className="underline-offset-2 hover:text-zinc-300 hover:underline">
+          <button type="button" onClick={() => setTr((x) => ({ ...x, [key]: { ...t, hidden: true } }))} className="underline-offset-2 hover:text-white hover:underline">
             {tx("Übersetzung ausblenden")}
           </button>
         </p>
@@ -244,7 +244,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
   };
   const trLink = (key: string) =>
     !tr[key] || tr[key].hidden || tr[key].state === "error" ? (
-      <button type="button" onClick={() => translate(key)} title={tx("Übersetzt per KI, nur die einzelne Nachricht wird dafür an die KI geschickt.")} className="mt-0.5 px-1 text-[10px] text-zinc-500 underline-offset-2 transition-colors hover:text-gold hover:underline">
+      <button type="button" onClick={() => translate(key)} title={tx("Übersetzt per KI, nur die einzelne Nachricht wird dafür an die KI geschickt.")} className="mt-0.5 px-1 text-[10px] text-zinc-400 underline-offset-2 transition-colors hover:text-gold hover:underline">
         {tx("Übersetzen")}
       </button>
     ) : null;
@@ -259,7 +259,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
         {/* Kopf */}
         <header className="flex items-center justify-between gap-3 py-4">
           <div className="min-w-0">
-            <Link href={sample ? "#" : "/dashboard/chats"} className="text-xs text-zinc-500 hover:text-zinc-300">
+            <Link href={sample ? "#" : "/dashboard/chats"} className="text-xs text-zinc-400 hover:text-white">
               {tx("← Chats")}
             </Link>
             <h1 className="mt-1 truncate text-lg font-semibold text-zinc-50">
@@ -278,7 +278,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                     </span>
                   ))}
             </h1>
-            <p className="text-[11px] text-zinc-500">
+            <p className="text-xs text-zinc-400">
               {detail.room.kind === "duo" ? tx("Duo") : tx("Gruppe · {n} Personen", { n: detail.members.length })}
               {detail.room.track === "business" ? tx(" · Business") : ""}
             </p>
@@ -286,7 +286,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
           {!confirmLeave ? (
             <div className="flex shrink-0 items-center gap-2">
               {!dissolved && (
-                <button type="button" onClick={() => setReporting((v) => !v)} className="text-xs text-zinc-500 transition-colors hover:text-rose">
+                <button type="button" onClick={() => setReporting((v) => !v)} className="text-xs text-zinc-400 transition-colors hover:text-rose">
                   {tx("Melden")}
                 </button>
               )}
@@ -300,10 +300,10 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             </div>
           ) : (
             <div className="flex shrink-0 items-center gap-2 text-xs">
-              <span className="max-w-[9rem] text-right leading-snug text-zinc-400">
+              <span className="max-w-[9rem] text-right leading-snug text-zinc-300">
                 {dissolved ? tx("Chat endgültig entfernen?") : tx("Wirklich verlassen? Der Platz wird frei.")}
               </span>
-              <button type="button" onClick={() => setConfirmLeave(false)} className="text-zinc-500 hover:text-zinc-300">
+              <button type="button" onClick={() => setConfirmLeave(false)} className="text-zinc-400 hover:text-white">
                 {tx("Nein")}
               </button>
               <button
@@ -321,7 +321,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
         {reporting && !dissolved && (
           <div className="mb-3 rounded-2xl border border-rose/30 bg-rose/[0.06] px-4 py-3">
             <p className="text-sm font-medium text-zinc-100">{tx("Was ist passiert?")}</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-zinc-400">
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-300">
               {tx("Wir lesen keine Nachrichten mit, ein kurzer Hinweis hilft uns. Du verlässt danach den Chat und wirst mit dieser Person nicht noch einmal zusammengebracht.")}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
@@ -355,7 +355,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
               <button type="button" disabled={!reason || busy} onClick={sendReport} className="rounded-full border border-rose/40 bg-rose/10 px-4 py-1.5 text-xs font-semibold text-rose disabled:opacity-40">
                 {tx("Melden und Chat verlassen")}
               </button>
-              <button type="button" onClick={() => setReporting(false)} className="text-xs text-zinc-500 hover:text-zinc-300">
+              <button type="button" onClick={() => setReporting(false)} className="text-xs text-zinc-400 hover:text-white">
                 {tx("Abbrechen")}
               </button>
             </div>
@@ -375,12 +375,12 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
             <p className="mt-1 text-sm leading-relaxed text-zinc-200">{detail.steckbrief}</p>
             {trLink("steckbrief")}
             {renderTr("steckbrief")}
-            <p className="mt-1.5 text-[10px] text-zinc-500">{tx("Dieser Steckbrief wird gelöscht, sobald der Chat endet.")}</p>
+            <p className="mt-1.5 text-[10px] text-zinc-400">{tx("Dieser Steckbrief wird gelöscht, sobald der Chat endet.")}</p>
           </motion.aside>
         )}
 
         {!sample && (
-          <label className="mb-1 flex cursor-pointer items-center justify-end gap-2 px-1 text-[11px] text-zinc-500">
+          <label className="mb-1 flex cursor-pointer items-center justify-end gap-2 px-1 text-xs text-zinc-400">
             <input type="checkbox" checked={autoTr} onChange={(e) => toggleAuto(e.target.checked)} className="h-3 w-3 accent-[#f2a65a]" />
             {tx("Automatisch übersetzen")}
           </label>
@@ -404,7 +404,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                   {renderTr(m.id, "center")}
                 </motion.div>
               ) : m.kind === "system" ? (
-                <p key={m.id} className="text-center text-xs text-zinc-500">
+                <p key={m.id} className="text-center text-xs text-zinc-400">
                   {tx(m.body)}
                 </p>
               ) : (
@@ -416,7 +416,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                   className={`flex ${m.mine ? "justify-end" : "justify-start"}`}
                 >
                   <div className="max-w-[82%]">
-                    {!m.mine && detail.members.length > 2 && <p className="mb-0.5 px-1 text-[11px] text-zinc-500">{m.sender}</p>}
+                    {!m.mine && detail.members.length > 2 && <p className="mb-0.5 px-1 text-xs text-zinc-400">{m.sender}</p>}
                     <div
                       className={
                         m.mine
@@ -426,7 +426,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
                     >
                       {m.body}
                     </div>
-                    <p className={`mt-0.5 px-1 text-[10px] text-zinc-600 ${m.mine ? "text-right" : ""}`}>{times[language].format(new Date(m.createdAt))}</p>
+                    <p className={`mt-0.5 px-1 text-[10px] text-zinc-400 ${m.mine ? "text-right" : ""}`}>{times[language].format(new Date(m.createdAt))}</p>
                     {!m.mine && trLink(m.id)}
                     {!m.mine && renderTr(m.id)}
                   </div>
@@ -439,7 +439,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
 
         {/* Feedback */}
         {askFeedback && (
-          <div className="mb-2 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400">
+          <div className="mb-2 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-300">
             <span>{tx("Wie fühlt sich dieser Chat an?")}</span>
             {(
               [
@@ -468,7 +468,7 @@ export default function ChatRoom({ roomId, sample }: { roomId: string; sample?: 
 
         {/* Eingabe */}
         {dissolved ? (
-          <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm text-zinc-400">
+          <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm text-zinc-300">
             {tx("Dieser Chat ist beendet. Du kannst ihn oben entfernen, dann ist er endgültig gelöscht.")}
           </div>
         ) : (

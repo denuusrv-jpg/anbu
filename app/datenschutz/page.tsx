@@ -9,7 +9,7 @@ export default function Datenschutz() {
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-16 text-zinc-300 sm:px-8">
       <div className="mx-auto max-w-2xl">
-        <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
           ← Zurück
         </Link>
 
@@ -74,11 +74,10 @@ export default function Datenschutz() {
                 schicken wir dir eine kurze E-Mail ohne Angaben zu deinem Match. Du kannst sie in deinem Profil ausschalten.
               </li>
               <li>
-                <strong className="text-zinc-200">Matching mit Freigabe:</strong> Aus deinen Antworten berechnet die KI
-                Vorschläge, wer gut zu wem passt (Punktesystem). Aus diesen Vorschlägen entsteht erst dann ein Chat, wenn
-                wir den Vorschlag geprüft und freigegeben haben. Hubs öffnen wir ebenfalls erst nach unserer Prüfung. Zur
-                Prüfung sehen wir in unserem Admin-Bereich die Anmeldelisten eines Hubs und die Grundlage jedes
-                Vorschlags (Punkte je Bereich); auffällige Anmeldungen (zum Beispiel doppelte oder Wegwerf-Adressen)
+                <strong className="text-zinc-200">Matching:</strong> Aus deinen Antworten berechnet die KI
+                Vorschläge, wer gut zu wem passt (Punktesystem), und daraus entstehen die Chats. Zur Qualitätssicherung
+                können wir in unserem Admin-Bereich die Anmeldelisten eines Hubs und die Grundlage jedes
+                Vorschlags (Punkte je Bereich) einsehen; auffällige Anmeldungen (zum Beispiel doppelte oder Wegwerf-Adressen)
                 markieren wir automatisch.
               </li>
               <li>
@@ -119,8 +118,8 @@ export default function Datenschutz() {
               für die Zukunft widerrufen kannst. Das technische Fehler-Tracking dient unserem berechtigten Interesse an
               einem stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Teilnahme am freiwilligen Gespräch (Phase 2) und
               die daraus abgeleiteten Merkmale beruhen auf deiner Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die du
-              jederzeit widerrufen kannst. Über Vorschläge für Chats entscheiden wir nach eigener Prüfung, es gibt keine
-              ausschließlich automatisierte Entscheidung mit rechtlicher Wirkung.
+              jederzeit widerrufen kannst. Die Chat-Vorschläge haben für dich keine rechtliche Wirkung; es gibt keine
+              automatisierte Entscheidung mit rechtlicher oder ähnlich erheblicher Wirkung.
             </p>
             <p className="mt-2">
               Bei der ersten Anmeldung bestätigst du diese Datenschutzbestimmungen mit einem Haken. Wir speichern dafür

@@ -724,3 +724,39 @@ register({
   "Verbringst du deine Zeit lieber draußen oder drinnen?": ["Do you prefer spending your time outdoors or indoors?", "நேரத்தை வெளியில் செலவிடுவது பிடிக்குமா, உள்ளே இருப்பது பிடிக்குமா?"],
   "Welches Essen magst du am liebsten?": ["What food do you like most?", "உங்களுக்கு மிகவும் பிடித்த உணவு எது?"],
 });
+
+// ——— Profil: Pop-ups, Slider, Konto löschen ———
+register({
+  "Zurück": ["Back", "பின்செல்"],
+  "Freundschaft und Wohnort": ["Friendship and place", "நட்பு மற்றும் வசிப்பிடம்"],
+  "gesucht": ["looking for", "தேடுவது"],
+  "Geschlecht und Wunsch": ["Gender and preference", "பாலினமும் விருப்பமும்"],
+  "Neuer Wohnort": ["New place of residence", "புதிய வசிப்பிடம்"],
+  "Sobald sich 100 Personen in deinem Hub eingetragen haben, öffnet sich dein Hub und die Matches entstehen automatisch. Du musst nichts weiter tun.": ["As soon as 100 people have signed up in your hub, your hub opens and matches happen automatically. You don't have to do anything else.", "உங்கள் ஹப்பில் 100 பேர் பதிவு செய்தவுடன், உங்கள் ஹப் திறக்கும், பொருத்தங்கள் தானாகவே உருவாகும். நீங்கள் வேறு எதுவும் செய்ய வேண்டியதில்லை."],
+  "Das weiß DSpora aktuell über dich. Erzähl der KI jederzeit Neues, oder entferne Angaben, die nicht mehr stimmen.": ["This is what DSpora currently knows about you. Tell the AI something new at any time, or remove details that are no longer true.", "DSpora இப்போது உங்களைப் பற்றி அறிந்தது இதுதான். எப்போது வேண்டுமானாலும் AI யிடம் புதிதாகச் சொல்லலாம், அல்லது இனி சரியில்லாத தகவல்களை நீக்கலாம்."],
+  "Alle Angaben ansehen": ["View all details", "அனைத்து விவரங்களையும் பார்"],
+  "Du kannst dein Konto und alle Daten jederzeit löschen. Zur Sicherheit bestätigst du das noch einmal per E-Mail.": ["You can delete your account and all data at any time. For your safety you confirm this once more by email.", "உங்கள் கணக்கையும் எல்லா தரவையும் எப்போது வேண்டுமானாலும் நீக்கலாம். பாதுகாப்புக்காக இதை மின்னஞ்சல் மூலம் மீண்டும் ஒருமுறை உறுதிப்படுத்துவீர்கள்."],
+  "Konto wirklich löschen?": ["Really delete your account?", "கணக்கை உண்மையிலேயே நீக்கவா?"],
+  "Bist du sicher? Das passiert, wenn du dein Konto löschst:": ["Are you sure? This is what happens when you delete your account:", "உறுதியாக இருக்கிறீர்களா? கணக்கை நீக்கினால் இது நடக்கும்:"],
+  "Dein Konto wird gesperrt und du verlässt alle Chats.": ["Your account is locked and you leave all chats.", "உங்கள் கணக்கு முடக்கப்படும், எல்லா அரட்டைகளிலிருந்தும் வெளியேறுவீர்கள்."],
+  "Dein Profil, deine Antworten und deine Fotos sind für andere nicht mehr sichtbar.": ["Your profile, your answers and your photos are no longer visible to others.", "உங்கள் சுயவிவரம், பதில்கள் மற்றும் புகைப்படங்கள் மற்றவர்களுக்குத் தெரியாது."],
+  "Nach 30 Tagen werden alle deine Daten endgültig gelöscht.": ["After 30 days all your data is permanently deleted.", "30 நாட்களுக்குப் பிறகு உங்கள் எல்லா தரவும் நிரந்தரமாக நீக்கப்படும்."],
+  "Im nächsten Schritt schicken wir dir einen Bestätigungslink an {email}. Erst wenn du darauf klickst, wird das Konto gelöscht.": ["In the next step we send a confirmation link to {email}. The account is only deleted once you click it.", "அடுத்த படியில் {email} முகவரிக்கு ஒரு உறுதிப்படுத்தல் இணைப்பை அனுப்புவோம். அதை நீங்கள் கிளிக் செய்த பிறகு மட்டுமே கணக்கு நீக்கப்படும்."],
+  "Bestätigungs-E-Mail senden": ["Send confirmation email", "உறுதிப்படுத்தல் மின்னஞ்சலை அனுப்பு"],
+  "Nein, Konto behalten": ["No, keep my account", "இல்லை, கணக்கை வைத்திரு"],
+  "Die Mail konnte nicht gesendet werden. Bitte versuch es noch einmal.": ["The email could not be sent. Please try again.", "மின்னஞ்சலை அனுப்ப முடியவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."],
+  "Wir haben dir eine E-Mail an {email} geschickt.": ["We sent an email to {email}.", "{email} முகவரிக்கு மின்னஞ்சல் அனுப்பியுள்ளோம்."],
+  "Klicke darin auf „Löschen bestätigen“. Der Link ist eine Stunde gültig. Schau auch im Spam-Ordner nach. Wenn du nicht klickst, bleibt dein Konto unverändert.": ["Click “Confirm deletion” in it. The link is valid for one hour. Also check your spam folder. If you don't click, your account stays unchanged.", "அதில் “நீக்குவதை உறுதிப்படுத்து” என்பதைக் கிளிக் செய்யவும். இணைப்பு ஒரு மணி நேரம் செல்லுபடியாகும். ஸ்பாம் கோப்புறையையும் பார்க்கவும். நீங்கள் கிளிக் செய்யவில்லை என்றால் கணக்கு மாறாமல் இருக்கும்."],
+  "Dein Konto wurde gelöscht": ["Your account has been deleted", "உங்கள் கணக்கு நீக்கப்பட்டது"],
+  "Dein Konto ist gesperrt. Deine Daten bleiben noch 30 Tage gespeichert und werden danach endgültig gelöscht. Alles Gute für dich!": ["Your account is locked. Your data is kept for another 30 days and then permanently deleted. All the best!", "உங்கள் கணக்கு முடக்கப்பட்டுள்ளது. உங்கள் தரவு இன்னும் 30 நாட்கள் சேமிக்கப்பட்டு பின்னர் நிரந்தரமாக நீக்கப்படும். உங்களுக்கு எல்லா நலமும் உண்டாகட்டும்!"],
+  "Konto endgültig löschen?": ["Delete account permanently?", "கணக்கை நிரந்தரமாக நீக்கவா?"],
+  "Du hast die Löschung per E-Mail bestätigt. Mit dem Knopf unten wird dein Konto sofort gesperrt und du verlässt alle Chats. Nach 30 Tagen werden deine Daten endgültig gelöscht.": ["You confirmed the deletion by email. With the button below your account is locked immediately and you leave all chats. After 30 days your data is permanently deleted.", "நீக்குவதை மின்னஞ்சல் மூலம் உறுதிப்படுத்தினீர்கள். கீழே உள்ள பொத்தானால் உங்கள் கணக்கு உடனே முடக்கப்படும், எல்லா அரட்டைகளிலிருந்தும் வெளியேறுவீர்கள். 30 நாட்களுக்குப் பிறகு உங்கள் தரவு நிரந்தரமாக நீக்கப்படும்."],
+  "Ja, Konto jetzt löschen": ["Yes, delete account now", "ஆம், கணக்கை இப்போது நீக்கு"],
+  "Link ungültig": ["Link invalid", "இணைப்பு செல்லாது"],
+  "Dieser Bestätigungslink ist ungültig oder abgelaufen. Bitte fordere in deinem Profil einen neuen an.": ["This confirmation link is invalid or has expired. Please request a new one in your profile.", "இந்த உறுதிப்படுத்தல் இணைப்பு செல்லாதது அல்லது காலாவதியானது. உங்கள் சுயவிவரத்தில் புதியதைக் கோரவும்."],
+});
+
+register({
+  "Neuen Beitrag erstellen": ["Create new post", "புதிய பதிவை உருவாக்கு"],
+  "Neuer Beitrag": ["New post", "புதிய பதிவு"],
+});

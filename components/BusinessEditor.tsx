@@ -88,7 +88,7 @@ export default function BusinessEditor({
               setEditing(true);
               setError("");
             }}
-            className="text-xs text-zinc-400 transition-colors hover:text-gold"
+            className="text-xs text-zinc-300 transition-colors hover:text-gold"
           >
             {tx("Bearbeiten")}
           </button>
@@ -154,7 +154,7 @@ export default function BusinessEditor({
                   setEditing(false);
                   onCancel?.();
                 }}
-                className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+                className="text-xs text-zinc-400 transition-colors hover:text-white"
               >
                 {tx("Abbrechen")}
               </button>
@@ -172,9 +172,9 @@ export default function BusinessEditor({
             className="mt-3 space-y-3 text-sm text-zinc-200"
           >
             <p>
-              <span className="text-zinc-500">{tx("Branche:")} </span>
+              <span className="text-zinc-400">{tx("Branche:")} </span>
               {labelOf(business.sector, SECTORS)}
-              <span className="text-zinc-500"> {tx("· Rolle:")} </span>
+              <span className="text-zinc-400"> {tx("· Rolle:")} </span>
               {business.role}
             </p>
             <ChipRow>
@@ -186,7 +186,7 @@ export default function BusinessEditor({
             </ChipRow>
             {business.cv.expertise && (
               <p>
-                <span className="text-zinc-500">{tx("Expertise:")} </span>
+                <span className="text-zinc-400">{tx("Expertise:")} </span>
                 {business.cv.expertise}
               </p>
             )}

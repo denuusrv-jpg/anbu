@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toJpeg } from "@/components/profile/imageTools";
 import { Chip, ChipRow, fieldClass } from "@/components/onboarding/ui";
+import Sheet from "@/components/ui/Sheet";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { CUSTOM_PATTERN, MAX_HOBBIES, NAME_PATTERN } from "@/lib/onboarding";
 import type { PostView } from "@/lib/profileMedia";
@@ -41,6 +42,7 @@ export default function ProfileEditor({
   const tx = useTx();
   const [form, setForm] = useState<Info>(info);
   const [hobbyDraft, setHobbyDraft] = useState("");
+  const [sheet, setSheet] = useState<"info" | "post" | null>(null);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<{ file: File; url: string }[]>([]);
@@ -77,6 +79,7 @@ export default function ProfileEditor({
     setBusy("");
     if (ok) {
       setMessage(tx("Gespeichert."));
+      setSheet(null);
       if (!preview) router.refresh();
     }
   }
@@ -163,6 +166,7 @@ export default function ProfileEditor({
       files.forEach((f) => URL.revokeObjectURL(f.url));
       setFiles([]);
       setCaption("");
+      setSheet(null);
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : tx("Der Beitrag konnte nicht veröffentlicht werden."));
@@ -183,14 +187,14 @@ export default function ProfileEditor({
     }
   }
 
-  const pill = "rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs text-zinc-200 transition-colors hover:border-gold/50 hover:text-gold disabled:opacity-50";
+  const pill = "rounded-full border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:border-gold/50 hover:text-gold disabled:opacity-50";
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">
+    <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Profilseite")}</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">{tx("So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.")}</p>
+          <p className="mt-0.5 text-sm text-zinc-300">{tx("So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.")}</p>
         </div>
         {!preview && (
           <Link href={`/profil/${userId}`} className="shrink-0 text-xs text-gold hover:underline">
@@ -214,7 +218,7 @@ export default function ProfileEditor({
             {tx("Privat")}
           </Chip>
         </ChipRow>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+        <p className="mt-2 text-xs leading-relaxed text-zinc-400">
           {visibility === "public"
             ? tx("Alle angemeldeten Mitglieder sehen Name, Alter, Text, Hobbys und Beiträge.")
             : visibility === "business"
@@ -246,81 +250,96 @@ export default function ProfileEditor({
         </div>
       </div>
 
-      {/* Angaben */}
-      <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
-        <div>
-          <label className="text-xs font-medium text-zinc-300" htmlFor="pf-nick">
-            {tx("Spitzname oder Künstlername")}
-          </label>
-          <input id="pf-nick" value={form.displayName} maxLength={24} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className={`${fieldClass} mt-1.5`} />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium text-zinc-300" htmlFor="pf-first">
-              {tx("Vorname (optional)")}
-            </label>
-            <input id="pf-first" value={form.firstName} maxLength={24} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={`${fieldClass} mt-1.5`} />
+      {/* Angaben: Zusammenfassung, Bearbeiten im Pop-up */}
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-zinc-50">{form.displayName || "–"}</p>
+            {form.bio && <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-zinc-300">{form.bio}</p>}
+            {form.hobbies.length > 0 && <p className="mt-1 truncate text-sm text-zinc-300">{form.hobbies.join(", ")}</p>}
           </div>
-          <div>
-            <label className="text-xs font-medium text-zinc-300" htmlFor="pf-last">
-              {tx("Nachname (optional)")}
-            </label>
-            <input id="pf-last" value={form.lastName} maxLength={24} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={`${fieldClass} mt-1.5`} />
-          </div>
+          <button type="button" onClick={() => { setMessage(""); setSheet("info"); }} className={`${pill} shrink-0`}>
+            {tx("Bearbeiten")}
+          </button>
         </div>
-        <p className="text-[11px] text-zinc-500">{tx("Name und Nachname siehst nur du, solange dein Profil privat ist.")}</p>
-        <div>
-          <div className="flex items-baseline justify-between">
-            <label className="text-xs font-medium text-zinc-300" htmlFor="pf-bio">
-              {tx("Über mich")}
-            </label>
-            <span className="text-[11px] text-zinc-500">{form.bio.length}/300</span>
-          </div>
-          <textarea id="pf-bio" value={form.bio} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 300) })} placeholder={tx("Ein paar Sätze über dich …")} className={`${fieldClass} mt-1.5 resize-none`} />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-zinc-300">{tx("Hobbys")}</p>
-          <div className="mt-1.5 flex gap-2">
-            <input
-              value={hobbyDraft}
-              maxLength={30}
-              onChange={(e) => setHobbyDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addHobby();
-                }
-              }}
-              placeholder={tx("Hobby eintippen, Enter")}
-              aria-label={tx("Hobby hinzufügen")}
-              className={fieldClass}
-            />
-            <button type="button" onClick={addHobby} className={pill}>
-              {tx("Hinzufügen")}
-            </button>
-          </div>
-          {form.hobbies.length > 0 && (
-            <div className="mt-2">
-              <ChipRow>
-                {form.hobbies.map((h) => (
-                  <Chip key={h} selected removable onClick={() => setForm((f) => ({ ...f, hobbies: f.hobbies.filter((x) => x !== h) }))}>
-                    {h}
-                  </Chip>
-                ))}
-              </ChipRow>
-            </div>
-          )}
-        </div>
-        <button type="button" disabled={busy === "info"} onClick={saveInfo} className="rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-xs font-semibold text-zinc-950 disabled:opacity-50">
-          {busy === "info" ? tx("Speichere …") : tx("Speichern")}
-        </button>
       </div>
+      <Sheet open={sheet === "info"} onClose={() => setSheet(null)} title={tx("Profil bearbeiten")}>
+<div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-zinc-200" htmlFor="pf-nick">
+              {tx("Spitzname oder Künstlername")}
+            </label>
+            <input id="pf-nick" value={form.displayName} maxLength={24} onChange={(e) => setForm({ ...form, displayName: e.target.value })} className={`${fieldClass} mt-1.5`} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-zinc-200" htmlFor="pf-first">
+                {tx("Vorname (optional)")}
+              </label>
+              <input id="pf-first" value={form.firstName} maxLength={24} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className={`${fieldClass} mt-1.5`} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-zinc-200" htmlFor="pf-last">
+                {tx("Nachname (optional)")}
+              </label>
+              <input id="pf-last" value={form.lastName} maxLength={24} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className={`${fieldClass} mt-1.5`} />
+            </div>
+          </div>
+          <p className="text-xs text-zinc-400">{tx("Name und Nachname siehst nur du, solange dein Profil privat ist.")}</p>
+          <div>
+            <div className="flex items-baseline justify-between">
+              <label className="text-sm font-medium text-zinc-200" htmlFor="pf-bio">
+                {tx("Über mich")}
+              </label>
+              <span className="text-xs text-zinc-400">{form.bio.length}/300</span>
+            </div>
+            <textarea id="pf-bio" value={form.bio} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 300) })} placeholder={tx("Ein paar Sätze über dich …")} className={`${fieldClass} mt-1.5 resize-none`} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-zinc-200">{tx("Hobbys")}</p>
+            <div className="mt-1.5 flex gap-2">
+              <input
+                value={hobbyDraft}
+                maxLength={30}
+                onChange={(e) => setHobbyDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addHobby();
+                  }
+                }}
+                placeholder={tx("Hobby eintippen, Enter")}
+                aria-label={tx("Hobby hinzufügen")}
+                className={fieldClass}
+              />
+              <button type="button" onClick={addHobby} className={pill}>
+                {tx("Hinzufügen")}
+              </button>
+            </div>
+            {form.hobbies.length > 0 && (
+              <div className="mt-2">
+                <ChipRow>
+                  {form.hobbies.map((h) => (
+                    <Chip key={h} selected removable onClick={() => setForm((f) => ({ ...f, hobbies: f.hobbies.filter((x) => x !== h) }))}>
+                      {h}
+                    </Chip>
+                  ))}
+                </ChipRow>
+              </div>
+            )}
+          </div>
+          <button type="button" disabled={busy === "info"} onClick={saveInfo} className="w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-50">
+            {busy === "info" ? tx("Speichere …") : tx("Speichern")}
+          </button>
+        </div>
+        {message && <p role="status" className="mt-4 text-sm text-zinc-200">{message}</p>}
+      </Sheet>
 
       {/* Beiträge */}
       <div className="mt-6 border-t border-white/10 pt-5">
         <div className="flex items-baseline justify-between">
           <p className="text-sm font-medium text-zinc-100">{tx("Beiträge")}</p>
-          <span className="text-[11px] text-zinc-500">
+          <span className="text-xs text-zinc-400">
             {tx("{n} von {max}", { n: posts.length, max: MAX_POSTS })}
           </span>
         </div>
@@ -336,7 +355,7 @@ export default function ProfileEditor({
                   disabled={busy === `del-${p.id}`}
                   onClick={() => removePost(p.id)}
                   aria-label={tx("Beitrag löschen")}
-                  className="absolute inset-x-1.5 bottom-1.5 rounded-full bg-black/70 py-1 text-[11px] text-white opacity-100 transition-opacity hover:bg-rose/80 sm:opacity-0 sm:group-hover:opacity-100"
+                  className="absolute inset-x-1.5 bottom-1.5 rounded-full bg-black/70 py-1 text-xs text-white opacity-100 transition-opacity hover:bg-rose/80 sm:opacity-0 sm:group-hover:opacity-100"
                 >
                   {tx("Löschen")}
                 </button>
@@ -346,8 +365,12 @@ export default function ProfileEditor({
         )}
 
         {posts.length < MAX_POSTS && (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs font-medium text-zinc-300">{tx("Neuer Beitrag (bis zu {max} Bilder zum Wischen)", { max: MAX_SLIDES })}</p>
+          <>
+            <button type="button" onClick={() => { setMessage(""); setSheet("post"); }} className={`${pill} mt-4 w-full`}>
+              {tx("Neuen Beitrag erstellen")}
+            </button>
+            <Sheet open={sheet === "post"} onClose={() => setSheet(null)} title={tx("Neuer Beitrag")}>
+            <p className="text-sm font-medium text-zinc-200">{tx("Neuer Beitrag (bis zu {max} Bilder zum Wischen)", { max: MAX_SLIDES })}</p>
             {files.length > 0 && (
               <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
                 {files.map((f, i) => (
@@ -374,22 +397,24 @@ export default function ProfileEditor({
               <button type="button" disabled={files.length >= MAX_SLIDES} onClick={() => postInput.current?.click()} className={pill}>
                 {files.length === 0 ? tx("Bilder auswählen") : tx("Weitere Bilder")}
               </button>
-              {files.length > 0 && <span className="text-[11px] text-zinc-500">{tx("{n} von {max}", { n: files.length, max: MAX_SLIDES })}</span>}
+              {files.length > 0 && <span className="text-xs text-zinc-400">{tx("{n} von {max}", { n: files.length, max: MAX_SLIDES })}</span>}
             </div>
             {files.length > 0 && (
               <>
                 <input value={caption} maxLength={200} onChange={(e) => setCaption(e.target.value)} placeholder={tx("Bildunterschrift (optional)")} aria-label={tx("Bildunterschrift")} className={`${fieldClass} mt-3`} />
-                <button type="button" disabled={busy === "post"} onClick={publish} className="mt-3 rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-2 text-xs font-semibold text-zinc-950 disabled:opacity-50">
+                <button type="button" disabled={busy === "post"} onClick={publish} className="mt-3 w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-50">
                   {busy === "post" ? tx("Veröffentliche …") : tx("Beitrag veröffentlichen")}
                 </button>
               </>
             )}
-          </div>
+              {message && <p role="status" className="mt-4 text-sm text-zinc-200">{message}</p>}
+            </Sheet>
+          </>
         )}
       </div>
 
-      {message && (
-        <p role="status" className="mt-4 text-xs leading-relaxed text-zinc-300">
+      {message && !sheet && (
+        <p role="status" className="mt-4 text-sm leading-relaxed text-zinc-300">
           {message}
         </p>
       )}

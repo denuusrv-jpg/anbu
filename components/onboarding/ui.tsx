@@ -177,7 +177,7 @@ export function Field({
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-xs font-medium text-zinc-300">{tx(label)}</span>
-        {hint && <span className="text-[11px] text-zinc-300">{tx(hint)}</span>}
+        {hint && <span className="text-xs text-zinc-300">{tx(hint)}</span>}
       </div>
       {children}
     </div>

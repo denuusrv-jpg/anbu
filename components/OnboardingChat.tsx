@@ -1410,7 +1410,7 @@ export default function OnboardingChat({
           >
             {sending ? tx("Sende …") : tx("Jetzt anmelden & Profil speichern")}
           </button>
-          <p className="px-2 text-center text-[11px] leading-relaxed text-zinc-300">
+          <p className="px-2 text-center text-xs leading-relaxed text-zinc-300">
             {tx("Kein Passwort nötig. Deine E-Mail-Adresse bleibt für andere unsichtbar.")}
           </p>
         </form>
@@ -1621,7 +1621,7 @@ export default function OnboardingChat({
                 <button
                   type="button"
                   onClick={() => setNoticeOpen(true)}
-                  className="mx-auto mt-3 flex items-center gap-1.5 text-[11px] leading-tight text-zinc-400 transition-colors hover:text-zinc-200"
+                  className="mx-auto mt-3 flex items-center gap-1.5 text-xs leading-tight text-zinc-300 transition-colors hover:text-white"
                   aria-label={tx("KI-Analyse und Datenschutz")}
                 >
                   <ShieldIcon className="h-3 w-3 shrink-0" />

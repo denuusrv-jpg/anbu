@@ -72,14 +72,14 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                   />
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-zinc-500">
+              <p className="mt-1.5 text-xs text-zinc-400">
                 {tx("{n} von {max} Plätzen belegt", { n: data.slotsUsed, max: data.limit })}
               </p>
             </div>
           )}
         </header>
 
-        <p className="text-xs leading-relaxed text-zinc-500">
+        <p className="text-xs leading-relaxed text-zinc-400">
           {tx("Du kannst höchstens {max} Chats gleichzeitig führen, damit jedes Gespräch Raum bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.", { max: data?.limit ?? 4 })}
         </p>
 
@@ -92,7 +92,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
         {data && data.rooms.length === 0 && (
           <div className={`${card} p-8 text-center`}>
             <h2 className="text-lg font-semibold text-zinc-50">{tx("Noch keine Chats")}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 text-sm leading-relaxed text-zinc-300">
               {tx("Sobald dein Hub öffnet und wir passende Menschen für dich gefunden haben, startet hier dein erster Chat, mit einem Eisbrecher, der zu euren Gemeinsamkeiten passt.")}
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                     <p className="truncate text-base font-semibold text-zinc-50">
                       {room.members.filter((m) => !m.isMe).map((m) => m.label).join(", ") || tx("Allein im Chat")}
                     </p>
-                    <p className="mt-0.5 text-xs text-zinc-500">
+                    <p className="mt-0.5 text-xs text-zinc-400">
                       {room.kind === "duo" ? tx("Duo") : tx("Gruppe · {n} Personen", { n: room.members.length })}
                       {room.track === "business" ? tx(" · Business") : ""}
                       {room.dissolved ? tx(" · beendet") : ""}
@@ -126,12 +126,12 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                   )}
                 </div>
                 {room.last && (
-                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-zinc-400">
+                  <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-zinc-300">
                     {room.last.kind === "icebreaker" ? "✨ " : ""}
                     {room.last.kind === "system" ? tx(room.last.body) : room.last.body}
                   </p>
                 )}
-                {room.last && <p className="mt-2 text-[11px] text-zinc-600">{times[language].format(new Date(room.last.createdAt))}</p>}
+                {room.last && <p className="mt-2 text-xs text-zinc-400">{times[language].format(new Date(room.last.createdAt))}</p>}
               </Link>
             </motion.li>
           ))}
