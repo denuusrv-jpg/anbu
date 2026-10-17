@@ -200,6 +200,7 @@ export function LongTextAnswer({
   submitLabel = "Senden",
   error,
   rows = 4,
+  busy = false,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -212,6 +213,8 @@ export function LongTextAnswer({
   submitLabel?: string;
   error?: string;
   rows?: number;
+  /** Wartet auf eine Antwort: Senden gesperrt, das Feld bleibt aber aktiv (Tastatur bleibt offen) */
+  busy?: boolean;
 }) {
   const tx = useTx();
   const length = value.trim().length;
@@ -219,7 +222,7 @@ export function LongTextAnswer({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (length >= minLength) onSubmit();
+        if (length >= minLength && !busy) onSubmit();
       }}
       className="space-y-2.5"
     >
@@ -227,7 +230,7 @@ export function LongTextAnswer({
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && length >= minLength) {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && length >= minLength && !busy) {
             e.preventDefault();
             onSubmit();
           }
@@ -257,7 +260,7 @@ export function LongTextAnswer({
               {tx(skipLabel)}
             </button>
           )}
-          <GoldButton type="submit" disabled={length < minLength}>
+          <GoldButton type="submit" disabled={length < minLength || busy}>
             {tx(submitLabel)}
           </GoldButton>
         </div>

@@ -158,3 +158,6 @@ export function answerSiteQuestion(raw: string): SiteAnswer | null {
 
   return entry ? entry.answer : UNKNOWN;
 }
+
+/** Alle Antworttexte als Fließtext, damit die KI im Gespräch Fragen zu DSpora beantworten kann (ohne etwas zu erfinden). */
+export const SITE_FACTS = ENTRIES.map((e) => e.answer.text).join("\n");

@@ -19,11 +19,10 @@ import { CheckIcon, ShieldIcon } from "@/components/Icons";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
 import { nextQuestion } from "@/lib/followups";
-import { answerSiteQuestion, type ChatLink } from "@/lib/siteKnowledge";
+import type { ChatLink } from "@/lib/siteKnowledge";
 import {
   FREE_FACT_QUESTION,
   buildSteckbrief,
-  isRemoveRequest,
   isSteckbriefRequest,
   steckbriefText,
   type Steckbrief,
@@ -84,9 +83,8 @@ type Step =
   | "vibes"
   | "nickname"
   | "transition"
-  | "freeText"
-  | "followUp"
-  | "checkpoint"
+  | "talkMode"
+  | "talk"
   | "wishes"
   | "login"
   | "sent"
@@ -97,7 +95,6 @@ type Message = { id: number; from: "bot" | "user"; text: string; link?: ChatLink
 type BotLine = string | { text: string; link?: ChatLink };
 
 const MARK = "\u0002";
-const ACKNOWLEDGEMENTS = ["Danke dir!", "Gut zu wissen.", "Verstehe, danke dir."];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -106,7 +103,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_SECONDS = 30;
 
 // Phase 1: alle Basisfragen sind Pflicht. Die Reihenfolge hängt von den Antworten ab (online/Aktivitäten, Friends/Business).
-const TALK_STEPS: Step[] = ["freeText", "followUp", "checkpoint"];
+const TALK_STEPS: Step[] = ["talkMode", "talk"];
 const FINALE_STEPS: Step[] = ["wishes", "login", "sent", "retry"];
 
 // Phase 1 läuft als Karten-Ablauf (eine Frage pro Bildschirm, keine Chat-Blasen), das Gespräch danach als Chat.
@@ -192,7 +189,10 @@ export default function OnboardingChat({
   const [wishKind, setWishKind] = useState<"duo" | "group">("duo");
   const [chosenGender, setChosenGender] = useState<string | undefined>();
   const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
-  const [followQuestion, setFollowQuestion] = useState("");
+  const [talkMode, setTalkMode] = useState<"free" | "ask">("free");
+  const talkModeRef = useRef<"free" | "ask">("free");
+  const [talkBusy, setTalkBusy] = useState(false);
+  const talkBusyRef = useRef(false);
   const [track, setTrack] = useState<"community" | "business">("community");
   const [ageNow, setAgeNow] = useState(25);
   const [chosenSector, setChosenSector] = useState<string | undefined>();
@@ -232,11 +232,11 @@ export default function OnboardingChat({
   // Längeres Gespräch: schon gestellte Fragen, alles bisher Gesagte, Zähler für Zwischenfragen
   const askedQuestions = useRef<string[]>(resume?.asked ?? []);
   const talkContext = useRef<string>(resume?.context ?? "");
-  const lastAnswer = useRef("");
-  const sinceCheckpoint = useRef(0);
-  const checkpointCount = useRef(0);
   const skipsInRow = useRef(0);
-  const ackIndex = useRef(0);
+  // Gespräch: Verlauf für die KI, letzte KI-Frage, Zähler
+  const talkTurns = useRef<{ role: "assistant" | "user"; text: string }[]>([]);
+  const lastQuestion = useRef("");
+  const userMessages = useRef(0);
   const nextId = useRef(0);
   const alive = useRef(true);
   const started = useRef(false);
@@ -386,12 +386,7 @@ export default function OnboardingChat({
     if (!languageReady || started.current) return;
     started.current = true;
     if (resume) {
-      ask(
-        [
-          t("Schön, dass du wieder da bist! Was gibt es Neues bei dir? Erzähl mir gern, was sich geändert hat, oder frag mich nach deinem Steckbrief. Wenn du magst, stelle ich dir auch einfach weitere Fragen."),
-        ],
-        "freeText",
-      );
+      startTalkChoice();
       return;
     }
     ask(
@@ -681,11 +676,7 @@ export default function OnboardingChat({
       toAuth();
       return;
     }
-    setTalkOn(true);
-    const opener = talkOpener();
-    askedQuestions.current.push(opener);
-    setFollowQuestion(opener);
-    ask([t("Los geht's. Du kannst jede Frage überspringen."), opener], "followUp");
+    startTalkChoice();
   }
 
   function toWishes(intro: BotLine[] = []) {
@@ -698,56 +689,11 @@ export default function OnboardingChat({
     );
   }
 
-  // ——— Freitext und Folgefragen (optional, vor der Weiche), danach das Profil ———
+  // ——— Phase 2: Gespräch (frei erzählen oder Fragen, jederzeit umschaltbar), danach das Profil ———
 
   function extras() {
     answers.current.extras = answers.current.extras ?? {};
     return answers.current.extras;
-  }
-
-  // Fragt eine Person zwischendurch etwas zu DSpora, antwortet der Chat anhand der Webseiten-Infos
-  // (nichts Erfundenes, sonst Hinweis auf das Kontaktformular) und stellt dann dieselbe Frage noch einmal.
-  function tryAnswerSiteQuestion(value: string, question: string, backTo: Step): boolean {
-    // Der Steckbrief: Wie sehe ich aktuell aus? Anpassen ist im Profil und im Gespräch jederzeit möglich.
-    if (isSteckbriefRequest(value)) {
-      user(value);
-      ask(
-        [
-          { text: steckbriefText(currentSteckbrief(), tx) },
-          loggedIn
-            ? {
-                text: t("Wenn etwas nicht mehr stimmt, erzähl mir hier einfach den neuen Stand. Einzelne Angaben kannst du in deinem Profil auch selbst entfernen."),
-                link: { href: "/dashboard", label: t("Steckbrief im Profil") },
-              }
-            : t("Nach der Anmeldung kannst du alles jederzeit in deinem Profil anpassen und mir im Gespräch Neues erzählen."),
-          t("Aber zurück zu dir: {question}", { question }),
-        ],
-        backTo,
-      );
-      return true;
-    }
-    // Etwas vergessen/entfernen: das geschieht bewusst sichtbar im Profil, nicht heimlich im Gespräch
-    if (isRemoveRequest(value)) {
-      user(value);
-      ask(
-        [
-          loggedIn
-            ? {
-                text: t("Einzelne Angaben entfernst du in deinem Profil unter „Dein Steckbrief“ mit dem ×. Dann sind sie auch wirklich weg. Wenn sich etwas geändert hat, erzähl mir hier gern den neuen Stand."),
-                link: { href: "/dashboard", label: t("Zum Steckbrief") },
-              }
-            : t("Nach der Anmeldung kannst du in deinem Profil unter „Dein Steckbrief“ jede Angabe mit dem × entfernen. Wenn sich etwas geändert hat, erzähl mir gern den neuen Stand."),
-          t("Aber zurück zu dir: {question}", { question }),
-        ],
-        backTo,
-      );
-      return true;
-    }
-    const reply = answerSiteQuestion(value);
-    if (!reply) return false;
-    user(value);
-    ask([{ text: t(reply.text), link: reply.link ? { href: reply.link.href, label: t(reply.link.label) } : undefined }, t("Aber zurück zu dir: {question}", { question })], backTo);
-    return true;
   }
 
   // Angemeldet: der Chat kennt den gespeicherten Steckbrief. Gast: er entsteht aus den bisherigen Antworten.
@@ -785,41 +731,38 @@ export default function OnboardingChat({
     });
   }
 
-  function submitFreeText(skip = false) {
-    const value = text.trim();
-    if (
-      !skip &&
-      value &&
-      tryAnswerSiteQuestion(value, tx("Erzähl mir gern, was dir wichtig ist, wer du bist oder wonach du suchst."), "freeText")
-    ) {
-      return;
-    }
-    const answered = !skip && Boolean(value);
-    if (resume) {
-      // Fortgesetztes Gespräch: Neues wird als Angabe im Steckbrief gemerkt
-      user(answered ? value : tx("Frag du mich"));
-      if (answered) {
-        followAnswers.current.push({ question: tx("Das hast du mir mitgeteilt"), answer: value });
-        talkContext.current += ` ${value}`;
-        lastAnswer.current = value;
-        sinceCheckpoint.current += 1;
-      }
-      askNext(answered ? [tx("Danke, das merke ich mir.")] : []);
-      return;
-    }
-    extras().freeText = answered ? value : undefined;
-    user(answered ? value : tx("Überspringen"));
-    followAnswers.current = [];
-    if (answered) {
-      talkContext.current += ` ${value}`;
-      lastAnswer.current = value;
-      sinceCheckpoint.current += 1;
-    }
-    askNext(answered ? [tx("Danke, das erzählt schon viel über dich.")] : []);
+  // Zu Beginn: frei erzählen oder Fragen stellen lassen (auch beim Fortsetzen aus dem Profil)
+  function startTalkChoice() {
+    setTalkOn(true);
+    ask(
+      [
+        resume
+          ? t("Schön, dass du wieder da bist! Erzähl mir, was es Neues gibt, oder ich stelle dir Fragen. Du kannst jederzeit wechseln.")
+          : t("Wie möchtest du dich vorstellen? Du kannst jederzeit wechseln."),
+      ],
+      "talkMode",
+    );
   }
 
-  // Frage der KI holen (bereinigt, ohne Geschlecht). Bei Fehler oder Zeitüberschreitung null: dann gilt die regelbasierte Frage.
-  async function fetchAiQuestion(): Promise<string | null> {
+  // Eine Nachricht des Chats anzeigen (ohne künstliche Wartezeit, die KI braucht ohnehin einen Moment)
+  function say(message: string) {
+    talkTurns.current.push({ role: "assistant", text: message });
+    history.current.push({ role: "bot", text: message });
+    setMessages((m) => [...m, { id: nextId.current++, from: "bot", text: message }]);
+  }
+
+  // Die letzte Frage in einer Antwort der KI merken (für den Steckbrief und gegen Wiederholungen)
+  function rememberQuestion(reply: string) {
+    const found = reply.match(/[^.!?\n]*\?/g);
+    const last = found ? found[found.length - 1].trim() : "";
+    lastQuestion.current = last;
+    if (last) askedQuestions.current.push(last);
+  }
+
+  type TalkReply = { reply: string; personal: boolean; related: boolean };
+
+  // Nächste Nachricht der KI (bereinigt, ohne Geschlecht). Bei Fehler oder Zeitüberschreitung null: dann antwortet der Chat mit Regeln.
+  async function aiTalk(mode: "free" | "ask", opening = false): Promise<TalkReply | null> {
     if (!aiEnabled) return null;
     try {
       const sb = currentSteckbrief();
@@ -827,100 +770,135 @@ export default function OnboardingChat({
         .filter((l) => !["Geschlecht", "Verbinden mit", "Alter", "Gesuchtes Alter"].includes(l.label))
         .map((l) => `${l.label}: ${l.value}`)
         .slice(0, 10);
-      const recent = [
-        ...(resume?.steckbrief.facts ?? []).map((f) => f.answer),
-        ...(extrasText() ? [extrasText()] : []),
-        ...followAnswers.current.map((f) => f.answer),
-      ].slice(-6);
-      const res = await fetch("/api/chat/next", {
+      const res = await fetch("/api/chat/talk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lastAnswer: lastAnswer.current, recent, asked: askedQuestions.current.slice(-40), hints, track: resume?.track ?? track, language, skips: skipsInRow.current }),
-        signal: AbortSignal.timeout(9000),
+        body: JSON.stringify({
+          mode,
+          opening,
+          turns: talkTurns.current.slice(-14),
+          hints,
+          asked: askedQuestions.current.slice(-40),
+          track: resume?.track ?? track,
+          language,
+          skips: skipsInRow.current,
+          // Im freien Modus nur gelegentlich eine Anschlussfrage (jede dritte Antwort)
+          allowQuestion: userMessages.current % 3 === 1,
+        }),
+        signal: AbortSignal.timeout(15000),
       });
       const data = await res.json();
-      return typeof data?.question === "string" ? data.question : null;
+      return typeof data?.reply === "string"
+        ? { reply: data.reply, personal: data.personal !== false, related: data.related === true }
+        : null;
     } catch {
       return null;
     }
   }
 
-  function extrasText(): string {
-    return answers.current.extras?.freeText ?? "";
+  // Ohne KI: regelbasierte Frage bzw. freundliche Bestätigung
+  function ruleReply(mode: "free" | "ask", lastUserText: string): string {
+    if (mode === "free") return tx("Danke, das merke ich mir. Erzähl gern weiter.");
+    const question = nextQuestion(lastUserText, talkContext.current, askedQuestions.current, language);
+    return question ?? tx("Was machst du am liebsten in deiner Freizeit?");
   }
 
-  // Nächste Frage im Gespräch. Nach jeweils drei Antworten fragt der Chat, ob es weitergehen soll.
-  async function askNext(intro: BotLine[] = []) {
-    if (sinceCheckpoint.current >= 3 || skipsInRow.current >= 2) {
-      const bySkips = skipsInRow.current >= 2;
-      sinceCheckpoint.current = 0;
-      skipsInRow.current = 0;
-      askCheckpoint(intro, bySkips);
-      return;
+  // Eine persönliche Nachricht als Angabe im Steckbrief festhalten (lange Texte in Stücken, passend zur Speichergrenze)
+  function storeFact(answer: string, question: string) {
+    const label = question || tx("Das hast du mir mitgeteilt");
+    for (let i = 0; i < answer.length && followAnswers.current.length < 90; i += FOLLOW_UP_ANSWER_MAX) {
+      followAnswers.current.push({ question: label.slice(0, 280), answer: answer.slice(i, i + FOLLOW_UP_ANSWER_MAX) });
     }
-    let question: string | null = null;
-    if (aiEnabled) {
-      setStep("intro");
-      setBusy(true);
-      setTyping(true);
-      question = await fetchAiQuestion();
-      if (!alive.current) return;
-      setTyping(false);
-      if (question && askedQuestions.current.includes(question)) question = null;
-    }
-    if (!question) question = nextQuestion(lastAnswer.current, talkContext.current, askedQuestions.current, language);
-    if (!question) {
-      exitTalk([...intro, tx("Ich glaube, ich habe dich jetzt schon richtig gut kennengelernt. Danke dir!")]);
-      return;
-    }
-    askedQuestions.current.push(question);
-    setFollowQuestion(question);
-    ask([...intro, question], "followUp");
-  }
-
-  function submitFollowUp(skip = false) {
-    const value = text.trim();
-    if (!skip && value && tryAnswerSiteQuestion(value, followQuestion, "followUp")) return;
-    if (skip || !value) {
-      user(tx("Überspringen"));
-      skipsInRow.current += 1;
-      askNext([tx("Kein Problem, dann etwas anderes:")]);
-      return;
-    }
-    skipsInRow.current = 0;
-    followAnswers.current.push({ question: followQuestion, answer: value });
     if (!resume) extras().followUps = followAnswers.current.slice();
-    talkContext.current += ` ${value}`;
-    lastAnswer.current = value;
-    sinceCheckpoint.current += 1;
-    user(value);
-    askNext(sinceCheckpoint.current >= 3 ? [] : [tx(ACKNOWLEDGEMENTS[ackIndex.current++ % ACKNOWLEDGEMENTS.length])]);
   }
 
-  // Nach mehreren Antworten oder zwei Übersprungenen: fragt, ob es weitergehen soll. Nach Übersprungenem kein Lob.
-  function askCheckpoint(intro: BotLine[] = [], bySkips = false) {
-    const first = checkpointCount.current++ === 0;
-    ask(
-      bySkips
-        ? [t("Kein Problem, du musst nicht auf alles antworten. Möchtest du weitermachen oder das Gespräch später fortsetzen?")]
-        : [
-            ...intro,
-            first
-              ? t("Danke, das hilft mir schon sehr weiter. Möchtest du noch weiter erzählen, oder sollen wir das Gespräch später fortsetzen?")
-              : t("Ich lerne dich gerade richtig gut kennen. Weiter erzählen, oder sollen wir später weitermachen?"),
-          ],
-      "checkpoint",
-    );
+  // Antwort des Chats auf die letzte Nachricht der Person (oder Eröffnung, wenn userText leer ist)
+  async function respond(userText: string, opening = false) {
+    const mode = talkModeRef.current;
+    talkBusyRef.current = true;
+    setTalkBusy(true);
+    setTyping(true);
+    const result = await aiTalk(mode, opening);
+    if (!alive.current) return;
+    setTyping(false);
+    const reply = result?.reply ?? ruleReply(mode, userText);
+    if (userText && (result ? result.personal : true)) storeFact(userText, result ? (result.related ? lastQuestion.current : "") : lastQuestion.current);
+    say(reply);
+    if (mode === "ask") rememberQuestion(reply);
+    else lastQuestion.current = "";
+    talkBusyRef.current = false;
+    setTalkBusy(false);
   }
 
-  function pickCheckpoint(more: boolean) {
-    if (more) {
-      user(tx("Gern, weiter erzählen"));
-      askNext([tx("Super, dann weiter!")]);
+  function changeMode(next: "free" | "ask") {
+    talkModeRef.current = next;
+    setTalkMode(next);
+  }
+
+  // Auswahl am Anfang: Ab hier läuft das Gespräch in einem Eingabefeld
+  async function beginTalk(next: "free" | "ask") {
+    changeMode(next);
+    user(tx(next === "free" ? "Ich erzähle frei, was mir wichtig ist" : "Stell mir Fragen"));
+    setText("");
+    setInputError("");
+    setBusy(false);
+    setStep("talk");
+    if (next === "ask" && !resume) {
+      // Erste Frage knüpft an die Basis-Angaben an (ohne KI-Wartezeit)
+      const opener = talkOpener();
+      askedQuestions.current.push(opener);
+      lastQuestion.current = opener;
+      say(opener);
       return;
     }
-    user(tx("Später fortsetzen"));
-    exitTalk([tx("Alles klar, wir setzen das Gespräch später fort. Du findest es dann in deinem Profil.")]);
+    if (next === "free") {
+      say(resume ? tx("Gern. Was gibt es Neues bei dir? Erzähl einfach, ich höre zu.") : tx("Gern. Erzähl einfach, was dir wichtig ist, wer du bist oder wonach du suchst. Auch was du nicht magst, hilft mir. Ich höre zu."));
+      return;
+    }
+    await respond("", true);
+  }
+
+  // Zwischen frei erzählen und Fragen wechseln, mitten im Gespräch
+  async function switchTalkMode(next: "free" | "ask") {
+    if (next === talkModeRef.current || talkBusyRef.current) return;
+    changeMode(next);
+    if (next === "free") {
+      say(tx("Gern. Erzähl einfach, was dir gerade wichtig ist, ich höre zu."));
+      return;
+    }
+    await respond("", true);
+  }
+
+  async function sendTalk() {
+    const value = text.trim();
+    if (!value || talkBusyRef.current) return;
+    setText("");
+    user(value);
+    // Der Steckbrief: Was weiß DSpora gerade über mich? Anzeigen, ohne das Gespräch zu unterbrechen.
+    if (isSteckbriefRequest(value)) {
+      talkTurns.current.push({ role: "user", text: value });
+      say(steckbriefText(currentSteckbrief(), tx));
+      return;
+    }
+    userMessages.current += 1;
+    skipsInRow.current = 0;
+    talkTurns.current.push({ role: "user", text: value });
+    talkContext.current += ` ${value}`;
+    await respond(value);
+  }
+
+  // Im Fragen-Modus: Frage überspringen, die KI stellt eine andere
+  async function askAnother() {
+    if (talkBusyRef.current) return;
+    user(tx("Andere Frage"));
+    skipsInRow.current += 1;
+    talkTurns.current.push({ role: "user", text: "(möchte diese Frage überspringen)" });
+    await respond("");
+  }
+
+  function endTalk() {
+    if (talkBusyRef.current) return;
+    exitTalk([tx("Danke dir für das Gespräch! Alles Wichtige habe ich in deinem Steckbrief festgehalten.")]);
   }
 
   // Gespräch beenden: neu angemeldet geht es mit den Wünschen weiter, beim Fortsetzen werden die neuen Antworten gespeichert.
@@ -1360,40 +1338,43 @@ export default function OnboardingChat({
         </div>
       )}
 
-      {step === "freeText" && (
-        <LongTextAnswer
-          value={text}
-          onChange={setText}
-          onSubmit={() => submitFreeText()}
-          placeholder={tx("Erzähl frei heraus, was dir wichtig ist, wer du bist oder wonach du suchst …")}
-          maxLength={FREE_TEXT_MAX}
-          minLength={10}
-          rows={5}
-          skipLabel={resume ? tx("Frag du mich") : tx("Überspringen")}
-          onSkip={() => submitFreeText(true)}
-        />
-      )}
-
-      {step === "followUp" && (
-        <LongTextAnswer
-          value={text}
-          onChange={setText}
-          onSubmit={() => submitFollowUp()}
-          placeholder={tx("Deine Antwort …")}
-          maxLength={FOLLOW_UP_ANSWER_MAX}
-          minLength={2}
-          rows={3}
-          onSkip={() => submitFollowUp(true)}
-        />
-      )}
-
-      {step === "checkpoint" && (
+      {step === "talkMode" && (
         <ChipRow>
-          <Chip onClick={() => pickCheckpoint(true)}>{tx("Gern, weiter erzählen")}</Chip>
-          <Chip onClick={() => pickCheckpoint(false)} subtle>
-            {tx("Später fortsetzen")}
-          </Chip>
+          <Chip onClick={() => beginTalk("free")}>{tx("Ich erzähle frei, was mir wichtig ist")}</Chip>
+          <Chip onClick={() => beginTalk("ask")}>{tx("Stell mir Fragen")}</Chip>
         </ChipRow>
+      )}
+
+      {step === "talk" && (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip selected={talkMode === "free"} onClick={() => switchTalkMode("free")}>
+              {tx("Frei erzählen")}
+            </Chip>
+            <Chip selected={talkMode === "ask"} onClick={() => switchTalkMode("ask")}>
+              {tx("Fragen")}
+            </Chip>
+            <button
+              type="button"
+              onClick={endTalk}
+              className="ml-auto py-2 text-sm text-zinc-300 transition-colors hover:text-white"
+            >
+              {tx("Gespräch beenden")}
+            </button>
+          </div>
+          <LongTextAnswer
+            value={text}
+            onChange={setText}
+            onSubmit={sendTalk}
+            placeholder={talkMode === "free" ? tx("Schreib, was dir wichtig ist …") : tx("Deine Antwort oder was du gerade sagen möchtest …")}
+            maxLength={800}
+            minLength={1}
+            rows={3}
+            busy={talkBusy}
+            skipLabel={tx("Andere Frage")}
+            onSkip={talkMode === "ask" ? askAnother : undefined}
+          />
+        </div>
       )}
 
       {step === "wishes" && (

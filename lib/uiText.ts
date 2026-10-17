@@ -797,3 +797,21 @@ register({ "Eigenes Ziel + Enter": ["Your own goal + Enter", "உங்கள்
 register({ "Eigenes + Enter": ["Your own + Enter", "உங்கள் சொந்தம் + Enter"] });
 register({ "Eigenen Vibe + Enter": ["Your own vibe + Enter", "உங்கள் சொந்த உணர்வு + Enter"] });
 register({ "Mit Enter oder + hinzufügen, dann erscheint es oben als Auswahl.": ["Add with Enter or +, then it appears above as a choice.", "Enter அல்லது + மூலம் சேர்க்கவும், அது மேலே தேர்வாகத் தோன்றும்."] });
+// ——— Phase 2: Gespräch ———
+register({
+  "Schön, dass du wieder da bist! Erzähl mir, was es Neues gibt, oder ich stelle dir Fragen. Du kannst jederzeit wechseln.": ["Nice to have you back! Tell me what's new, or I'll ask you questions. You can switch at any time.", "மீண்டும் வந்தது மகிழ்ச்சி! புதிதாக என்ன நடந்தது என்று சொல்லுங்கள், அல்லது நான் கேள்விகள் கேட்கிறேன். எப்போது வேண்டுமானாலும் மாற்றிக்கொள்ளலாம்."],
+  "Wie möchtest du dich vorstellen? Du kannst jederzeit wechseln.": ["How would you like to introduce yourself? You can switch at any time.", "உங்களை எப்படி அறிமுகப்படுத்திக்கொள்ள விரும்புகிறீர்கள்? எப்போது வேண்டுமானாலும் மாற்றிக்கொள்ளலாம்."],
+  "Danke, das merke ich mir. Erzähl gern weiter.": ["Thanks, I'll remember that. Feel free to keep telling me more.", "நன்றி, இதை நினைவில் வைத்துக்கொள்கிறேன். தொடர்ந்து சொல்லுங்கள்."],
+  "Gern. Was gibt es Neues bei dir? Erzähl einfach, ich höre zu.": ["Gladly. What's new with you? Just tell me, I'm listening.", "மகிழ்ச்சி. உங்களிடம் புதிதாக என்ன? சொல்லுங்கள், நான் கேட்கிறேன்."],
+  "Gern. Erzähl einfach, was dir wichtig ist, wer du bist oder wonach du suchst. Auch was du nicht magst, hilft mir. Ich höre zu.": ["Gladly. Just tell me what matters to you, who you are or what you're looking for. What you don't like helps me too. I'm listening.", "மகிழ்ச்சி. உங்களுக்கு எது முக்கியம், நீங்கள் யார், எதைத் தேடுகிறீர்கள் என்பதைச் சொல்லுங்கள். உங்களுக்குப் பிடிக்காததும் எனக்கு உதவும். நான் கேட்கிறேன்."],
+  "Gern. Erzähl einfach, was dir gerade wichtig ist, ich höre zu.": ["Gladly. Just tell me what matters to you right now, I'm listening.", "மகிழ்ச்சி. இப்போது உங்களுக்கு எது முக்கியம் என்று சொல்லுங்கள், நான் கேட்கிறேன்."],
+  "Andere Frage": ["Another question", "வேறு கேள்வி"],
+  "Danke dir für das Gespräch! Alles Wichtige habe ich in deinem Steckbrief festgehalten.": ["Thank you for the conversation! I've noted everything important in your profile summary.", "உரையாடலுக்கு நன்றி! முக்கியமான அனைத்தையும் உங்கள் சுயவிவரச் சுருக்கத்தில் குறித்துள்ளேன்."],
+  "Ich erzähle frei, was mir wichtig ist": ["I'll freely tell you what matters to me", "எனக்கு எது முக்கியம் என்பதை நானே சொல்கிறேன்"],
+  "Stell mir Fragen": ["Ask me questions", "எனக்குக் கேள்விகள் கேளுங்கள்"],
+  "Frei erzählen": ["Talk freely", "சுதந்திரமாகச் சொல்"],
+  "Fragen": ["Questions", "கேள்விகள்"],
+  "Gespräch beenden": ["End conversation", "உரையாடலை முடி"],
+  "Schreib, was dir wichtig ist …": ["Write what matters to you …", "உங்களுக்கு எது முக்கியம் என்று எழுதுங்கள் …"],
+  "Deine Antwort oder was du gerade sagen möchtest …": ["Your answer or whatever you'd like to say …", "உங்கள் பதில் அல்லது நீங்கள் சொல்ல விரும்புவது …"],
+});
