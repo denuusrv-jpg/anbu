@@ -30,14 +30,16 @@ export default function HomeClient() {
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     const previousMeta = meta?.getAttribute("content") ?? null;
+    const html = document.documentElement;
     const previousBody = document.body.style.background;
-    const previousHtml = document.documentElement.style.background;
+    const previousHtml = html.style.background;
+    // Safari färbt Statusleiste und untere Leiste nach der Hintergrundfarbe der Seite (nur eine echte Farbe, kein Verlauf):
+    // body durchsichtig, html in der Hero-Farbe, solange der Hero im Bild ist, danach dunkel.
     document.body.style.background = "transparent";
-    // Oberste Bildschirmhöhe in der Farbe des Hero-Bereichs, danach dunkel (auch beim Überscrollen oben)
-    document.documentElement.style.background = "linear-gradient(to bottom, #86195a 0, #c52a3c 100lvh, #09090b 100lvh) #09090b";
     const update = () => {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
+      html.style.background = inHero ? "#a21c4f" : "#09090b";
       meta?.setAttribute("content", inHero ? "#86195a" : "#09090b");
     };
     update();
@@ -45,7 +47,7 @@ export default function HomeClient() {
     return () => {
       window.removeEventListener("scroll", update);
       document.body.style.background = previousBody;
-      document.documentElement.style.background = previousHtml;
+      html.style.background = previousHtml;
       if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
     };
   }, []);

@@ -151,9 +151,13 @@ export default function FlowingWaveBackground({ pulses = true, fixed = false }: 
     const html = document.documentElement;
     const previousMeta = meta?.getAttribute("content") ?? null;
     const previousBackground = html.style.background;
+    const previousBody = document.body.style.background;
     meta?.setAttribute("content", color);
     html.style.background = color;
+    // body durchsichtig: Safari färbt die Browser-Leisten nach dem Hintergrund der Seite (sonst schwarz durch den body)
+    document.body.style.background = "transparent";
     return () => {
+      document.body.style.background = previousBody;
       if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
       html.style.background = previousBackground;
     };

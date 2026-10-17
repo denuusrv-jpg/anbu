@@ -122,7 +122,7 @@ export default function LoginCard({
   }
 
   return (
-    <>
+    <div className="flex w-full flex-col items-center">
     <LanguageSwitch className="mb-5" />
     <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
       <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full glow-gold" />
@@ -256,9 +256,12 @@ export default function LoginCard({
         )}
       </div>
     </div>
-    <Link href="/" className="mt-8 text-sm text-zinc-400 hover:text-white">
+    <Link
+      href="/"
+      className="mt-8 inline-flex items-center justify-center rounded-full border border-white/15 bg-white/[0.07] px-5 py-2.5 text-sm font-medium text-zinc-100 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-white"
+    >
       {tx("← Zurück zur Startseite")}
     </Link>
-    </>
+    </div>
   );
 }
