@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { AnimatePresence, motion } from "motion/react";
 import { ShieldIcon } from "@/components/Icons";
 
@@ -12,6 +13,7 @@ export const OPEN_ADMIN_EVENT = "dspora:open-admin";
 export default function AdminGate() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  useScrollLock(open);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

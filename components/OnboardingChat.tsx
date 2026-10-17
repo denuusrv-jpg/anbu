@@ -20,6 +20,7 @@ import { stashPhotos } from "@/lib/draftPhotos";
 import { nextQuestion } from "@/lib/followups";
 import type { ChatLink } from "@/lib/siteKnowledge";
 import { translateUi } from "@/lib/uiText";
+import { useScrollLock } from "@/lib/useScrollLock";
 import {
   FREE_FACT_QUESTION,
   buildSteckbrief,
@@ -211,6 +212,7 @@ export default function OnboardingChat({
   const [cityByName, setCityByName] = useState(false);
   const [talkOn, setTalkOn] = useState(Boolean(resume));
   const [noticeOpen, setNoticeOpen] = useState(false);
+  useScrollLock(noticeOpen);
 
   // Auswahlen, die in den Panels live bearbeitet werden
   const [interests, setInterests] = useState<Choice>(EMPTY);

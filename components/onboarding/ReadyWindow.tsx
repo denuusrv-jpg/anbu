@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { CheckIcon } from "@/components/Icons";
 import { useTx } from "@/lib/LanguageContext";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 export type ReadyKind =
   | "guest" // Link per E-Mail verschickt, noch nicht angemeldet
@@ -30,6 +31,7 @@ export default function ReadyWindow({
   inline?: boolean;
 }) {
   const tx = useTx();
+  useScrollLock(!inline);
   const text =
     kind === "guest"
       ? tx("Wir haben dir einen Link an {email} geschickt. Mit einem Klick darauf wirst du angemeldet und dein Profil wird gespeichert.", { email: email ?? tx("deine E-Mail-Adresse") })

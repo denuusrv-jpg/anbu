@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useTx } from "@/lib/LanguageContext";
 import { scrollFieldIntoView } from "@/lib/scrollIntoViewOnFocus";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -24,6 +25,7 @@ export default function Sheet({
 }) {
   const tx = useTx();
   const titleId = useId();
+  useScrollLock(open);
   // Wird an document.body gehängt: Karten mit Weichzeichner/Transform würden sonst das "fixed" einschließen
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -58,11 +60,8 @@ export default function Sheet({
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previous;
     };
   }, [open, onClose]);
 

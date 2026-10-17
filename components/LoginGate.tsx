@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import LoginCard from "@/components/LoginCard";
+import { useScrollLock } from "@/lib/useScrollLock";
 
 export const OPEN_LOGIN_EVENT = "dspora:open-login";
 
 // Globales Anmelde-Fenster: öffnet sich über das Event (Klick auf "Anmelden").
 export default function LoginGate() {
   const [open, setOpen] = useState(false);
+  useScrollLock(open);
 
   useEffect(() => {
     const openGate = () => setOpen(true);
