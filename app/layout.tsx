@@ -30,15 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de" className={tamil.variable} suppressHydrationWarning>
-      <head>
-        {/* Gespeicherte Schriftgröße vor dem ersten Zeichnen anwenden (kein Springen) */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var s=localStorage.getItem("dspora-text-size");var m={s:0.9,l:1.12,xl:1.3};if(m[s])document.documentElement.style.setProperty("--text-scale",m[s])}catch(e){}`,
-          }}
-        />
-      </head>
+    <html lang="de" className={tamil.variable}>
       <body className="bg-zinc-950 text-zinc-100 antialiased">
         <LanguageProvider>
           <PageTransition>{children}</PageTransition>

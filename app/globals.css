@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 html {
-  font-size: calc(100% * var(--text-scale, 1));
   /* Oberste Bildschirmhöhe in der Farbe des Hero-Bereichs, danach dunkel: beim Überscrollen oben bleibt es farbig, nicht schwarz */
   background: linear-gradient(to bottom, #7d1b5b 0, #7d1b5b 100vh, #09090b 100vh) #09090b;
   scroll-behavior: smooth;
@@ -291,7 +290,7 @@ input::-webkit-credentials-auto-fill-button {
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
   textarea,
   select {
-    font-size: max(16px, 1rem);
+    font-size: 16px;
   }
 }
 

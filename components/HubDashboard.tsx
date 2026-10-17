@@ -13,7 +13,6 @@ import { fieldClass } from "@/components/onboarding/ui";
 import { Chip, ChipRow } from "@/components/onboarding/ui";
 import { CheckIcon } from "@/components/Icons";
 import LanguageButton from "@/components/LanguageButton";
-import TextSizeControl from "@/components/TextSizeControl";
 import Sheet from "@/components/ui/Sheet";
 import Slider from "@/components/ui/Slider";
 import { CustomEntry } from "@/components/onboarding/ChoiceSelect";
@@ -543,7 +542,6 @@ export default function HubDashboard({
           </div>
           <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
             <LanguageButton onChange={saveLanguage} />
-            <TextSizeControl />
             {isAdmin && (
               <Link
                 href="/admin"

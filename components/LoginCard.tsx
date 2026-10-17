@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import LanguageSwitch from "@/components/LanguageSwitch";
-import TextSizeControl from "@/components/TextSizeControl";
 import { useTx } from "@/lib/LanguageContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -124,10 +123,7 @@ export default function LoginCard({
 
   return (
     <>
-    <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
-      <LanguageSwitch />
-      <TextSizeControl />
-    </div>
+    <LanguageSwitch className="mb-5" />
     <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-900/60 p-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_30px_80px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl">
       <div className="pointer-events-none absolute -top-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full glow-gold" />
       <div className="relative">

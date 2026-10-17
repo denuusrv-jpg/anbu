@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LanguageSwitch from "@/components/LanguageSwitch";
-import TextSizeControl from "@/components/TextSizeControl";
 import { scrollFieldIntoView } from "@/lib/scrollIntoViewOnFocus";
 import { useLanguage, useTx } from "@/lib/LanguageContext";
 import { useEffect, useRef, useState } from "react";
@@ -1549,9 +1548,8 @@ export default function OnboardingChat({
         </header>
 
         {/* Sprache (immer Deutsch, தமிழ், English) */}
-        <div className="relative flex flex-wrap items-center justify-center gap-2 border-b border-white/5 px-3 py-1.5">
+        <div className="relative flex justify-center border-b border-white/5 py-1.5">
           <LanguageSwitch className="scale-90" />
-          <TextSizeControl className="scale-90" />
         </div>
 
         {cards ? (
