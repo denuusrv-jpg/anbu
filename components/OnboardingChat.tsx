@@ -239,6 +239,10 @@ export default function OnboardingChat({
   const skipsInRow = useRef(0);
   // Gespräch: Verlauf für die KI, letzte KI-Frage, Zähler
   const talkTurns = useRef<{ role: "assistant" | "user"; text: string }[]>([]);
+  // Angemeldet: Das Basis-Profil wird schon vor dem Gespräch gespeichert, neue Angaben aus dem Gespräch laufend
+  const baseSaved = useRef(false);
+  const sentCount = useRef(0);
+  const syncing = useRef(false);
   const lastQuestion = useRef("");
   const userMessages = useRef(0);
   const nextId = useRef(0);
@@ -652,6 +656,7 @@ export default function OnboardingChat({
       photoCount: 0,
     };
     user(value);
+    void saveBase();
     ask(
       [
         t("Möchtest du dein Profil durch ein kurzes Gespräch schärfen, damit unser System noch tiefgründigere Matches für dich findet?"),
@@ -672,6 +677,41 @@ export default function OnboardingChat({
     const first = a.interests ? choiceLabels(a.interests, INTERESTS)[0] : undefined;
     if (first) return tl("Du hast {topic} als Interesse angegeben. Was gefällt dir daran am meisten?", { topic: tl(first) });
     return tl("Was machst du am liebsten in deiner Freizeit?");
+  }
+
+  // Basis-Profil sofort speichern (nur angemeldet), damit nichts verloren geht, wenn man im Gespräch aufhört
+  async function saveBase() {
+    if (mode !== "live" || resume) return;
+    try {
+      const res = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...answers.current }),
+      });
+      if (res.ok) baseSaved.current = true;
+    } catch {
+      // am Ende wird noch einmal gespeichert
+    }
+  }
+
+  // Neue Angaben aus dem Gespräch laufend ins Profil schreiben (nur angemeldet, nur was noch nicht gesendet wurde)
+  async function syncFacts() {
+    if (mode !== "live" || (!resume && !baseSaved.current) || syncing.current) return;
+    const fresh = followAnswers.current.slice(sentCount.current);
+    if (fresh.length === 0) return;
+    syncing.current = true;
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ talk: { followUps: fresh } }),
+      });
+      if (res.ok) sentCount.current += fresh.length;
+    } catch {
+      // wird beim Beenden noch einmal versucht
+    } finally {
+      syncing.current = false;
+    }
   }
 
   function pickTransition(wantsTalk: boolean) {
@@ -818,6 +858,7 @@ export default function OnboardingChat({
       followAnswers.current.push({ question: label.slice(0, 280), answer: answer.slice(i, i + FOLLOW_UP_ANSWER_MAX) });
     }
     if (!resume) extras().followUps = followAnswers.current.slice();
+    void syncFacts();
   }
 
   // Antwort des Chats auf die letzte Nachricht der Person (oder Eröffnung, wenn userText leer ist)
@@ -936,7 +977,7 @@ export default function OnboardingChat({
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ talk: { followUps: followAnswers.current, transcript: history.current.slice(-MAX_TRANSCRIPT) } }),
+        body: JSON.stringify({ talk: { followUps: followAnswers.current.slice(sentCount.current), transcript: history.current.slice(-MAX_TRANSCRIPT) } }),
       });
       if (!res.ok) throw new Error("save failed");
       setTyping(false);
