@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
@@ -22,10 +23,39 @@ const featureStyles = [
 export default function HomeClient() {
   const { t, language } = useLanguage();
   const isTamil = language === "ta";
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  // Handy: Solange der Hero-Bereich den Bildschirm füllt, sind auch Statusleiste, Browser-Leisten und der Bereich
+  // dahinter in seiner Farbe (statt schwarz). Erst wenn man nach unten scrollt, wird alles dunkel.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const previousMeta = meta?.getAttribute("content") ?? null;
+    const previousBody = document.body.style.background;
+    const previousHtml = document.documentElement.style.background;
+    document.body.style.background = "transparent";
+    // Oberste Bildschirmhöhe in der Farbe des Hero-Bereichs, danach dunkel (auch beim Überscrollen oben)
+    document.documentElement.style.background = "linear-gradient(to bottom, #86195a 0, #c52a3c 100lvh, #09090b 100lvh) #09090b";
+    const update = () => {
+      const hero = heroRef.current;
+      const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
+      meta?.setAttribute("content", inHero ? "#86195a" : "#09090b");
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", update);
+      document.body.style.background = previousBody;
+      document.documentElement.style.background = previousHtml;
+      if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
+    };
+  }, []);
 
   return (
     <main className="min-h-[100dvh] bg-zinc-950">
-      <div className="relative isolate flex min-h-[100dvh] flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
+      <div
+        ref={heroRef}
+        className="relative isolate flex min-h-[100lvh] flex-col overflow-hidden bg-gradient-to-b from-[#86195a] to-[#c52a3c] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+      >
         <FlowingWaveBackground />
 
         {/* Hero — takes the full first screen */}

@@ -6,7 +6,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#7d1b5b",
+  themeColor: "#86195a",
 };
 
 export default function Home() {
