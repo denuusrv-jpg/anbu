@@ -29,6 +29,15 @@ export default function Sheet({
   useEffect(() => setMounted(true), []);
   // Handy: Das Pop-up endet über der Tastatur (sichtbare Höhe), damit Eingabefelder nicht verdeckt werden
   const [view, setView] = useState<{ top: number; height: number } | null>(null);
+  // Breite Bildschirme: Pop-up in der Mitte, das einblendet statt von unten hereinzufahren
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    setWide(mq.matches);
+    const on = (e: MediaQueryListEvent) => setWide(e.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   useEffect(() => {
     if (!open) return;
     const vv = window.visualViewport;
@@ -73,9 +82,9 @@ export default function Sheet({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
+            initial={wide ? { opacity: 0, y: 16, scale: 0.97 } : { y: "100%" }}
+            animate={wide ? { opacity: 1, y: 0, scale: 1 } : { y: 0 }}
+            exit={wide ? { opacity: 0, y: 8, scale: 0.98 } : { y: "100%" }}
             transition={{ duration: 0.35, ease: EASE }}
             onClick={(e) => e.stopPropagation()}
             className={`flex max-h-[92%] w-full max-w-lg flex-col rounded-t-3xl border bg-zinc-900 shadow-[0_-30px_80px_-30px_rgba(0,0,0,0.9)] sm:rounded-3xl ${

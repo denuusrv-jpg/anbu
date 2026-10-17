@@ -533,7 +533,7 @@ export default function HubDashboard({
       <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         {/* Kopf */}
-        <header className="space-y-4">
+        <header className="space-y-4 sm:flex sm:items-start sm:justify-between sm:gap-6 sm:space-y-0">
           <div>
             <p className="text-xs font-semibold tracking-wide text-gold uppercase">{tx("DSpora Profil")}</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
@@ -541,7 +541,7 @@ export default function HubDashboard({
             </h1>
             <p className="mt-0.5 truncate text-sm text-zinc-300">{email}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
             <LanguageButton onChange={saveLanguage} />
             <TextSizeControl />
             {isAdmin && (
