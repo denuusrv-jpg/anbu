@@ -51,7 +51,7 @@ export type TalkInput = {
   hints: string[];
   asked: string[];
   track?: "community" | "business";
-  language?: "de" | "en" | "ta";
+  language?: "de" | "en";
   skips?: number;
   /** Modus "free": darf diese Antwort eine (einzige) Anschlussfrage enthalten? */
   allowQuestion?: boolean;
@@ -72,16 +72,11 @@ export function acceptReply(raw: string): string | null {
 }
 
 export async function talk(model: LanguageModel, input: TalkInput): Promise<TalkResult | null> {
-  const language =
-    input.language === "ta"
-      ? "Tamil (தமிழ்), in tamilischer Schrift und höflich mit „நீங்கள்“ angesprochen"
-      : input.language === "en"
-        ? "Englisch"
-        : "Deutsch";
+  const language = input.language === "en" ? "Englisch" : "Deutsch";
   const prompt = [
     `Modus: ${input.mode}`,
     `Richtung: ${input.track === "business" ? "Business-Community" : "Friends-Community"}`,
-    `Sprache deiner Antwort: ${language}. Die Person liest und schreibt in dieser Sprache.`,
+    `Sprache deiner Antwort: ${language}. Das Gespräch läuft nur auf Deutsch oder Englisch: Schreibt die Person in der jeweils anderen dieser beiden Sprachen, antworte in der Sprache ihrer letzten Nachricht. Schreibt sie in einer anderen Sprache, antworte in ${language} und bitte freundlich, auf Deutsch oder Englisch zu schreiben.`,
     input.hints.length ? `Bekannt über die Person aus den Basis-Fragen: ${input.hints.join("; ")}` : "",
     input.skips ? `Die Person hat zuletzt ${input.skips} Frage(n) hintereinander übersprungen.` : "",
     input.asked.length ? `Bereits gestellte Fragen (nicht wiederholen):\n${input.asked.map((q) => `- ${q}`).join("\n")}` : "",

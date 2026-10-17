@@ -20,6 +20,7 @@ import { getBrowserClient } from "@/lib/supabase/client";
 import { stashPhotos } from "@/lib/draftPhotos";
 import { nextQuestion } from "@/lib/followups";
 import type { ChatLink } from "@/lib/siteKnowledge";
+import { translateUi } from "@/lib/uiText";
 import {
   FREE_FACT_QUESTION,
   buildSteckbrief,
@@ -191,6 +192,10 @@ export default function OnboardingChat({
   const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
   const [talkMode, setTalkMode] = useState<"free" | "ask">("free");
   const talkModeRef = useRef<"free" | "ask">("free");
+  // Sprache des Gesprächs mit der KI: nur Deutsch oder Englisch (bei Tamil als Oberfläche startet Englisch)
+  const [talkLang, setTalkLang] = useState<"de" | "en">(language === "en" || language === "ta" ? "en" : "de");
+  const talkLangRef = useRef<"de" | "en">(language === "en" || language === "ta" ? "en" : "de");
+  const tl = (key: string, vars?: Record<string, string | number>) => translateUi(key, talkLangRef.current, vars);
   const [talkBusy, setTalkBusy] = useState(false);
   const talkBusyRef = useRef(false);
   const [track, setTrack] = useState<"community" | "business">("community");
@@ -661,13 +666,13 @@ export default function OnboardingChat({
   function talkOpener(): string {
     const a = answers.current;
     if (track === "business" && a.business?.sector) {
-      return tx("Du hast angegeben, dass du im Bereich {topic} unterwegs bist. Was reizt dich daran am meisten?", {
-        topic: tx(labelOf(a.business.sector, SECTORS)),
+      return tl("Du hast angegeben, dass du im Bereich {topic} unterwegs bist. Was reizt dich daran am meisten?", {
+        topic: tl(labelOf(a.business.sector, SECTORS)),
       });
     }
     const first = a.interests ? choiceLabels(a.interests, INTERESTS)[0] : undefined;
-    if (first) return tx("Du hast {topic} als Interesse angegeben. Was gefällt dir daran am meisten?", { topic: tx(first) });
-    return tx("Was machst du am liebsten in deiner Freizeit?");
+    if (first) return tl("Du hast {topic} als Interesse angegeben. Was gefällt dir daran am meisten?", { topic: tl(first) });
+    return tl("Was machst du am liebsten in deiner Freizeit?");
   }
 
   function pickTransition(wantsTalk: boolean) {
@@ -734,6 +739,10 @@ export default function OnboardingChat({
   // Zu Beginn: frei erzählen oder Fragen stellen lassen (auch beim Fortsetzen aus dem Profil)
   function startTalkChoice() {
     setTalkOn(true);
+    // Gespräch startet in der Oberflächensprache; Tamil gibt es hier nicht, dann Englisch
+    const start = language === "de" ? "de" : "en";
+    talkLangRef.current = start;
+    setTalkLang(start);
     ask(
       [
         resume
@@ -780,7 +789,7 @@ export default function OnboardingChat({
           hints,
           asked: askedQuestions.current.slice(-40),
           track: resume?.track ?? track,
-          language,
+          language: talkLangRef.current,
           skips: skipsInRow.current,
           // Im freien Modus nur gelegentlich eine Anschlussfrage (jede dritte Antwort)
           allowQuestion: userMessages.current % 3 === 1,
@@ -798,9 +807,9 @@ export default function OnboardingChat({
 
   // Ohne KI: regelbasierte Frage bzw. freundliche Bestätigung
   function ruleReply(mode: "free" | "ask", lastUserText: string): string {
-    if (mode === "free") return tx("Danke, das merke ich mir. Erzähl gern weiter.");
-    const question = nextQuestion(lastUserText, talkContext.current, askedQuestions.current, language);
-    return question ?? tx("Was machst du am liebsten in deiner Freizeit?");
+    if (mode === "free") return tl("Danke, das merke ich mir. Erzähl gern weiter.");
+    const question = nextQuestion(lastUserText, talkContext.current, askedQuestions.current, talkLangRef.current);
+    return question ?? tl("Was machst du am liebsten in deiner Freizeit?");
   }
 
   // Eine persönliche Nachricht als Angabe im Steckbrief festhalten (lange Texte in Stücken, passend zur Speichergrenze)
@@ -852,7 +861,7 @@ export default function OnboardingChat({
       return;
     }
     if (next === "free") {
-      say(resume ? tx("Gern. Was gibt es Neues bei dir? Erzähl einfach, ich höre zu.") : tx("Gern. Erzähl einfach, was dir wichtig ist, wer du bist oder wonach du suchst. Auch was du nicht magst, hilft mir. Ich höre zu."));
+      say(resume ? tl("Gern. Was gibt es Neues bei dir? Erzähl einfach, ich höre zu.") : tl("Gern. Erzähl einfach, was dir wichtig ist, wer du bist oder wonach du suchst. Auch was du nicht magst, hilft mir. Ich höre zu."));
       return;
     }
     await respond("", true);
@@ -863,7 +872,7 @@ export default function OnboardingChat({
     if (next === talkModeRef.current || talkBusyRef.current) return;
     changeMode(next);
     if (next === "free") {
-      say(tx("Gern. Erzähl einfach, was dir gerade wichtig ist, ich höre zu."));
+      say(tl("Gern. Erzähl einfach, was dir gerade wichtig ist, ich höre zu."));
       return;
     }
     await respond("", true);
@@ -872,6 +881,12 @@ export default function OnboardingChat({
   async function sendTalk() {
     const value = text.trim();
     if (!value || talkBusyRef.current) return;
+    // Das Gespräch läuft nur auf Deutsch oder Englisch: tamilische Schrift wird freundlich abgelehnt
+    if (/[\u0B80-\u0BFF]/.test(value)) {
+      setInputError(tx("Das Gespräch läuft auf Deutsch oder Englisch. Bitte schreib in einer dieser Sprachen."));
+      return;
+    }
+    setInputError("");
     setText("");
     user(value);
     // Der Steckbrief: Was weiß DSpora gerade über mich? Anzeigen, ohne das Gespräch zu unterbrechen.
@@ -1371,9 +1386,31 @@ export default function OnboardingChat({
             minLength={1}
             rows={3}
             busy={talkBusy}
+            error={inputError}
             skipLabel={tx("Andere Frage")}
             onSkip={talkMode === "ask" ? askAnother : undefined}
           />
+          <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-300">
+            <span>{tx("Gespräch auf Deutsch oder English:")}</span>
+            {(
+              [
+                { id: "de", label: "Deutsch" },
+                { id: "en", label: "English" },
+              ] as const
+            ).map((l) => (
+              <Chip
+                key={l.id}
+                selected={talkLang === l.id}
+                onClick={() => {
+                  talkLangRef.current = l.id;
+                  setTalkLang(l.id);
+                  setInputError("");
+                }}
+              >
+                {l.label}
+              </Chip>
+            ))}
+          </div>
         </div>
       )}
 

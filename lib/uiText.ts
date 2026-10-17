@@ -815,3 +815,8 @@ register({
   "Schreib, was dir wichtig ist …": ["Write what matters to you …", "உங்களுக்கு எது முக்கியம் என்று எழுதுங்கள் …"],
   "Deine Antwort oder was du gerade sagen möchtest …": ["Your answer or whatever you'd like to say …", "உங்கள் பதில் அல்லது நீங்கள் சொல்ல விரும்புவது …"],
 });
+
+register({
+  "Das Gespräch läuft auf Deutsch oder Englisch. Bitte schreib in einer dieser Sprachen.": ["The conversation runs in German or English. Please write in one of these languages.", "உரையாடல் ஜெர்மன் அல்லது ஆங்கிலத்தில் நடைபெறுகிறது. தயவுசெய்து இந்த மொழிகளில் ஒன்றில் எழுதுங்கள்."],
+  "Gespräch auf Deutsch oder English:": ["Conversation in German or English:", "உரையாடல் ஜெர்மன் அல்லது ஆங்கிலத்தில்:"],
+});
