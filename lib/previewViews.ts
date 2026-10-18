@@ -126,8 +126,8 @@ export const SAMPLE_BUSINESS: HubProfile = {
 };
 
 export const SAMPLE_HUBS: HubStat[] = [
-  { id: "nrw", label: "NRW", count: 42 },
-  { id: "hamburg-nord", label: "Hamburg & Nord", count: 17 },
+  { id: "nrw", label: "Nordrhein-Westfalen", count: 42 },
+  { id: "hamburg-nord", label: "Hamburg", count: 17 },
 ];
 
 export const SAMPLE_WISHES = wishes;
@@ -185,7 +185,7 @@ const base = {
 export const SAMPLE_ROOM: RoomDetail = {
   ...base,
   room: { id: "r1", kind: "duo", track: "community", dissolved: false },
-  steckbrief: "Ihr zwei seid im Hub NRW und wolltet beide in einer 2er-Gruppe Leute treffen. Das verbindet euch: Gym, Musik. Ähnlicher Vibe: Entspannt.",
+  steckbrief: "Ihr zwei seid im Hub Nordrhein-Westfalen und wolltet beide in einer 2er-Gruppe Leute treffen. Das verbindet euch: Gym, Musik. Ähnlicher Vibe: Entspannt.",
   messages: [
     { id: "m1", kind: "icebreaker", body: "Was ist dein Lieblingssong, den du beim Workout hörst, um motiviert zu bleiben?", createdAt: t(40), mine: false, sender: null },
     { id: "m2", kind: "user", body: "Haha, ganz klar etwas mit viel Bass. Und bei dir?", createdAt: t(38), mine: true, sender: "Du" },

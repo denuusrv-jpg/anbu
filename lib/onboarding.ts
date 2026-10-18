@@ -3,12 +3,12 @@
 export type Option = { id: string; label: string };
 
 export const REGIONS: Option[] = [
-  { id: "nrw", label: "NRW" },
-  { id: "rhein-main", label: "Rhein-Main" },
+  { id: "nrw", label: "Nordrhein-Westfalen" },
+  { id: "rhein-main", label: "Hessen" },
   { id: "baden-wuerttemberg", label: "Baden-Württemberg" },
   { id: "bayern", label: "Bayern" },
-  { id: "berlin-ost", label: "Berlin & Ost" },
-  { id: "hamburg-nord", label: "Hamburg & Nord" },
+  { id: "berlin-ost", label: "Berlin" },
+  { id: "hamburg-nord", label: "Hamburg" },
   { id: "schweiz", label: "Schweiz" },
   { id: "oesterreich", label: "Österreich" },
 ];

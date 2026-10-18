@@ -123,8 +123,10 @@ register({
   "Privat": ["Private", "தனிப்பட்டது"],
   "Online": ["Online", "ஆன்லைன்"],
   "Warteliste (noch kein Hub in der Nähe)": ["Waiting list (no hub nearby yet)", "காத்திருப்புப் பட்டியல் (அருகில் இன்னும் மையம் இல்லை)"],
-  "Berlin & Ost": ["Berlin & East", "பெர்லின் & கிழக்கு"],
-  "Hamburg & Nord": ["Hamburg & North", "ஹாம்பர்க் & வடக்கு"],
+  "Nordrhein-Westfalen": ["North Rhine-Westphalia", "வடக்கு ரைன்-வெஸ்ட்பாலியா"],
+  "Hessen": ["Hesse", "ஹெசன்"],
+  "Berlin": ["Berlin", "பெர்லின்"],
+  "Hamburg": ["Hamburg", "ஹாம்பர்க்"],
   "Bayern": ["Bavaria", "பவேரியா"],
   "Schweiz": ["Switzerland", "சுவிட்சர்லாந்து"],
   "Österreich": ["Austria", "ஆஸ்திரியா"],
@@ -595,9 +597,9 @@ register({
     "Anonymity is an option with us, not a requirement: in the chat you only give a nickname, so you stay protected and can open up once the right circle of friends is found. You decide yourself who may see your profile.",
     "அடையாளமின்மை எங்களிடம் ஒரு விருப்பம், கட்டாயம் அல்ல: அரட்டையில் புனைப்பெயரை மட்டுமே தருகிறீர்கள், இதனால் பாதுகாப்பாக இருந்து, பொருத்தமான நண்பர் வட்டம் கிடைத்த பிறகு உங்களைத் திறக்கலாம். உங்கள் சுயவிவரத்தை யார் பார்க்கலாம் என்பதை நீங்களே தீர்மானிக்கிறீர்கள்.",
   ],
-  "Sobald sich 100 Personen in einer Region eintragen, öffnet sich der Hub dieser Region. Es gibt Hubs für NRW, Rhein-Main, Baden-Württemberg, Bayern & Allgäu, Hauptstadt & Ost, Hamburg & Nord, die Schweiz und Österreich. Ein festes Startdatum nennt die Webseite nicht. Du kannst den Link teilen, so wird dein Hub schneller freigeschaltet.": [
-    "As soon as 100 people sign up in a region, the hub of that region opens. There are hubs for NRW, Rhine-Main, Baden-Württemberg, Bavaria & Allgäu, Capital & East, Hamburg & North, Switzerland and Austria. The website names no fixed start date. You can share the link, so your hub is unlocked faster.",
-    "ஒரு பகுதியில் 100 பேர் பதிவு செய்தவுடன் அந்தப் பகுதியின் மையம் திறக்கும். NRW, ரைன்-மைன், பாடன்-வுர்ட்டம்பெர்க், பவேரியா & ஆல்கோய், தலைநகர் & கிழக்கு, ஹாம்பர்க் & வடக்கு, சுவிட்சர்லாந்து மற்றும் ஆஸ்திரியாவுக்கு மையங்கள் உள்ளன. இணையதளம் குறிப்பிட்ட தொடக்கத் தேதியைக் கூறவில்லை. இணைப்பைப் பகிரலாம், அப்போது உங்கள் மையம் விரைவாகத் திறக்கும்.",
+  "Sobald sich 100 Personen in einer Region eintragen, öffnet sich der Hub dieser Region. Es gibt Hubs für Nordrhein-Westfalen, Hessen, Baden-Württemberg, Bayern, Berlin, Hamburg, die Schweiz und Österreich. Ein festes Startdatum nennt die Webseite nicht. Du kannst den Link teilen, so wird dein Hub schneller freigeschaltet.": [
+    "As soon as 100 people sign up in a region, the hub of that region opens. There are hubs for North Rhine-Westphalia, Hesse, Baden-Württemberg, Bavaria, Berlin, Hamburg, Switzerland and Austria. The website names no fixed start date. You can share the link, so your hub is unlocked faster.",
+    "ஒரு பகுதியில் 100 பேர் பதிவு செய்தவுடன் அந்தப் பகுதியின் மையம் திறக்கும். வடக்கு ரைன்-வெஸ்ட்பாலியா, ஹெசன், பாடன்-வுர்ட்டம்பெர்க், பவேரியா, பெர்லின், ஹாம்பர்க், சுவிட்சர்லாந்து மற்றும் ஆஸ்திரியாவுக்கு மையங்கள் உள்ளன. இணையதளம் குறிப்பிட்ட தொடக்கத் தேதியைக் கூறவில்லை. இணைப்பைப் பகிரலாம், அப்போது உங்கள் மையம் விரைவாகத் திறக்கும்.",
   ],
   "Du wählst die Gruppengröße, die zu deinem sozialen Akku passt. Das Duo (2er Gruppe) ist ideal für Workouts, Joggen oder Business-Kontakte. Die Crew (4er Gruppe) passt zu Spieleabenden, Gaming oder Veranstaltungen. Der Squad (8er Gruppe) eignet sich für lebendige Events, Ausflüge oder Tanzgruppen.": [
     "You choose the group size that fits your social battery. The duo (group of 2) is ideal for workouts, jogging or business contacts. The crew (group of 4) suits game nights, gaming or events. The squad (group of 8) is good for lively events, trips or dance groups.",

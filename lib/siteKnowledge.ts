@@ -33,7 +33,7 @@ const ENTRIES: Entry[] = [
   {
     keywords: ["wann", "start", "hub", "freigeschaltet", "freischalt", "öffnet", "oeffnet", "100", "region", "stadt", "nrw", "bayern", "hamburg", "berlin", "schweiz", "österreich", "oesterreich", "rhein", "baden", "when", "launch", "open", "region", "city", "bavaria", "switzerland", "austria"],
     answer: {
-      text: "Sobald sich 100 Personen in einer Region eintragen, öffnet sich der Hub dieser Region. Es gibt Hubs für NRW, Rhein-Main, Baden-Württemberg, Bayern & Allgäu, Hauptstadt & Ost, Hamburg & Nord, die Schweiz und Österreich. Ein festes Startdatum nennt die Webseite nicht. Du kannst den Link teilen, so wird dein Hub schneller freigeschaltet.",
+      text: "Sobald sich 100 Personen in einer Region eintragen, öffnet sich der Hub dieser Region. Es gibt Hubs für Nordrhein-Westfalen, Hessen, Baden-Württemberg, Bayern, Berlin, Hamburg, die Schweiz und Österreich. Ein festes Startdatum nennt die Webseite nicht. Du kannst den Link teilen, so wird dein Hub schneller freigeschaltet.",
     },
   },
   {
