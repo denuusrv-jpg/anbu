@@ -102,14 +102,14 @@ export default function ChatList({ sample }: { sample?: ListData }) {
                   />
                 ))}
               </div>
-              <p className="mt-1.5 text-xs text-zinc-400">
+              <p className="mt-1.5 text-sm font-medium text-zinc-50">
                 {tx("{n} von {max} Plätzen belegt", { n: data.slotsUsed, max: data.limit })}
               </p>
             </div>
           )}
         </header>
 
-        <p className="text-xs leading-relaxed text-zinc-400">
+        <p className="text-base leading-relaxed text-zinc-50">
           {tx("Du kannst höchstens {max} Chats gleichzeitig führen, damit jedes Gespräch Raum bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.", { max: data?.limit ?? 4 })}
         </p>
 

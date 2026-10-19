@@ -7,7 +7,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const BUCKET = "profile-photos";
 export const MAX_POSTS = 6;
-export const MAX_SLIDES = 6;
+export const MAX_SLIDES = 1; // neue Beiträge: genau ein Bild
+// Ältere Beiträge können noch bis zu 6 Bilder haben (zum Aufräumen und Anzeigen)
+export const LEGACY_MAX_SLIDES = 6;
 export const CAPTION_MAX = 200;
 const URL_SECONDS = 3600;
 
@@ -33,7 +35,7 @@ export async function loadPosts(db: SupabaseClient, userId: string): Promise<Pos
 
 /** Dateien eines Beitrags löschen. */
 export async function removePostFiles(db: SupabaseClient, userId: string, postId: string, slides: number): Promise<void> {
-  const paths = Array.from({ length: Math.max(slides, MAX_SLIDES) }, (_, i) => `${userId}/posts/${postId}/${i + 1}.jpg`);
+  const paths = Array.from({ length: Math.max(slides, LEGACY_MAX_SLIDES) }, (_, i) => `${userId}/posts/${postId}/${i + 1}.jpg`);
   await db.storage.from(BUCKET).remove(paths);
 }
 

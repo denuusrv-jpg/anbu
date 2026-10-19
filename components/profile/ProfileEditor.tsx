@@ -12,7 +12,7 @@ import { CUSTOM_PATTERN, MAX_HOBBIES, NAME_PATTERN } from "@/lib/onboarding";
 import type { PostView } from "@/lib/profileMedia";
 
 const MAX_POSTS = 6;
-const MAX_SLIDES = 6;
+const CAPTION_MAX = 200;
 const BUCKET = "profile-photos";
 
 type Info = { displayName: string; firstName: string; lastName: string; bio: string; hobbies: string[] };
@@ -137,10 +137,12 @@ export default function ProfileEditor({
   function pickSlides(list: FileList | null) {
     if (!list) return;
     setMessage("");
-    const incoming = Array.from(list).filter((f) => f.type.startsWith("image/"));
-    const room = MAX_SLIDES - files.length;
-    if (incoming.length > room) setMessage(tx("Höchstens {n} Bilder pro Beitrag.", { n: MAX_SLIDES }));
-    setFiles((prev) => [...prev, ...incoming.slice(0, room).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    // Ein Bild pro Beitrag: ein neu gewähltes Bild ersetzt das bisherige
+    const file = Array.from(list).find((f) => f.type.startsWith("image/"));
+    if (file) {
+      files.forEach((f) => URL.revokeObjectURL(f.url));
+      setFiles([{ file, url: URL.createObjectURL(file) }]);
+    }
     if (postInput.current) postInput.current.value = "";
   }
 
@@ -194,7 +196,7 @@ export default function ProfileEditor({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Profilseite")}</h2>
-          <p className="mt-0.5 text-sm text-zinc-300">{tx("So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.")}</p>
+          <p className="mt-0.5 text-sm text-zinc-300">{tx("So sehen dich andere. Du kannst bis zu 6 Beiträge mit je einem Bild zeigen.")}</p>
         </div>
         {!preview && (
           <Link
@@ -373,11 +375,11 @@ export default function ProfileEditor({
               {tx("Neuen Beitrag erstellen")}
             </button>
             <Sheet open={sheet === "post"} onClose={() => setSheet(null)} title={tx("Neuer Beitrag")}>
-            <p className="text-sm font-medium text-zinc-200">{tx("Neuer Beitrag (bis zu {max} Bilder zum Wischen)", { max: MAX_SLIDES })}</p>
+            <p className="text-sm font-medium text-zinc-200">{tx("Ein Bild pro Beitrag, dazu ein kurzer Text (optional).")}</p>
             {files.length > 0 && (
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+              <div className="mt-3 grid grid-cols-1">
                 {files.map((f, i) => (
-                  <div key={f.url} className="relative aspect-square overflow-hidden rounded-lg bg-zinc-900">
+                  <div key={f.url} className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl bg-zinc-900">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={f.url} alt={`Bild ${i + 1}`} className="h-full w-full object-cover" />
                     <button
@@ -387,7 +389,7 @@ export default function ProfileEditor({
                         setFiles((prev) => prev.filter((x) => x !== f));
                       }}
                       aria-label={`Bild ${i + 1} entfernen`}
-                      className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs text-white"
+                      className="absolute top-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-lg text-white"
                     >
                       ×
                     </button>
@@ -395,16 +397,24 @@ export default function ProfileEditor({
                 ))}
               </div>
             )}
-            <input ref={postInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => pickSlides(e.target.files)} aria-label={tx("Bilder für den Beitrag auswählen")} />
+            <input ref={postInput} type="file" accept="image/*" className="hidden" onChange={(e) => pickSlides(e.target.files)} aria-label={tx("Bild für den Beitrag auswählen")} />
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button type="button" disabled={files.length >= MAX_SLIDES} onClick={() => postInput.current?.click()} className={pill}>
-                {files.length === 0 ? tx("Bilder auswählen") : tx("Weitere Bilder")}
+              <button type="button" onClick={() => postInput.current?.click()} className={pill}>
+                {files.length === 0 ? tx("Bild auswählen") : tx("Anderes Bild wählen")}
               </button>
-              {files.length > 0 && <span className="text-xs text-zinc-400">{tx("{n} von {max}", { n: files.length, max: MAX_SLIDES })}</span>}
             </div>
             {files.length > 0 && (
               <>
-                <input value={caption} maxLength={200} onChange={(e) => setCaption(e.target.value)} placeholder={tx("Bildunterschrift (optional)")} aria-label={tx("Bildunterschrift")} className={`${fieldClass} mt-3`} />
+                <textarea
+                  value={caption}
+                  rows={3}
+                  maxLength={CAPTION_MAX}
+                  onChange={(e) => setCaption(e.target.value.slice(0, CAPTION_MAX))}
+                  placeholder={tx("Bildunterschrift (optional)")}
+                  aria-label={tx("Bildunterschrift")}
+                  className={`${fieldClass} mt-3 resize-none`}
+                />
+                <p className="mt-1 text-right text-sm text-zinc-300">{caption.length}/{CAPTION_MAX}</p>
                 <button type="button" disabled={busy === "post"} onClick={publish} className="mt-3 w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-5 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-50">
                   {busy === "post" ? tx("Veröffentliche …") : tx("Beitrag veröffentlichen")}
                 </button>

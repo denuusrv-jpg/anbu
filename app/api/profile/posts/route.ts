@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const id = typeof body.id === "string" ? body.id : "";
   const slides = typeof body.slides === "number" ? body.slides : 0;
   if (!isUuid(id) || !Number.isInteger(slides) || slides < 1 || slides > MAX_SLIDES) {
-    return NextResponse.json({ error: `Ein Beitrag hat 1 bis ${MAX_SLIDES} Bilder.` }, { status: 400 });
+    return NextResponse.json({ error: "Ein Beitrag hat genau ein Bild." }, { status: 400 });
   }
   const caption = typeof body.caption === "string" ? sanitizeText(body.caption.trim()).slice(0, CAPTION_MAX) : "";
 

@@ -860,3 +860,12 @@ register({
   "Wir arbeiten im Hintergrund an passenden Verbindungen für dich.": ["We're working in the background on suitable connections for you.", "உங்களுக்குப் பொருத்தமான தொடர்புகளுக்காக நாங்கள் பின்னணியில் பணியாற்றுகிறோம்."],
   "Profil-Ansicht": ["Profile view", "சுயவிவரக் காட்சி"],
 });
+
+register({
+  "So sehen dich andere. Du kannst bis zu 6 Beiträge mit je einem Bild zeigen.": ["This is how others see you. You can show up to 6 posts with one image each.", "இப்படித்தான் மற்றவர்கள் உங்களைப் பார்க்கிறார்கள். ஒவ்வொன்றிலும் ஒரு படத்துடன் 6 பதிவுகள் வரை காட்டலாம்."],
+  "Ein Bild pro Beitrag, dazu ein kurzer Text (optional).": ["One image per post, plus a short text (optional).", "ஒரு பதிவுக்கு ஒரு படம், கூடவே ஒரு சிறிய உரை (விருப்பம்)."],
+  "Bild für den Beitrag auswählen": ["Choose image for the post", "பதிவிற்கான படத்தைத் தேர்ந்தெடுக்கவும்"],
+  "Bild auswählen": ["Choose image", "படத்தைத் தேர்ந்தெடு"],
+  "Anderes Bild wählen": ["Choose another image", "வேறு படத்தைத் தேர்ந்தெடு"],
+  "Ein Beitrag hat genau ein Bild.": ["A post has exactly one image.", "ஒரு பதிவில் சரியாக ஒரு படம் உள்ளது."],
+});

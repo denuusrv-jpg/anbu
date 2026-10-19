@@ -1059,7 +1059,7 @@ export default function HubDashboard({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Chats")}</h2>
-              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
+              <p className="mt-1.5 text-base leading-relaxed text-zinc-50">
                 {tx("Du kannst höchstens vier Chats gleichzeitig führen, damit jedes Gespräch echten Fokus bekommt. Verlässt du einen Chat, wird ein Platz für ein neues Match frei.")}
               </p>
             </div>
@@ -1069,7 +1069,7 @@ export default function HubDashboard({
                   <span key={i} className={`h-2 w-5 rounded-full ${i < matchCount ? "bg-gold" : "bg-white/10"}`} />
                 ))}
               </div>
-              <p className="mt-1 text-xs text-zinc-400">{tx("{n} von 4", { n: matchCount })}</p>
+              <p className="mt-1.5 text-sm font-medium text-zinc-50">{tx("{n} von 4", { n: matchCount })}</p>
             </div>
           </div>
           <Link

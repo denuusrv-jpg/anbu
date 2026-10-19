@@ -58,33 +58,25 @@ export default async function Hub() {
     redirect("/");
   }
 
-  // Eigene eingereichte Ideen (die RLS-Regeln zeigen nur die eigenen)
-  const { data: wishes } = await supabase
-    .from("user_wishes")
-    .select("id, wish, created_at")
-    .order("created_at", { ascending: false })
-    .limit(20);
-
+  // Alles Weitere gleichzeitig laden (statt nacheinander): schnellerer Seitenaufbau
+  const service = isServiceRoleConfigured();
+  const db = service ? getServiceClient() : null;
+  const [wishesResult, roomsResult, avatar, posts, isAdmin] = await Promise.all([
+    // Eigene eingereichte Ideen (die RLS-Regeln zeigen nur die eigenen)
+    supabase.from("user_wishes").select("id, wish, created_at").order("created_at", { ascending: false }).limit(20),
+    // Aktive Chats (höchstens 4) und ungelesene Nachrichten
+    db ? listRooms(db, auth.user.id) : Promise.resolve(null),
+    // Profilbild und Beiträge (kurzlebige Links)
+    db && (profile as { has_avatar?: boolean }).has_avatar ? avatarUrl(db, auth.user.id) : Promise.resolve(null),
+    db ? loadPosts(db, auth.user.id) : Promise.resolve([] as PostView[]),
+    isAdminRequest(),
+  ]);
+  const wishes = wishesResult.data;
   // Die Zahl der Anmeldungen im Hub wird bewusst nicht angezeigt
   const hubs: { id: string; label: string; count: number }[] | null = null;
-
-  // Aktive Chats (höchstens 4) und ungelesene Nachrichten
-  let matchCount = 0;
-  let unreadCount = 0;
-  if (isServiceRoleConfigured()) {
-    const { rooms } = await listRooms(getServiceClient(), auth.user.id);
-    matchCount = rooms.filter((r) => !r.dissolved).length;
-    unreadCount = rooms.reduce((sum, r) => sum + r.unread, 0);
-  }
-
-  // Profilbild und Beiträge (kurzlebige Links)
-  let avatar: string | null = null;
-  let posts: PostView[] = [];
-  if (isServiceRoleConfigured()) {
-    const db = getServiceClient();
-    if ((profile as { has_avatar?: boolean }).has_avatar) avatar = await avatarUrl(db, auth.user.id);
-    posts = await loadPosts(db, auth.user.id);
-  }
+  const rooms = roomsResult?.rooms ?? [];
+  const matchCount = rooms.filter((r) => !r.dissolved).length;
+  const unreadCount = rooms.reduce((sum, r) => sum + r.unread, 0);
 
   return (
     <HubDashboard
@@ -96,7 +88,7 @@ export default async function Hub() {
       hubs={hubs}
       matchCount={matchCount}
       unreadCount={unreadCount}
-      isAdmin={await isAdminRequest()}
+      isAdmin={isAdmin}
       wishes={(wishes ?? []) as HubWish[]}
     />
   );
