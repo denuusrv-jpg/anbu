@@ -149,7 +149,9 @@ export default function HubDashboard({
   const [wishText, setWishText] = useState("");
   const [wishMessage, setWishMessage] = useState("");
   const [wishBusy, setWishBusy] = useState(false);
-  const [sheet, setSheet] = useState<"place" | "age" | "phase" | "gender" | "group" | "facts" | "delete" | null>(null);
+  const [sheet, setSheet] = useState<"place" | "age" | "phase" | "gender" | "group" | "facts" | "delete" | "reset" | null>(null);
+  const [editingFact, setEditingFact] = useState<SteckbriefFact | null>(null);
+  const [factDraft, setFactDraft] = useState("");
   const [deleteStep, setDeleteStep] = useState<"intro" | "sent">("intro");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -288,6 +290,68 @@ export default function HubDashboard({
       return { ...p, extras };
     });
   }
+
+  // Eine Angabe aus dem Steckbrief ändern: nur der Text, die Frage dazu bleibt
+  async function saveFactEdit() {
+    const fact = editingFact;
+    const next = factDraft.trim();
+    if (!fact || next.length < 2) return;
+    if (next === fact.answer) {
+      setEditingFact(null);
+      return;
+    }
+    if (!(await patch({ editFact: { kind: fact.kind, question: fact.question, answer: fact.answer, newAnswer: next } }))) return;
+    setProfile((p) => {
+      const extras = { ...(p.extras ?? {}) };
+      if (fact.kind === "free") extras.freeText = next;
+      else extras.followUps = (extras.followUps ?? []).map((f) => (f.question === fact.question && f.answer === fact.answer ? { ...f, answer: next } : f));
+      return { ...p, extras };
+    });
+    setEditingFact(null);
+  }
+
+  // Das Gespräch mit der KI komplett zurücksetzen (Angaben daraus, Verlauf, Auswertung)
+  async function resetTalk() {
+    if (!(await patch({ resetTalk: true }))) return;
+    setProfile((p) => {
+      const extras = { ...(p.extras ?? {}) };
+      delete extras.followUps;
+      delete extras.freeText;
+      return { ...p, extras };
+    });
+    setSheet(null);
+  }
+
+  // Zeile im Steckbrief antippen: öffnet das passende Pop-up zum Ändern
+  function editLine(label: string) {
+    setMessage("");
+    const sheets: Record<string, "gender" | "age" | "group" | "place" | "phase"> = {
+      Geschlecht: "gender",
+      "Verbinden mit": "gender",
+      Alter: "age",
+      "Gesuchtes Alter": "age",
+      Gruppengröße: "group",
+      "Art der Freundschaft": "place",
+      "Max. Entfernung (Auto)": "place",
+      Stadt: "place",
+      Lebensphase: "phase",
+    };
+    if (sheets[label]) {
+      if (sheets[label] === "age") setAgeDraft({ age: "", min: "", max: "" });
+      setSheet(sheets[label]);
+    } else if (label === "Sprachen") {
+      setSheet(null);
+      setLangDraft(profile.languages ?? { ids: [], custom: [] });
+      setEditingLanguages(true);
+    } else if (label === "Interessen" || label === "Vibe") {
+      const key = label === "Interessen" ? "interests" : "vibes";
+      setSheet(null);
+      setDraft(profile[key]);
+      setEditing(key);
+    }
+  }
+  const editableLine = (label: string) =>
+    ["Geschlecht", "Verbinden mit", "Alter", "Gesuchtes Alter", "Gruppengröße", "Art der Freundschaft", "Max. Entfernung (Auto)", "Stadt", "Lebensphase", "Sprachen", "Interessen", "Vibe"].includes(label);
 
   // Wohnort: wird geprüft und dem nächsten Hub zugeordnet, erst nach der Bestätigung gespeichert
   async function checkPlace() {
@@ -1040,23 +1104,35 @@ export default function HubDashboard({
             <>
               <dl className="mt-4 space-y-2 text-sm">
                 {steckbrief.lines.slice(0, 4).map((l) => (
-                  <div key={l.label} className="flex gap-3">
+                  <div key={l.label} className="flex items-baseline gap-3">
                     <dt className="w-32 shrink-0 text-zinc-300">{tx(l.label)}</dt>
-                    <dd className="min-w-0 text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                    <dd className="min-w-0 flex-1 text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                    {editableLine(l.label) && (
+                      <button type="button" onClick={() => editLine(l.label)} className="shrink-0 py-1 text-sm font-medium text-gold hover:underline">
+                        {tx("Ändern")}
+                      </button>
+                    )}
                   </div>
                 ))}
               </dl>
               {steckbrief.lines.length > 4 && (
                 <button type="button" onClick={() => setSheet("facts")} className="mt-3 text-sm font-medium text-gold hover:underline">
-                  {tx("Alle Angaben ansehen")}
+                  {tx("Alle Angaben ansehen und ändern")}
                 </button>
               )}
               <Sheet open={sheet === "facts"} onClose={() => setSheet(null)} title={tx("Dein Steckbrief")}>
                 <dl className="space-y-3 text-sm">
                   {steckbrief.lines.map((l) => (
-                    <div key={l.label}>
-                      <dt className="text-zinc-300">{tx(l.label)}</dt>
-                      <dd className="mt-0.5 text-base text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                    <div key={l.label} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <dt className="text-zinc-300">{tx(l.label)}</dt>
+                        <dd className="mt-0.5 text-base text-zinc-50">{l.value.split(", ").map((v) => tx(v)).join(", ")}</dd>
+                      </div>
+                      {editableLine(l.label) && (
+                        <button type="button" onClick={() => editLine(l.label)} className="shrink-0 py-1 text-sm font-medium text-gold hover:underline">
+                          {tx("Ändern")}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </dl>
@@ -1081,16 +1157,30 @@ export default function HubDashboard({
                         {f.kind === "follow" && <p className="text-sm text-zinc-300">{f.question}</p>}
                         <p className="mt-1 text-base leading-relaxed break-words text-zinc-50">{f.answer}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFact(f)}
-                        disabled={saving}
-                        aria-label={tx("Diese Angabe entfernen")}
-                        title={tx("Entfernen")}
-                        className="-mt-1 -mr-1 flex h-10 w-10 shrink-0 items-center justify-center text-2xl leading-none text-zinc-300 transition-colors hover:text-rose disabled:opacity-50"
-                      >
-                        ×
-                      </button>
+                      <div className="-mt-1 -mr-1 flex shrink-0 items-center">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingFact(f); setFactDraft(f.answer); setMessage(""); }}
+                          aria-label={tx("Diese Angabe ändern")}
+                          title={tx("Ändern")}
+                          className="flex h-10 w-10 items-center justify-center text-zinc-300 transition-colors hover:text-gold"
+                        >
+                          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+                            <path d="M13.5 6.5l4 4" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeFact(f)}
+                          disabled={saving}
+                          aria-label={tx("Diese Angabe entfernen")}
+                          title={tx("Entfernen")}
+                          className="flex h-10 w-10 items-center justify-center text-2xl leading-none text-zinc-300 transition-colors hover:text-rose disabled:opacity-50"
+                        >
+                          ×
+                        </button>
+                      </div>
                     </div>
                   ))}
                 />
@@ -1104,6 +1194,45 @@ export default function HubDashboard({
           >
             {tx("Mit der KI sprechen")}
           </Link>
+          {steckbrief.facts.length > 0 && (
+            <button type="button" onClick={() => { setMessage(""); setSheet("reset"); }} className="mt-4 block text-sm text-zinc-300 underline-offset-2 transition-colors hover:text-rose hover:underline">
+              {tx("Gespräch mit der KI zurücksetzen")}
+            </button>
+          )}
+          <Sheet open={Boolean(editingFact)} onClose={() => setEditingFact(null)} title={tx("Angabe ändern")}>
+            {editingFact?.kind === "follow" && <p className="text-sm text-zinc-300">{editingFact.question}</p>}
+            <textarea
+              value={factDraft}
+              onChange={(e) => setFactDraft(e.target.value.slice(0, 600))}
+              rows={5}
+              aria-label={tx("Angabe ändern")}
+              className="mt-3 w-full resize-none rounded-2xl border border-white/10 bg-zinc-950/60 px-4 py-3 text-base leading-relaxed text-white focus:border-gold/60 focus:outline-none"
+            />
+            <p className="mt-1 text-right text-sm text-zinc-300">{factDraft.length}/600</p>
+            {message && <p role="alert" className="mt-2 text-sm text-rose">{message}</p>}
+            <button
+              type="button"
+              onClick={saveFactEdit}
+              disabled={saving || factDraft.trim().length < 2}
+              className="cta-premium mt-4 w-full rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-40"
+            >
+              {saving ? tx("Speichere …") : tx("Speichern")}
+            </button>
+          </Sheet>
+          <Sheet open={sheet === "reset"} onClose={() => setSheet(null)} title={tx("Gespräch zurücksetzen?")} tone="danger">
+            <p className="text-base leading-relaxed text-zinc-100">
+              {tx("Alle Angaben aus deinem Gespräch mit der KI werden gelöscht, dazu der gespeicherte Gesprächsverlauf und die daraus abgeleiteten Merkmale. Deine Profil-Angaben (Alter, Interessen, Vibe …) bleiben.")}
+            </p>
+            {message && <p role="alert" className="mt-3 text-sm text-rose">{message}</p>}
+            <div className="mt-6 grid gap-3">
+              <button type="button" onClick={resetTalk} disabled={saving} className="w-full rounded-full bg-rose px-6 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50">
+                {saving ? tx("Lösche …") : tx("Ja, alles zurücksetzen")}
+              </button>
+              <button type="button" onClick={() => setSheet(null)} className="w-full rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-medium text-zinc-100">
+                {tx("Abbrechen")}
+              </button>
+            </div>
+          </Sheet>
         </motion.section>
 
         {/* Ideen für DSpora (Co-Creation) */}

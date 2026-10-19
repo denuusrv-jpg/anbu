@@ -25,11 +25,12 @@ import {
 } from "@/lib/onboarding";
 import { conceptsWithAi } from "@/lib/conceptAi";
 import { scheduleEvaluation } from "@/lib/evaluate";
-import { MAX_FOLLOW_UPS } from "@/lib/onboarding";
+import { FOLLOW_UP_ANSWER_MAX, MAX_FOLLOW_UPS } from "@/lib/onboarding";
 import { Invalid, choice, followUps, idOrCustom, oneOf, stringOf, validateBusiness, validateTranscript } from "@/lib/onboardingValidation";
 import { saveTranscript } from "@/lib/profileStore";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getServerClient } from "@/lib/supabase/server";
+import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
 import { logError } from "@/lib/errorLog";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +65,8 @@ export async function PATCH(request: Request) {
 
   const update: Record<string, unknown> = {};
   let transcript: ReturnType<typeof validateTranscript> = [];
+  let resetTalk = false;
+  let scheduleEvaluationLater = false;
   try {
     if (body.interests !== undefined) {
       const interests = choice(body.interests, INTERESTS, "Interessen", MIN_INTERESTS, MAX_INTERESTS);
@@ -195,6 +198,41 @@ export async function PATCH(request: Request) {
       update.extras = extras;
     }
 
+    // Eine Angabe aus dem Steckbrief ändern (Profil: Stift)
+    if (body.editFact !== undefined) {
+      const fact = (body.editFact && typeof body.editFact === "object" ? body.editFact : {}) as {
+        kind?: unknown;
+        question?: unknown;
+        answer?: unknown;
+        newAnswer?: unknown;
+      };
+      if ((fact.kind !== "free" && fact.kind !== "follow") || typeof fact.answer !== "string") {
+        throw new Invalid("Angabe ist ungültig.");
+      }
+      const next = stringOf(fact.newAnswer, "Angabe", FOLLOW_UP_ANSWER_MAX, true) as string;
+      const extras = { ...((update.extras ?? row.extras ?? {}) as Record<string, unknown>) };
+      if (fact.kind === "free") {
+        if (extras.freeText === fact.answer) extras.freeText = next;
+      } else {
+        const list = ((extras.followUps ?? []) as { question: string; answer: string }[]).slice();
+        const index = list.findIndex((f) => f.question === fact.question && f.answer === fact.answer);
+        if (index < 0) throw new Invalid("Diese Angabe gibt es nicht mehr.");
+        list[index] = { ...list[index], answer: next };
+        extras.followUps = list;
+      }
+      update.extras = extras;
+      scheduleEvaluationLater = true;
+    }
+
+    // Das Gespräch mit der KI komplett zurücksetzen: alle Angaben daraus, der Gesprächsverlauf und die Auswertung
+    if (body.resetTalk === true) {
+      const extras = { ...((update.extras ?? row.extras ?? {}) as Record<string, unknown>) };
+      delete extras.followUps;
+      delete extras.freeText;
+      update.extras = extras;
+      resetTalk = true;
+    }
+
     // Hubs ändern (höchstens zwei): der erste ist region, der zweite second_region
     if (body.hubs !== undefined) {
       const hubs = choice(body.hubs, ALL_HUBS, "Hubs", 1);
@@ -276,6 +314,14 @@ export async function PATCH(request: Request) {
   if (error) {
     await logError(error, "API /api/profile (Speichern)");
     return NextResponse.json({ error: "Speichern hat nicht geklappt." }, { status: 500 });
+  }
+  if (resetTalk && isServiceRoleConfigured()) {
+    // Verlauf und Auswertung kann die Person selbst nicht ändern, das geht nur über den Server
+    const db = getServiceClient();
+    await db.from("chat_messages").delete().eq("user_id", data.user.id);
+    await db.from("user_profiles").update({ ai_profile: null, phase2_done: false }).eq("user_id", data.user.id);
+  } else if (scheduleEvaluationLater) {
+    scheduleEvaluation(data.user.id);
   }
   return NextResponse.json({ ok: true });
 }

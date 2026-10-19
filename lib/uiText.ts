@@ -822,3 +822,16 @@ register({
   "Das Gespräch läuft auf Deutsch oder Englisch. Bitte schreib in einer dieser Sprachen.": ["The conversation runs in German or English. Please write in one of these languages.", "உரையாடல் ஜெர்மன் அல்லது ஆங்கிலத்தில் நடைபெறுகிறது. தயவுசெய்து இந்த மொழிகளில் ஒன்றில் எழுதுங்கள்."],
   "Gespräch auf Deutsch oder English:": ["Conversation in German or English:", "உரையாடல் ஜெர்மன் அல்லது ஆங்கிலத்தில்:"],
 });
+
+// ——— Steckbrief ändern, Gespräch zurücksetzen ———
+register({
+  "Ändern": ["Change", "மாற்று"],
+  "Alle Angaben ansehen und ändern": ["View and change all details", "அனைத்து விவரங்களையும் பார்த்து மாற்று"],
+  "Diese Angabe ändern": ["Change this detail", "இந்த விவரத்தை மாற்று"],
+  "Gespräch mit der KI zurücksetzen": ["Reset conversation with the AI", "AI உடனான உரையாடலை மீட்டமை"],
+  "Angabe ändern": ["Change detail", "விவரத்தை மாற்று"],
+  "Gespräch zurücksetzen?": ["Reset conversation?", "உரையாடலை மீட்டமைக்கவா?"],
+  "Alle Angaben aus deinem Gespräch mit der KI werden gelöscht, dazu der gespeicherte Gesprächsverlauf und die daraus abgeleiteten Merkmale. Deine Profil-Angaben (Alter, Interessen, Vibe …) bleiben.": ["All details from your conversation with the AI are deleted, along with the stored conversation history and the traits derived from it. Your profile details (age, interests, vibe …) stay.", "AI உடனான உங்கள் உரையாடலில் உள்ள அனைத்து விவரங்களும், சேமிக்கப்பட்ட உரையாடல் வரலாறும், அதிலிருந்து பெறப்பட்ட பண்புகளும் நீக்கப்படும். உங்கள் சுயவிவர விவரங்கள் (வயது, ஆர்வங்கள், உணர்வு …) அப்படியே இருக்கும்."],
+  "Ja, alles zurücksetzen": ["Yes, reset everything", "ஆம், எல்லாவற்றையும் மீட்டமை"],
+  "Diese Angabe gibt es nicht mehr.": ["This detail no longer exists.", "இந்த விவரம் இனி இல்லை."],
+});
