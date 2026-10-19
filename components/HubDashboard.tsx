@@ -15,6 +15,7 @@ import { CheckIcon } from "@/components/Icons";
 import LanguageButton from "@/components/LanguageButton";
 import Sheet from "@/components/ui/Sheet";
 import Slider from "@/components/ui/Slider";
+import MatchingActivity from "@/components/MatchingActivity";
 import { CustomEntry } from "@/components/onboarding/ChoiceSelect";
 import { useLanguage, useTx } from "@/lib/LanguageContext";
 import type { Language } from "@/lib/translations";
@@ -654,6 +655,9 @@ export default function HubDashboard({
               {tx("Sobald sich 100 Personen in deinem Hub eingetragen haben, öffnet sich dein Hub und die Matches entstehen automatisch. Du musst nichts weiter tun.")}
             </p>
 
+            {/* Ruhige Endlos-Animation: es wird gearbeitet. Bewusst ohne Fortschritt, nichts deutet an, wie weit es ist. */}
+            <MatchingActivity label={tx("Wir arbeiten im Hintergrund an passenden Verbindungen für dich.")} />
+
             {/* Getrennt nach Intention */}
             <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
               {intentions.map((i) => (
@@ -683,14 +687,6 @@ export default function HubDashboard({
                   {hubLabels.length > 1 ? tx("Hubs") : tx("Hub")} {hubLabels.join(" + ")}
                   {profile.city ? ` · ${profile.city}` : ""}
                 </div>
-                {hubs?.map((h) => (
-                  <p key={h.id} className="mt-1.5 pl-[26px] text-xs text-zinc-400">
-                    {h.count === 1 ? tx("{n} Anmeldung im Hub {hub}", { n: h.count, hub: tx(h.label) }) : tx("{n} Anmeldungen im Hub {hub}", { n: h.count, hub: tx(h.label) })}
-                  </p>
-                ))}
-              </li>
-              <li className="flex items-center gap-2.5 text-zinc-300">
-                <span className="h-4 w-4 rounded-full border border-dashed border-zinc-600" /> {tx("Matching: in Vorbereitung")}
               </li>
             </ul>
           </div>

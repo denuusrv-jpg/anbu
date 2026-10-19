@@ -21,8 +21,12 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
     <main className="relative isolate min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
       <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
-        <Link href="/dashboard" className="text-xs text-white/70 hover:text-white">
-          {tx("← Profil")}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-5 py-3 text-base font-semibold text-zinc-50 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
+        >
+          <span aria-hidden className="text-xl leading-none">←</span>
+          {tx("Profil")}
         </Link>
 
         <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-6 backdrop-blur-md sm:p-7">

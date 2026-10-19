@@ -65,22 +65,8 @@ export default async function Hub() {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  // Wie viele Leute sind schon in den eigenen Hubs dabei? (zählt serverseitig über alle Profile;
-  // ein Hub zählt Personen, die ihn als ersten oder zweiten Hub gewählt haben, nie doppelt)
-  const hubIds = [profile.region, profile.second_region].filter((h): h is string => Boolean(h));
-  let hubs: { id: string; label: string; count: number }[] | null = null;
-  if (isServiceRoleConfigured()) {
-    const db = getServiceClient();
-    hubs = await Promise.all(
-      hubIds.map(async (id) => {
-        const [first, second] = await Promise.all([
-          db.from("user_profiles").select("user_id", { count: "exact", head: true }).eq("region", id).is("deleted_at", null),
-          db.from("user_profiles").select("user_id", { count: "exact", head: true }).eq("second_region", id).is("deleted_at", null),
-        ]);
-        return { id, label: labelOf(id, ALL_HUBS), count: (first.count ?? 0) + (second.count ?? 0) };
-      }),
-    );
-  }
+  // Die Zahl der Anmeldungen im Hub wird bewusst nicht angezeigt
+  const hubs: { id: string; label: string; count: number }[] | null = null;
 
   // Aktive Chats (höchstens 4) und ungelesene Nachrichten
   let matchCount = 0;

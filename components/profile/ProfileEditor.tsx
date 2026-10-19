@@ -197,8 +197,11 @@ export default function ProfileEditor({
           <p className="mt-0.5 text-sm text-zinc-300">{tx("So sehen dich andere. Beiträge zeigst du mit Bildern, die du wischen kannst.")}</p>
         </div>
         {!preview && (
-          <Link href={`/profil/${userId}`} className="shrink-0 text-xs text-gold hover:underline">
-            {tx("Ansehen")}
+          <Link
+            href={`/profil/${userId}`}
+            className="shrink-0 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition-colors hover:bg-gold/20"
+          >
+            {tx("Profil-Ansicht")}
           </Link>
         )}
       </div>

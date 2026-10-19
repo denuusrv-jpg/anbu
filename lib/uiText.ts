@@ -855,3 +855,8 @@ register({
   "Suche aus": ["Search off", "தேடல் நிறுத்தம்"],
   "Business einrichten": ["Set up business", "வணிகத்தை அமைக்கவும்"],
 });
+
+register({
+  "Wir arbeiten im Hintergrund an passenden Verbindungen für dich.": ["We're working in the background on suitable connections for you.", "உங்களுக்குப் பொருத்தமான தொடர்புகளுக்காக நாங்கள் பின்னணியில் பணியாற்றுகிறோம்."],
+  "Profil-Ansicht": ["Profile view", "சுயவிவரக் காட்சி"],
+});

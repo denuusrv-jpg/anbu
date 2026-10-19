@@ -83,8 +83,12 @@ export default function ChatList({ sample }: { sample?: ListData }) {
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="flex items-center justify-between gap-4">
           <div>
-            <Link href={sample ? "#" : "/dashboard"} className="text-xs text-white/70 hover:text-white">
-              {tx("← Profil")}
+            <Link
+              href={sample ? "#" : "/dashboard"}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-5 py-3 text-base font-semibold text-zinc-50 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
+            >
+              <span aria-hidden className="text-xl leading-none">←</span>
+              {tx("Profil")}
             </Link>
             <h1 className="mt-2 text-2xl font-bold text-zinc-50 sm:text-3xl">{tx("Deine Chats")}</h1>
           </div>
