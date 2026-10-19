@@ -73,12 +73,12 @@ export async function loadProfilePage(db: SupabaseClient, viewerId: string, targ
 
   if (viewerId === targetId) return full("self");
 
-  const { data: me } = await db.from("user_profiles").select("track, deleted_at").eq("user_id", viewerId).maybeSingle();
-  const viewer = me as { track: string; deleted_at: string | null } | null;
+  const { data: me } = await db.from("user_profiles").select("track, business_active, deleted_at").eq("user_id", viewerId).maybeSingle();
+  const viewer = me as { track: string; business_active: boolean | null; deleted_at: string | null } | null;
   if (!viewer || viewer.deleted_at) return null;
 
   if (row.visibility === "public") return full("full");
-  if (row.visibility === "business") return viewer.track === "business" ? full("full") : (await related(db, viewerId, targetId)) ? limited : null;
+  if (row.visibility === "business") return (viewer.business_active ?? viewer.track === "business") ? full("full") : (await related(db, viewerId, targetId)) ? limited : null;
   // Privat: nur mit Verbindung (Chat oder Match), und dann nur Profilbild und Spitzname
   return (await related(db, viewerId, targetId)) ? limited : null;
 }

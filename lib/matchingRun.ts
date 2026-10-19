@@ -30,6 +30,8 @@ type ProfileRow = {
   lng: number | null;
   group_size: string | null;
   track: "community" | "business";
+  friends_active: boolean | null;
+  business_active: boolean | null;
   gender: string | null;
   match_gender: string | null;
   age: number | null;
@@ -50,7 +52,7 @@ type ProfileRow = {
 };
 
 const COLUMNS =
-  "user_id, created_at, region, city, lat, lng, group_size, track, gender, match_gender, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, interests, vibes, interest_concepts, vibe_concepts, business, ai_profile, extras";
+  "user_id, created_at, region, city, lat, lng, group_size, track, friends_active, business_active, gender, match_gender, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, interests, vibes, interest_concepts, vibe_concepts, business, ai_profile, extras";
 
 export type HubStat = { hub: string; total: number; complete: number; approved: boolean };
 
@@ -85,38 +87,59 @@ export async function loadCandidates(db: SupabaseClient): Promise<{
   const approvedHubs = new Set<string>(((approvals ?? []) as { hub: string; status: string }[]).filter((a) => a.status === "approved").map((a) => a.hub));
 
   const now = Date.now();
-  const candidates: Candidate[] = profiles.map((p) => ({
-    userId: p.user_id,
-    createdAt: p.created_at,
-    hub: p.region,
-    city: p.city,
-    lat: p.lat === null ? null : Number(p.lat),
-    lng: p.lng === null ? null : Number(p.lng),
-    groupSize: (p.group_size as Candidate["groupSize"]) ?? null,
-    track: p.track,
-    gender: p.gender,
-    matchGender: p.match_gender,
-    age: p.age,
-    ageMin: p.age_min,
-    ageMax: p.age_max,
-    meetMode: p.meet_mode,
-    travelMinutes: p.travel_minutes,
-    languages: p.languages ? [...p.languages.ids, ...p.languages.custom].map(norm) : [],
-    lifePhase: p.life_phase,
-    frequency: p.meet_frequency ?? p.extras?.meetFrequency ?? null,
-    interests: p.interest_concepts ?? conceptsOfChoice(p.interests, "interest"),
-    vibes: p.vibe_concepts ?? conceptsOfChoice(p.vibes, "vibe"),
-    business: p.business,
-    ai: p.ai_profile,
-    activeChats: active.get(p.user_id) ?? 0,
-    waitingDays: Math.max(0, Math.floor((now - new Date(p.created_at).getTime()) / DAY)),
-  }));
+  // Jede Person hat bis zu zwei Seiten, auf denen sie sucht: Friends ("community") und Business. Pro aktiver Seite ein Kandidat.
+  const candidates: Candidate[] = [];
+  for (const p of profiles) {
+    const sides: ("community" | "business")[] = [];
+    // Alte Zeilen ohne die neuen Spalten: wie bisher nur die gewählte Richtung
+    const friends = p.friends_active ?? p.track === "community";
+    const biz = p.business_active ?? p.track === "business";
+    if (friends) sides.push("community");
+    if (biz && p.business) sides.push("business");
+    for (const side of sides) {
+      candidates.push({
+        userId: p.user_id,
+        createdAt: p.created_at,
+        hub: p.region,
+        city: p.city,
+        lat: p.lat === null ? null : Number(p.lat),
+        lng: p.lng === null ? null : Number(p.lng),
+        groupSize: (p.group_size as Candidate["groupSize"]) ?? null,
+        track: side,
+        gender: p.gender,
+        matchGender: p.match_gender,
+        age: p.age,
+        ageMin: p.age_min,
+        ageMax: p.age_max,
+        meetMode: p.meet_mode,
+        travelMinutes: p.travel_minutes,
+        languages: p.languages ? [...p.languages.ids, ...p.languages.custom].map(norm) : [],
+        lifePhase: p.life_phase,
+        frequency: p.meet_frequency ?? p.extras?.meetFrequency ?? null,
+        interests: p.interest_concepts ?? conceptsOfChoice(p.interests, "interest"),
+        vibes: p.vibe_concepts ?? conceptsOfChoice(p.vibes, "vibe"),
+        business: side === "business" ? p.business : null,
+        ai: p.ai_profile,
+        activeChats: active.get(p.user_id) ?? 0,
+        waitingDays: Math.max(0, Math.floor((now - new Date(p.created_at).getTime()) / DAY)),
+      });
+    }
+  }
 
+  // Pro Hub zählen Personen, nicht Seiten (wer auf beiden Seiten sucht, zählt einmal)
   const stats = new Map<string, HubStat>();
+  const counted = new Set<string>();
+  const completed = new Set<string>();
   for (const c of candidates) {
     const s = stats.get(c.hub) ?? { hub: c.hub, total: 0, complete: 0, approved: approvedHubs.has(c.hub) };
-    s.total += 1;
-    if (missingFields(c).length === 0) s.complete += 1;
+    if (!counted.has(c.userId)) {
+      counted.add(c.userId);
+      s.total += 1;
+    }
+    if (!completed.has(c.userId) && missingFields(c).length === 0) {
+      completed.add(c.userId);
+      s.complete += 1;
+    }
     stats.set(c.hub, s);
   }
   // Freigegebene Hubs ohne Anmeldungen bleiben in der Liste sichtbar

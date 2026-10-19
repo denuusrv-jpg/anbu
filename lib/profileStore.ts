@@ -47,6 +47,9 @@ export async function saveProfile(
       vibes: answers.vibes,
       mode: answers.mode,
       track: answers.track ?? "community",
+      // Auf welcher Seite gesucht wird (später im Profil beide möglich)
+      friends_active: (answers.track ?? "community") === "community",
+      business_active: answers.track === "business",
       business: answers.business ?? null,
       // Sichtbarkeit liegt als eigene Spalte (wird von der Datenbank durchgesetzt), nicht im Profil-JSON
       visibility: answers.profile?.visibility ?? "stealth",

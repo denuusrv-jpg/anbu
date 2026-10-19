@@ -345,24 +345,27 @@ export function formGroups(candidates: Candidate[], existingPairs: Set<string>, 
     .filter((c) => c.activeChats < MAX_ACTIVE_CHATS && missingFields(c).length === 0)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
-  // Paarwerte einmal berechnen (nur Paare, die alle Filter bestehen und die Schwelle des Paares erreichen)
+  // Eine Person kann auf zwei Seiten suchen (Friends und Business): Jede Seite ist ein eigener Kandidat (Schlüssel
+  // "Person|Seite"), aber pro Durchlauf bekommt jede Person höchstens eine Gruppe (used nach Person).
+  const key = (c: Candidate) => `${c.userId}|${c.track}`;
   const scores: Record<string, Breakdown> = {};
   const neighbours: Record<string, string[]> = {};
   const byId: Record<string, Candidate> = {};
   for (const c of pool) {
-    byId[c.userId] = c;
-    neighbours[c.userId] = [];
+    byId[key(c)] = c;
+    neighbours[key(c)] = [];
   }
   for (let i = 0; i < pool.length; i++) {
     for (let j = i + 1; j < pool.length; j++) {
       const a = pool[i];
       const b = pool[j];
+      if (a.userId === b.userId) continue;
       if (existingPairs.has(pairKey(a.userId, b.userId))) continue;
       const s = pairScore(a, b);
       if (!s || s.total < SCORE_MID) continue;
-      scores[pairKey(a.userId, b.userId)] = s;
-      neighbours[a.userId].push(b.userId);
-      neighbours[b.userId].push(a.userId);
+      scores[pairKey(key(a), key(b))] = s;
+      neighbours[key(a)].push(key(b));
+      neighbours[key(b)].push(key(a));
     }
   }
   const score = (x: string, y: string): number | null => {
@@ -371,31 +374,32 @@ export function formGroups(candidates: Candidate[], existingPairs: Set<string>, 
   };
 
   const used: Record<string, boolean> = {};
+  const isUsed = (k: string) => used[byId[k].userId] === true;
   const proposals: Proposal[] = [];
 
   const build = (size: number, allowed: (c: Candidate) => boolean, needFixed: boolean) => {
     // Alle Paare der erlaubten Personen, beste zuerst
     const list: { a: string; b: string; s: number }[] = [];
     for (const id of Object.keys(neighbours)) {
-      if (used[id] || !allowed(byId[id])) continue;
+      if (isUsed(id) || !allowed(byId[id])) continue;
       for (const other of neighbours[id]) {
-        if (id < other && !used[other] && allowed(byId[other])) list.push({ a: id, b: other, s: score(id, other) as number });
+        if (id < other && !isUsed(other) && allowed(byId[other])) list.push({ a: id, b: other, s: score(id, other) as number });
       }
     }
     list.sort((x, y) => y.s - x.s);
     for (const seed of list) {
-      if (used[seed.a] || used[seed.b]) continue;
+      if (isUsed(seed.a) || isUsed(seed.b) || byId[seed.a].userId === byId[seed.b].userId) continue;
       const members: Candidate[] = [byId[seed.a], byId[seed.b]];
       let ok = true;
       while (members.length < size) {
         let best: { c: Candidate; avg: number } | null = null;
         for (const id of Object.keys(neighbours)) {
           const c = byId[id];
-          if (used[id] || !allowed(c) || members.some((m) => m.userId === id)) continue;
+          if (isUsed(id) || !allowed(c) || members.some((m) => m.userId === c.userId)) continue;
           let total = 0;
           let fits = true;
           for (const m of members) {
-            const v = score(m.userId, id);
+            const v = score(key(m), id);
             if (v === null) {
               fits = false;
               break;
@@ -421,7 +425,7 @@ export function formGroups(candidates: Candidate[], existingPairs: Set<string>, 
       let sum = 0;
       for (let i = 0; i < members.length; i++) {
         for (let j = i + 1; j < members.length; j++) {
-          const b = scores[pairKey(members[i].userId, members[j].userId)];
+          const b = scores[pairKey(key(members[i]), key(members[j]))];
           pairs.push({ a: members[i].userId, b: members[j].userId, breakdown: b });
           sum += b.total;
         }

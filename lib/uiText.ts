@@ -835,3 +835,23 @@ register({
   "Ja, alles zurücksetzen": ["Yes, reset everything", "ஆம், எல்லாவற்றையும் மீட்டமை"],
   "Diese Angabe gibt es nicht mehr.": ["This detail no longer exists.", "இந்த விவரம் இனி இல்லை."],
 });
+
+// ——— Friends und Business gleichzeitig, Suche an/aus ———
+register({
+  "Für die Business-Seite brauchst du ein Profil mit Namen. Lege es zuerst an.": ["For the business side you need a profile with a name. Create it first.", "வணிகப் பக்கத்திற்கு பெயருடன் கூடிய சுயவிவரம் தேவை. முதலில் அதை உருவாக்குங்கள்."],
+  "Suche aktiv": ["Search on", "தேடல் இயக்கத்தில்"],
+  "Suche aus. Unten bei „Wo suchst du?“ einschalten.": ["Search off. Switch it on below under “Where are you looking?”.", "தேடல் நிறுத்தப்பட்டுள்ளது. கீழே “நீங்கள் எங்கே தேடுகிறீர்கள்?” என்பதில் இயக்கவும்."],
+  "Wo suchst du?": ["Where are you looking?", "நீங்கள் எங்கே தேடுகிறீர்கள்?"],
+  "Beides gleichzeitig ist möglich. Zusammen kannst du höchstens 4 Chats führen. Bestehende Chats bleiben, wenn du die Suche ausschaltest.": ["Both at the same time is possible. Together you can have at most 4 chats. Existing chats stay when you switch a search off.", "இரண்டும் ஒரே நேரத்தில் சாத்தியம். மொத்தம் அதிகபட்சம் 4 அரட்டைகள் வைத்திருக்கலாம். தேடலை நிறுத்தினாலும் இருக்கும் அரட்டைகள் தொடரும்."],
+  "Freundschaften und gemeinsame Aktivitäten": ["Friendships and shared activities", "நட்பு மற்றும் பகிரப்பட்ட செயல்பாடுகள்"],
+  "Business-Kontakte, Sparring, Co-Founding": ["Business contacts, sparring, co-founding", "வணிகத் தொடர்புகள், கருத்துப் பரிமாற்றம், இணை நிறுவுதல்"],
+  "Für die Business-Seite brauchen wir noch ein paar Angaben und dein Light-CV.": ["For the business side we still need a few details and your light CV.", "வணிகப் பக்கத்திற்கு இன்னும் சில விவரங்களும் உங்கள் சுருக்க CV யும் தேவை."],
+  "Das hat nicht geklappt. Bitte versuch es noch einmal.": ["That didn't work. Please try again.", "அது வெற்றி பெறவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்."],
+  "Neue Chats": ["New chats", "புதிய அரட்டைகள்"],
+  "Alle Plätze sind belegt. Verlässt du einen Chat, wird ein Platz frei und wir suchen ein neues Match für dich.": ["All spots are taken. If you leave a chat, a spot opens up and we look for a new match for you.", "எல்லா இடங்களும் நிரம்பியுள்ளன. ஒரு அரட்டையிலிருந்து வெளியேறினால் ஓர் இடம் காலியாகும், உங்களுக்கான புதிய பொருத்தத்தைத் தேடுவோம்."],
+  "Du hast noch freie Plätze. Solange die Suche an ist, schlagen wir dir automatisch passende Leute vor. Neue Chats erscheinen hier und du bekommst eine E-Mail.": ["You still have free spots. As long as the search is on, we automatically suggest suitable people. New chats appear here and you get an email.", "உங்களுக்கு இன்னும் இடங்கள் உள்ளன. தேடல் இயக்கத்தில் இருக்கும் வரை பொருத்தமானவர்களை தானாகவே பரிந்துரைப்போம். புதிய அரட்டைகள் இங்கே தோன்றும், உங்களுக்கு மின்னஞ்சலும் வரும்."],
+  "Die Suche ist ausgeschaltet. Schalte sie ein, damit wir dir neue Leute vorschlagen.": ["The search is switched off. Switch it on so we can suggest new people.", "தேடல் நிறுத்தப்பட்டுள்ளது. புதியவர்களை நாங்கள் பரிந்துரைக்க அதை இயக்குங்கள்."],
+  "Suche an": ["Search on", "தேடல் இயக்கத்தில்"],
+  "Suche aus": ["Search off", "தேடல் நிறுத்தம்"],
+  "Business einrichten": ["Set up business", "வணிகத்தை அமைக்கவும்"],
+});

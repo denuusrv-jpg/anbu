@@ -7,7 +7,8 @@ import { motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import type { RoomSummary } from "@/lib/chatRooms";
 
-type ListData = { rooms: RoomSummary[]; slotsUsed: number; limit: number };
+type Search = { friends: boolean; business: boolean; canBusiness: boolean };
+type ListData = { rooms: RoomSummary[]; slotsUsed: number; limit: number; search?: Search };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const times = {
@@ -22,6 +23,7 @@ export default function ChatList({ sample }: { sample?: ListData }) {
   const { language } = useLanguage();
   const [data, setData] = useState<ListData | null>(sample ?? null);
   const [error, setError] = useState("");
+  const [savingSide, setSavingSide] = useState<"" | "friends" | "business">("");
 
   useEffect(() => {
     if (sample) return;
@@ -48,6 +50,30 @@ export default function ChatList({ sample }: { sample?: ListData }) {
       clearInterval(id);
     };
   }, [sample]);
+
+  // Suche pro Seite an/aus (Friends / Business). Neue Chats entstehen nur, solange ein Platz frei ist und eine Suche an ist.
+  async function toggleSide(side: "friends" | "business") {
+    if (!data?.search || savingSide || sample) return;
+    const next = !data.search[side];
+    setSavingSide(side);
+    setError("");
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(side === "friends" ? { friendsActive: next } : { businessActive: next }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error ?? "failed");
+      }
+      setData((d) => (d && d.search ? { ...d, search: { ...d.search, [side]: next } } : d));
+    } catch (e) {
+      setError(e instanceof Error && e.message !== "failed" ? tx(e.message) : tx("Das hat nicht geklappt. Bitte versuch es noch einmal."));
+    } finally {
+      setSavingSide("");
+    }
+  }
 
   const card = "rounded-3xl border border-white/10 bg-zinc-950/75 backdrop-blur-md";
 
@@ -87,6 +113,53 @@ export default function ChatList({ sample }: { sample?: ListData }) {
           <p role="alert" className="text-sm text-rose">
             {error}
           </p>
+        )}
+
+        {data?.search && (
+          <section className={`${card} p-5`}>
+            <h2 className="text-base font-semibold text-zinc-50">{tx("Neue Chats")}</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
+              {data.slotsUsed >= data.limit
+                ? tx("Alle Plätze sind belegt. Verlässt du einen Chat, wird ein Platz frei und wir suchen ein neues Match für dich.")
+                : data.search.friends || data.search.business
+                  ? tx("Du hast noch freie Plätze. Solange die Suche an ist, schlagen wir dir automatisch passende Leute vor. Neue Chats erscheinen hier und du bekommst eine E-Mail.")
+                  : tx("Die Suche ist ausgeschaltet. Schalte sie ein, damit wir dir neue Leute vorschlagen.")}
+            </p>
+            <div className="mt-4 grid gap-2.5">
+              {(
+                [
+                  { id: "friends" as const, label: "Friends-Community", on: data.search.friends },
+                  { id: "business" as const, label: "Business-Community", on: data.search.business },
+                ]
+              ).map((side) => (
+                <div key={side.id} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-zinc-50">{tx(side.label)}</p>
+                    <p className="text-sm text-zinc-300">{side.on ? tx("Suche an") : tx("Suche aus")}</p>
+                  </div>
+                  {side.id === "business" && !data.search?.canBusiness && !side.on ? (
+                    <Link href="/dashboard" className="shrink-0 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-2 text-sm font-medium text-zinc-100 hover:border-gold/50">
+                      {tx("Business einrichten")}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={side.on}
+                      aria-label={tx(side.label)}
+                      disabled={Boolean(savingSide)}
+                      onClick={() => toggleSide(side.id)}
+                      className={`relative h-8 w-14 shrink-0 rounded-full border transition-colors duration-200 disabled:opacity-60 ${
+                        side.on ? "border-gold/60 bg-gold" : "border-white/20 bg-white/10"
+                      }`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ${side.on ? "translate-x-6" : "translate-x-0"}`} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {data && data.rooms.length === 0 && (

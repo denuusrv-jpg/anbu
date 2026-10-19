@@ -56,7 +56,7 @@ export async function PATCH(request: Request) {
 
   const { data: row } = await supabase
     .from("user_profiles")
-    .select("track, mode, profile, business, visibility, extras, deleted_at")
+    .select("track, friends_active, business_active, mode, profile, business, visibility, extras, deleted_at")
     .eq("user_id", data.user.id)
     .maybeSingle();
   if (!row || row.deleted_at) {
@@ -255,7 +255,33 @@ export async function PATCH(request: Request) {
       update.group_size = oneOf(body.groupSize, GROUP_SIZES, "Gruppengröße", true);
     }
 
-    // Modus-Switch: Privat / Community <-> Business & Co-Founding
+    // Suche pro Seite an/aus: Friends und Business können gleichzeitig aktiv sein (zusammen höchstens 4 Chats).
+    // Business braucht ein Profil mit Namen und die Business-Angaben. Bestehende Chats bleiben, wenn die Suche ausgeschaltet wird.
+    if (body.friendsActive !== undefined || body.businessActive !== undefined) {
+      for (const v of [body.friendsActive, body.businessActive]) {
+        if (v !== undefined && typeof v !== "boolean") throw new Invalid("Einstellung ist ungültig.");
+      }
+      const wasBusiness = (row.business_active ?? row.track === "business") as boolean;
+      const friends = (body.friendsActive as boolean | undefined) ?? ((row.friends_active ?? row.track === "community") as boolean);
+      const biz = (body.businessActive as boolean | undefined) ?? wasBusiness;
+      if (biz) {
+        if (!row.profile) throw new Invalid("Lege zuerst ein Profil an (Chat erneut durchspielen).");
+        const business = body.business !== undefined ? validateBusiness(body.business) : row.business;
+        if (!business) throw new Invalid("Bitte ergänze zuerst deine Business-Angaben.");
+        update.business = business;
+        update.mode = "profile";
+      } else if (row.visibility === "business") {
+        // "Nur für Business-Mitglieder sichtbar" gibt es nur mit aktiver Business-Seite
+        update.visibility = "stealth";
+      }
+      update.friends_active = friends;
+      update.business_active = biz;
+      // "track" bleibt die Hauptrichtung für ältere Teile der App: nur Business aktiv = business, sonst community
+      if (biz && !friends) update.track = "business";
+      else if (friends || !biz) update.track = friends ? "community" : (row.track as string);
+    }
+
+    // Modus-Switch (ältere Form): Privat / Community <-> Business & Co-Founding
     if (body.track !== undefined) {
       const track = oneOf(body.track, TRACKS, "Modus", true);
       if (track === "business") {
@@ -264,23 +290,27 @@ export async function PATCH(request: Request) {
         const business = body.business !== undefined ? validateBusiness(body.business) : row.business;
         if (!business) throw new Invalid("Bitte ergänze zuerst deine Business-Angaben.");
         update.track = "business";
+        update.friends_active = false;
+        update.business_active = true;
         update.mode = "profile";
         update.business = business;
       } else {
         update.track = "community";
+        update.friends_active = true;
+        update.business_active = false;
         // "Nur für Business-Profile sichtbar" gibt es nur im Business-Modus; die Angaben bleiben gespeichert
         if (row.visibility === "business") update.visibility = "stealth";
       }
     }
 
-    if (body.business !== undefined && body.track === undefined) {
-      if (row.track !== "business") throw new Invalid("Du hast kein Business-Profil.");
+    if (body.business !== undefined && body.track === undefined && body.businessActive === undefined) {
+      if (!((update.business_active ?? row.business_active ?? row.track === "business") as boolean)) throw new Invalid("Du hast kein Business-Profil.");
       update.business = validateBusiness(body.business);
     }
 
     if (body.mode !== undefined) {
       if (body.mode !== "anonymous" && body.mode !== "profile") throw new Invalid("Modus ist ungültig.");
-      if (body.mode === "anonymous" && (update.track ?? row.track) === "business") {
+      if (body.mode === "anonymous" && ((update.business_active ?? row.business_active ?? row.track === "business") as boolean)) {
         throw new Invalid("Business-Profile können nicht anonym sein.");
       }
       if (body.mode === "profile" && !row.profile) {
@@ -291,7 +321,7 @@ export async function PATCH(request: Request) {
 
     if (body.visibility !== undefined) {
       const visibility = oneOf(body.visibility, VISIBILITIES, "Sichtbarkeit", true);
-      if (visibility === "business" && (update.track ?? row.track) !== "business") {
+      if (visibility === "business" && !((update.business_active ?? row.business_active ?? row.track === "business") as boolean)) {
         throw new Invalid("Diese Sichtbarkeit ist nur für Business-Profile möglich.");
       }
       update.visibility = visibility;

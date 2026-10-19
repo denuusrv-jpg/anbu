@@ -71,6 +71,8 @@ export type HubProfile = {
   life_phase?: string | null;
   meet_frequency?: string | null;
   notify_matches?: boolean | null;
+  friends_active?: boolean | null;
+  business_active?: boolean | null;
   ui_language?: string | null;
 };
 
@@ -182,7 +184,7 @@ export default function HubDashboard({
     lifePhase: profile.life_phase,
     interests: profile.interests,
     vibes: profile.vibes,
-    track: profile.track,
+    track: profile.business_active ?? profile.track === "business" ? "business" : profile.track,
     business: profile.business,
     extras: profile.extras,
   });
@@ -451,31 +453,40 @@ export default function HubDashboard({
     return lastError.current || tx("Speichern hat nicht geklappt.");
   }
 
-  async function switchTrack(next: HubProfile["track"]) {
-    if (next === profile.track) return;
+  // Suche pro Seite an/aus: Friends und Business können gleichzeitig laufen (zusammen höchstens 4 Chats)
+  async function setSide(side: "friends" | "business", on: boolean) {
     setMessage("");
-    if (next === "community") {
-      if (await patch({ track: "community" })) {
-        setProfile((p) => ({ ...p, track: "community", visibility: p.visibility === "business" ? "stealth" : p.visibility }));
-        setSetupBusiness(false);
+    if (side === "business" && on) {
+      if (!hasProfile) {
+        setMessage(tx("Für die Business-Seite brauchst du ein Profil mit Namen. Lege es zuerst an."));
+        return;
       }
-      return;
+      if (!profile.business) {
+        setSetupBusiness(true);
+        return;
+      }
     }
-    if (!hasProfile) {
-      setMessage(tx("Für den Business-Modus brauchst du ein Profil mit Namen. Lege es zuerst an."));
-      return;
-    }
-    if (!profile.business) {
-      setSetupBusiness(true);
-      return;
-    }
-    if (await patch({ track: "business" })) setProfile((p) => ({ ...p, track: "business", mode: "profile" }));
+    const payload = side === "friends" ? { friendsActive: on } : { businessActive: on };
+    if (!(await patch(payload))) return;
+    setProfile((p) => {
+      const friends = side === "friends" ? on : p.friends_active ?? p.track === "community";
+      const biz = side === "business" ? on : p.business_active ?? p.track === "business";
+      return {
+        ...p,
+        friends_active: friends,
+        business_active: biz,
+        track: biz && !friends ? "business" : friends ? "community" : p.track,
+        mode: biz ? "profile" : p.mode,
+        visibility: !biz && p.visibility === "business" ? "stealth" : p.visibility,
+      };
+    });
+    if (side === "business" && !on) setSetupBusiness(false);
   }
 
   async function activateBusiness(next: BusinessData): Promise<string | null> {
-    const ok = await patch({ track: "business", business: next });
+    const ok = await patch({ businessActive: true, business: next });
     if (!ok) return lastError.current || tx("Speichern hat nicht geklappt.");
-    setProfile((p) => ({ ...p, track: "business", mode: "profile", business: next }));
+    setProfile((p) => ({ ...p, business_active: true, mode: "profile", business: next, track: p.friends_active ?? p.track === "community" ? p.track : "business" }));
     setSetupBusiness(false);
     return null;
   }
@@ -565,27 +576,20 @@ export default function HubDashboard({
     if (!error) setPasskeys((list) => (list ?? []).filter((p) => p.id !== id));
   }
 
-  const active = profile.track;
+  const friendsOn = profile.friends_active ?? profile.track === "community";
+  const businessOn = profile.business_active ?? profile.track === "business";
   const intentions = [
     {
-      id: "community" as const,
+      id: "friends",
       label: tx("Privat"),
-      text:
-        active === "community"
-          ? matchCount > 0
-            ? (matchCount === 1 ? tx("{n} aktiver Chat (höchstens 4)", { n: matchCount }) : tx("{n} aktive Chats (höchstens 4)", { n: matchCount }))
-            : tx("Dein Hub bereitet passende Verbindungen vor")
-          : tx("Pausiert. Wechsle oben auf „Friends-Community“, um sie zu aktivieren."),
+      on: friendsOn,
+      text: friendsOn ? tx("Suche aktiv") : tx("Suche aus. Unten bei „Wo suchst du?“ einschalten."),
     },
     {
-      id: "business" as const,
+      id: "business",
       label: tx("Business"),
-      text:
-        active === "business"
-          ? matchCount > 0
-            ? (matchCount === 1 ? tx("{n} aktiver Chat (höchstens 4)", { n: matchCount }) : tx("{n} aktive Chats (höchstens 4)", { n: matchCount }))
-            : tx("Dein Hub bereitet passende Business-Verbindungen vor")
-          : tx("Nicht aktiv. Wechsle oben auf „Business-Community“, um sie zu aktivieren."),
+      on: businessOn,
+      text: businessOn ? tx("Suche aktiv") : tx("Suche aus. Unten bei „Wo suchst du?“ einschalten."),
     },
   ];
 
@@ -656,13 +660,13 @@ export default function HubDashboard({
                 <div
                   key={i.id}
                   className={`rounded-2xl border px-4 py-3 ${
-                    active === i.id ? "border-gold/40 bg-gold/[0.07]" : "border-white/10 bg-white/[0.03]"
+                    i.on ? "border-gold/40 bg-gold/[0.07]" : "border-white/10 bg-white/[0.03]"
                   }`}
                 >
-                  <p className={`text-xs font-semibold tracking-wide uppercase ${active === i.id ? "text-gold" : "text-zinc-400"}`}>
+                  <p className={`text-xs font-semibold tracking-wide uppercase ${i.on ? "text-gold" : "text-zinc-400"}`}>
                     {i.label}
                   </p>
-                  <p className={`mt-1 text-sm leading-snug ${active === i.id ? "text-zinc-100" : "text-zinc-400"}`}>
+                  <p className={`mt-1 text-sm leading-snug ${i.on ? "text-zinc-100" : "text-zinc-400"}`}>
                     {i.text}
                   </p>
                 </div>
@@ -697,7 +701,7 @@ export default function HubDashboard({
           <ProfileEditor
             userId={userId}
             visibility={profile.visibility}
-            track={profile.track}
+            track={businessOn ? "business" : "community"}
             avatar={avatar}
             posts={posts}
             preview={preview}
@@ -721,49 +725,44 @@ export default function HubDashboard({
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Profil")}</h2>
 
-          {/* Modus-Switch */}
+          {/* Wo suchst du? Friends und Business gleichzeitig möglich */}
           <div className="mt-5">
-            <p className="text-sm font-medium text-zinc-100">{tx("Modus")}</p>
-            <div
-              role="radiogroup"
-              aria-label={tx("Modus")}
-              className="relative mt-2.5 grid grid-cols-2 rounded-full border border-white/10 bg-zinc-950/60 p-1"
-            >
+            <p className="text-sm font-medium text-zinc-100">{tx("Wo suchst du?")}</p>
+            <p className="mt-1 text-sm text-zinc-300">{tx("Beides gleichzeitig ist möglich. Zusammen kannst du höchstens 4 Chats führen. Bestehende Chats bleiben, wenn du die Suche ausschaltest.")}</p>
+            <div className="mt-3 grid gap-2.5">
               {(
                 [
-                  { id: "community", label: "Friends-Community" },
-                  { id: "business", label: "Business-Community" },
-                ] as const
-              ).map((m) => {
-                const on = (setupBusiness ? "business" : profile.track) === m.id;
-                return (
+                  { id: "friends" as const, label: "Friends-Community", hint: "Freundschaften und gemeinsame Aktivitäten", on: friendsOn },
+                  { id: "business" as const, label: "Business-Community", hint: "Business-Kontakte, Sparring, Co-Founding", on: businessOn || setupBusiness },
+                ]
+              ).map((side) => (
+                <div key={side.id} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-zinc-50">{tx(side.label)}</p>
+                    <p className="mt-0.5 text-sm text-zinc-300">{tx(side.hint)}</p>
+                  </div>
                   <button
-                    key={m.id}
                     type="button"
-                    role="radio"
-                    aria-checked={on}
+                    role="switch"
+                    aria-checked={side.on}
+                    aria-label={tx(side.label)}
                     disabled={saving}
-                    onClick={() => switchTrack(m.id)}
-                    className={`relative z-10 rounded-full px-3 py-2 text-xs font-semibold transition-colors duration-300 sm:text-sm ${
-                      on ? "text-zinc-950" : "text-zinc-300 hover:text-white"
+                    onClick={() => (side.id === "business" && setupBusiness ? setSetupBusiness(false) : setSide(side.id, !side.on))}
+                    className={`relative h-8 w-14 shrink-0 rounded-full border transition-colors duration-200 disabled:opacity-60 ${
+                      side.on ? "border-gold/60 bg-gold" : "border-white/20 bg-white/10"
                     }`}
                   >
-                    {on && (
-                      <motion.span
-                        layoutId="mode-pill"
-                        className="absolute inset-0 -z-10 rounded-full bg-gradient-to-b from-gold-light to-gold shadow-[0_0_24px_-6px_rgba(242,166,90,0.7)]"
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                      />
-                    )}
-                    {tx(m.label)}
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ${side.on ? "translate-x-6" : "translate-x-0"}`}
+                    />
                   </button>
-                );
-              })}
+                </div>
+              ))}
             </div>
             {setupBusiness && (
               <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/[0.05] p-4">
-                <p className="text-xs leading-relaxed text-zinc-300">
-                  {tx("Für den Business-Modus brauchen wir noch ein paar Angaben und dein Light-CV.")}
+                <p className="text-sm leading-relaxed text-zinc-200">
+                  {tx("Für die Business-Seite brauchen wir noch ein paar Angaben und dein Light-CV.")}
                 </p>
                 <BusinessEditor
                   business={EMPTY_BUSINESS}
@@ -797,7 +796,7 @@ export default function HubDashboard({
               summary={choiceLabels(profile.languages ?? { ids: [], custom: [] }, LANGUAGES).map((l) => tx(l)).join(", ") || "–"}
               onClick={() => { setLangDraft(profile.languages ?? { ids: [], custom: [] }); setEditingLanguages(true); setMessage(""); }}
             />
-            {profile.track !== "business" && (
+            {friendsOn && (
               <SettingRow
                 title={tx("Lebensphase")}
                 summary={profile.life_phase ? tx(labelOf(profile.life_phase, PHASES)) : "–"}
@@ -849,7 +848,7 @@ export default function HubDashboard({
             })}
           </div>
 
-          {profile.track === "business" && profile.business && (
+          {businessOn && profile.business && (
             <BusinessEditor business={profile.business} onSave={saveBusiness} />
           )}
 

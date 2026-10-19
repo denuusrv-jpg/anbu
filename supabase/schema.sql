@@ -563,3 +563,8 @@ do $$ begin
     alter table public.user_profiles add constraint user_profiles_ui_language_check check (ui_language is null or ui_language in ('de', 'ta', 'en'));
   end if;
 end $$;
+
+-- 18) Friends und Business gleichzeitig: Suche pro Seite an/aus (Chats insgesamt weiter höchstens 4)
+alter table public.user_profiles add column if not exists friends_active boolean not null default true;
+alter table public.user_profiles add column if not exists business_active boolean not null default false;
+update public.user_profiles set friends_active = (track = 'community'), business_active = (track = 'business');
