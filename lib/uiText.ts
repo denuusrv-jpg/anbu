@@ -869,3 +869,5 @@ register({
   "Anderes Bild wählen": ["Choose another image", "வேறு படத்தைத் தேர்ந்தெடு"],
   "Ein Beitrag hat genau ein Bild.": ["A post has exactly one image.", "ஒரு பதிவில் சரியாக ஒரு படம் உள்ளது."],
 });
+
+register({ "Profil": ["Profile", "சுயவிவரம்"] });
