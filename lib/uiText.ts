@@ -871,3 +871,5 @@ register({
 });
 
 register({ "Profil": ["Profile", "சுயவிவரம்"] });
+
+register({ "Menü": ["Menu", "பட்டி"] });

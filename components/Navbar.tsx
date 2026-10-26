@@ -10,6 +10,10 @@ import {
   useTransform,
 } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import Image from "next/image";
+import { useTx } from "@/lib/LanguageContext";
+import { useScrollLock } from "@/lib/useScrollLock";
 import { useLanguage } from "@/lib/LanguageContext";
 import { Language, languages } from "@/lib/translations";
 import Translated from "@/components/Translated";
@@ -41,6 +45,9 @@ export default function Navbar() {
     { id: "mission", title: t.nav.mission, href: "/mission" },
     { id: "kontakt", title: t.nav.kontakt, href: "/kontakt" },
   ];
+
+  // Handy und Touch: nur ein "Menü"-Knopf, die Seiten öffnen sich in einem schwarzen Vollbild-Menü
+  if (!isDesktop) return <MobileMenu items={items} />;
 
   return (
     <motion.div
@@ -195,5 +202,120 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+const NATIVE_LANGUAGE_LABELS: Record<Language, string> = { de: "Deutsch", ta: "தமிழ்", en: "English" };
+
+function MobileMenu({ items }: { items: { id: string; title: string; href: string }[] }) {
+  const tx = useTx();
+  const { language, setLanguage } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useScrollLock(open);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Anker (z. B. "Erfahre mehr"): erst schließen, dann dorthin scrollen
+  function choose(e: React.MouseEvent, href: string) {
+    setOpen(false);
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      window.setTimeout(() => document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" }), 350);
+    }
+  }
+
+  const pill =
+    "inline-flex items-center gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/70 px-5 py-3 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:border-gold/60";
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} className={`${pill} relative z-30 mx-auto shadow-lg shadow-black/30`}>
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+          <rect x="3" y="3" width="8" height="8" rx="2" />
+          <rect x="13" y="3" width="8" height="8" rx="2" />
+          <rect x="3" y="13" width="8" height="8" rx="2" />
+          <rect x="13" y="13" width="8" height="8" rx="2" />
+        </svg>
+        {tx("Menü")}
+      </button>
+
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label={tx("Menü")}
+                className="fixed inset-0 z-[150] flex flex-col bg-black px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div className="flex items-center justify-between">
+                  <Image src="/logo-orange.png" alt="DSpora" width={1548} height={454} className="h-9 w-auto" />
+                  <button type="button" onClick={() => setOpen(false)} className={pill} aria-label={tx("Schließen")}>
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                    {tx("Schließen")}
+                  </button>
+                </div>
+
+                <nav className="flex flex-1 flex-col items-center justify-center gap-7" aria-label={tx("Menü")}>
+                  {items.map((item, i) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.08 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                    >
+                      <NavLink href={item.href}>
+                        <span
+                          onClick={(e) => choose(e, item.href)}
+                          className="block py-1 text-center text-[clamp(1.9rem,9vw,2.9rem)] leading-tight font-semibold text-white transition-colors hover:text-gold"
+                        >
+                          <Translated text={item.title} />
+                        </span>
+                      </NavLink>
+                    </motion.div>
+                  ))}
+                </nav>
+
+                <div className="flex items-center justify-center gap-2" role="radiogroup" aria-label="Language / Sprache / மொழி">
+                  {languages.map((lang) => {
+                    const on = lang === language;
+                    return (
+                      <button
+                        key={lang}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        lang={lang}
+                        onClick={() => setLanguage(lang)}
+                        className={`rounded-full border px-5 py-2.5 text-base font-medium transition-colors ${
+                          on ? "border-gold/70 bg-gold/15 text-gold" : "border-white/15 text-zinc-200 hover:border-gold/50"
+                        }`}
+                      >
+                        {NATIVE_LANGUAGE_LABELS[lang]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
   );
 }
