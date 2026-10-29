@@ -38,6 +38,13 @@ export default function WaitlistCapture() {
     shownAt.current = Date.now();
   }, []);
 
+  // Der Glanz läuft von selbst alle 3,5 Sekunden (statt beim Darüberfahren mit der Maus)
+  useEffect(() => {
+    if (status !== "idle") return;
+    const id = setInterval(() => setSheenKey((k) => k + 1), 3500);
+    return () => clearInterval(id);
+  }, [status]);
+
   // Liefert null bei Erfolg, sonst eine Fehlermeldung
   async function send(): Promise<string | null> {
     try {
@@ -95,9 +102,6 @@ export default function WaitlistCapture() {
     <div className="mx-auto w-full max-w-md">
       <form onSubmit={handleSubmit}>
         <div
-          onMouseEnter={() => {
-            if (status === "idle") setSheenKey((k) => k + 1);
-          }}
           className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
         >
           {sheenKey > 0 && (
