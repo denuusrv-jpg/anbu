@@ -310,7 +310,7 @@ input::-webkit-credentials-auto-fill-button {
 }
 
 /* Hero-Hintergrund: am Desktop liegt die bewegte Welle darüber. Auf dem Handy bleibt dieser feste Verlauf stehen:
-   oben schwarz, dann Dunkelrot, Rot, Orange bis zu einem warmen Gelborange am Ende des Hero-Bereichs. */
+   oben schwarz, dann Dunkelrot, Rot bis Orange am Ende des Hero-Bereichs (kein Gelb). */
 .hero-bg {
   background: linear-gradient(to bottom, #86195a, #c52a3c);
 }
@@ -322,9 +322,8 @@ input::-webkit-credentials-auto-fill-button {
       #240a10 12%,
       #6e1226 28%,
       #b81f35 46%,
-      #e5452a 64%,
-      #f2701a 80%,
-      #f5a62e 100%
+      #e5452a 66%,
+      #f2701a 100%
     );
   }
 }
