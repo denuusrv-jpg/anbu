@@ -22,7 +22,7 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
       <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         <Link
-          href={data.self || data.state === "self" ? "/dashboard/profil" : "/dashboard"}
+          href={data.self || data.state === "self" ? "/dashboard/profil" : "/dashboard/chats"}
           className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-5 py-3 text-base font-semibold text-zinc-50 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
         >
           <span aria-hidden className="text-xl leading-none">←</span>

@@ -341,3 +341,14 @@ input::-webkit-credentials-auto-fill-button {
     font-size: max(16px, 1em);
   }
 }
+
+/* Lichtstreifen, der gleichmäßig um einen Rahmen läuft (SVG-Rechteck mit pathLength=100) */
+@keyframes dash-run {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+.dash-run {
+  stroke-dasharray: 14 86;
+  animation: dash-run 3.6s linear infinite;
+}
