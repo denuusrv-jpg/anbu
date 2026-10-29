@@ -35,7 +35,7 @@ const glowVariant: Variants = {
 };
 
 export default function AiMatchingCard() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <motion.div
@@ -60,7 +60,7 @@ export default function AiMatchingCard() {
       </motion.div>
 
       <motion.div
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl sm:px-12"
+        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl [container-type:inline-size] sm:px-12"
         variants={cardVariant}
       >
         {/* Dezentes Leuchten */}
@@ -75,11 +75,26 @@ export default function AiMatchingCard() {
         </span>
 
         <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 uppercase sm:text-2xl">
-          <Translated text={t.ai.heading} />
+          <span className="sm:hidden">
+            <Translated text={t.ai.headingMobile ?? t.ai.heading} />
+          </span>
+          <span className="hidden sm:inline">
+            <Translated text={t.ai.heading} />
+          </span>
         </h3>
 
-        <p className="relative mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-300 sm:text-base">
-          <Translated text={t.ai.description} />
+        {/* Handy: Blocksatz, Schriftgröße folgt der Kartenbreite, damit der Text auf jedem iPhone gleich umbricht */}
+        <p
+          className={`relative mx-auto mt-3 max-w-xl text-justify text-[5.05cqw] leading-relaxed text-zinc-300 [hyphens:auto] ${
+            language === "ta" ? "[text-align-last:start]" : "[text-align-last:justify]"
+          } sm:text-center sm:text-base sm:[hyphens:manual] sm:[text-align-last:auto]`}
+        >
+          <span className="sm:hidden">
+            <Translated text={t.ai.descriptionMobile ?? t.ai.description} />
+          </span>
+          <span className="hidden sm:inline">
+            <Translated text={t.ai.description} />
+          </span>
         </p>
       </motion.div>
     </motion.div>

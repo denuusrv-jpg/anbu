@@ -191,6 +191,15 @@ export default function HomeClient() {
             <Translated text={t.footer.impressum} />
           </Link>
           <span>&middot;</span>
+          {/* Handy: DSPORA bringt nach ganz oben */}
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="font-semibold tracking-wide text-zinc-300 uppercase hover:text-white sm:hidden"
+          >
+            DSpora
+          </button>
+          <span className="sm:hidden">&middot;</span>
           <Link href="/datenschutz" className="hover:text-white">
             <Translated text={t.footer.datenschutz} />
           </Link>

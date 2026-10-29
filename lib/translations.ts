@@ -49,6 +49,9 @@ export type Translation = {
     badge: string;
     heading: string;
     description: string;
+    /** Handy: kürzere Überschrift und auf die Zeilenlänge abgestimmter Text (optional) */
+    headingMobile?: string;
+    descriptionMobile?: string;
   };
   features: {
     items: FeatureItem[];
@@ -108,7 +111,7 @@ export const translations: Record<Language, Translation> = {
       infoText:
         "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam.",
       infoTextMobile:
-        "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam – versprochen.",
+        "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam – das ist garantiert.",
     },
     groups: {
       heading: "Gemeinschaft nach Maß",
@@ -138,8 +141,11 @@ export const translations: Record<Language, Translation> = {
     ai: {
       badge: "Powered by AI",
       heading: "Der KI-Persönlichkeits-Check",
+      headingMobile: "Der KI-Check",
       description:
         "Keine starren Fragebögen. Du führst ein entspanntes Gespräch mit unserer künstlichen Intelligenz – wie lange es dauert, liegt ganz bei dir. Sie versteht deinen Humor und deine Interessen und findet so dein perfektes Match für Duo, Crew oder Squad.",
+      descriptionMobile:
+        "Keine starren Fragebögen. Du führst ein entspanntes Gespräch mit unserer künstlichen Intelligenz – wie lange es dauert, liegt ganz bei dir. Sie versteht deinen Humor und deine Interessen und findet so dein perfektes Match für Duo, Crew oder Squad – ganz entspannt und ohne Druck.",
     },
     features: {
       items: [
@@ -241,6 +247,7 @@ export const translations: Record<Language, Translation> = {
     ai: {
       badge: "Powered by AI",
       heading: "The AI personality check",
+      headingMobile: "The AI check",
       description:
         "No rigid questionnaires. You have a relaxed conversation with our AI – how long it takes is entirely up to you. It picks up on your humor and interests to find your perfect match for Duo, Crew, or Squad.",
     },
