@@ -192,9 +192,11 @@ export default function OnboardingChat({
   const [ready, setReady] = useState<{ kind: ReadyKind; email?: string } | null>(null);
   const [talkMode, setTalkMode] = useState<"free" | "ask">("free");
   const talkModeRef = useRef<"free" | "ask">("free");
-  // Sprache des Gesprächs mit der KI: nur Deutsch oder Englisch (bei Tamil als Oberfläche startet Englisch)
-  const [talkLang, setTalkLang] = useState<"de" | "en">(language === "en" || language === "ta" ? "en" : "de");
-  const talkLangRef = useRef<"de" | "en">(language === "en" || language === "ta" ? "en" : "de");
+  // Sprache des Gesprächs mit der KI: immer die gewählte Sprache oben (Deutsch, Tamil oder English)
+  const talkLangRef = useRef<"de" | "en" | "ta">(language);
+  useEffect(() => {
+    talkLangRef.current = language;
+  }, [language]);
   const tl = (key: string, vars?: Record<string, string | number>) => translateUi(key, talkLangRef.current, vars);
   const [talkBusy, setTalkBusy] = useState(false);
   const talkBusyRef = useRef(false);
@@ -780,10 +782,8 @@ export default function OnboardingChat({
   // Zu Beginn: frei erzählen oder Fragen stellen lassen (auch beim Fortsetzen aus dem Profil)
   function startTalkChoice() {
     setTalkOn(true);
-    // Gespräch startet in der Oberflächensprache; Tamil gibt es hier nicht, dann Englisch
-    const start = language === "de" ? "de" : "en";
-    talkLangRef.current = start;
-    setTalkLang(start);
+    // Das Gespräch läuft in der gewählten Oberflächensprache
+    talkLangRef.current = language;
     ask(
       [
         resume
@@ -923,11 +923,6 @@ export default function OnboardingChat({
   async function sendTalk() {
     const value = text.trim();
     if (!value || talkBusyRef.current) return;
-    // Das Gespräch läuft nur auf Deutsch oder Englisch: tamilische Schrift wird freundlich abgelehnt
-    if (/[\u0B80-\u0BFF]/.test(value)) {
-      setInputError(tx("Das Gespräch läuft auf Deutsch oder Englisch. Bitte schreib in einer dieser Sprachen."));
-      return;
-    }
     setInputError("");
     setText("");
     user(value);
@@ -1432,27 +1427,6 @@ export default function OnboardingChat({
             skipLabel={tx("Andere Frage")}
             onSkip={talkMode === "ask" ? askAnother : undefined}
           />
-          <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-300">
-            <span>{tx("Gespräch auf Deutsch oder English:")}</span>
-            {(
-              [
-                { id: "de", label: "Deutsch" },
-                { id: "en", label: "English" },
-              ] as const
-            ).map((l) => (
-              <Chip
-                key={l.id}
-                selected={talkLang === l.id}
-                onClick={() => {
-                  talkLangRef.current = l.id;
-                  setTalkLang(l.id);
-                  setInputError("");
-                }}
-              >
-                {l.label}
-              </Chip>
-            ))}
-          </div>
         </div>
       )}
 

@@ -47,7 +47,7 @@ export default function AiMatchingCard() {
     >
       {/* Rotierende KI-Aura hinter der Karte */}
       <motion.div
-        className="pointer-events-none absolute -inset-2 overflow-hidden rounded-[2rem]"
+        className="pointer-events-none absolute -inset-2 overflow-hidden rounded-[2rem] border border-white/40 sm:border-white/10"
         variants={auraVariant}
       >
         <div

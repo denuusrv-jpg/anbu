@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       hints: strings(body.hints, 12, 120),
       asked: strings(body.asked, 40, 300),
       track: body.track === "business" ? "business" : "community",
-      language: body.language === "en" ? "en" : "de",
+      language: body.language === "en" ? "en" : body.language === "ta" ? "ta" : "de",
       skips: typeof body.skips === "number" ? Math.max(0, Math.min(5, Math.floor(body.skips))) : 0,
       opening: body.opening === true,
       allowQuestion: body.allowQuestion === true,
