@@ -75,29 +75,32 @@ export default function HomeClient() {
           <section
             className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
-            <div className="mb-6 flex justify-center">
-              <Image
-                src="/logo-orange.png"
-                alt="DSpora Community"
-                width={1548}
-                height={454}
-                priority
-                className="h-12 w-auto sm:h-16"
-              />
-            </div>
-
-            <div className="mb-12">
+            {/* Logo und Menü: am Handy steht das Menü oben, das Logo darunter */}
+            <div className="mb-12 flex flex-col max-sm:flex-col-reverse">
+              <div className="mb-6 flex justify-center max-sm:mt-8 max-sm:mb-0">
+                <Image
+                  src="/logo-orange.png"
+                  alt="DSpora Community"
+                  width={1548}
+                  height={454}
+                  priority
+                  className="h-12 w-auto sm:h-16"
+                />
+              </div>
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase max-sm:font-black">
               <Translated text={t.hero.heading[0]} />
-              <br />
-              <Translated text={t.hero.heading[1]} />
+              {/* Am Handy nur die erste Zeile */}
+              <span className="max-sm:hidden">
+                <br />
+                <Translated text={t.hero.heading[1]} />
+              </span>
             </h1>
 
             <p
-              className={`mx-auto mt-5 text-base leading-relaxed text-white sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
+              className={`mx-auto mt-5 text-base leading-relaxed text-white max-sm:hyphens-auto max-sm:text-justify max-sm:text-zinc-300 max-sm:[text-shadow:0_1px_8px_rgba(0,0,0,0.3)] sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
             >
               <Translated text={t.hero.description} />
             </p>
