@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
 import WaitlistForm from "@/components/WaitlistForm";
+import Slider from "@/components/Slider";
 import HubsAndCrews from "@/components/HubsAndCrews";
 import AiMatchingCard from "@/components/AiMatchingCard";
 import SignUpCta from "@/components/SignUpCta";
@@ -122,16 +123,18 @@ export default function HomeClient() {
         <div className="mx-auto max-w-5xl">
           <AiMatchingCard />
 
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-            {t.features.items.map((feature, index) => {
+          <Slider
+            label={t.ai.heading}
+            desktopClassName="sm:grid sm:grid-cols-3 sm:gap-8"
+            slides={t.features.items.map((feature, index) => {
               const { Icon, wrap } = featureStyles[index];
               return (
                 <motion.div
                   key={feature.title}
-                  className="feature-tile cursor-default text-center"
+                  className="feature-tile cursor-default text-center rounded-3xl border border-white/10 bg-white/5 px-6 py-9 backdrop-blur-xl sm:rounded-none sm:border-transparent sm:bg-transparent sm:p-0 sm:backdrop-blur-none"
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.4 }}
+                  viewport={{ once: true, amount: 0.05 }}
                   transition={{
                     duration: 0.5,
                     delay: index * 0.1,
@@ -152,7 +155,7 @@ export default function HomeClient() {
                 </motion.div>
               );
             })}
-          </div>
+          />
 
           <SignUpCta />
         </div>

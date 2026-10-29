@@ -61,7 +61,7 @@ export default function GroupSizeCard({
       }}
       initial={{ opacity: 0, y: 32 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.05 }}
       transition={{ duration: 0.55, delay: index * 0.12, ease: "easeOut" }}
       className="cursor-default overflow-hidden rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
     >

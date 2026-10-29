@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import HubCard from "@/components/HubCard";
 import GroupSizeCard from "@/components/GroupSizeCard";
+import Slider from "@/components/Slider";
 import ShareLinkBadge from "@/components/ShareLinkBadge";
 import WaitlistCapture from "@/components/WaitlistCapture";
 import Translated from "@/components/Translated";
@@ -34,15 +35,23 @@ export default function HubsAndCrews() {
           </h2>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {t.hubs.list.map((hub, index) => (
-            <HubCard
-              key={index}
-              hub={hub}
-              badgeLabel={t.hubs.badgeActive}
-              index={index}
-            />
-          ))}
+        <div className="mt-10">
+          <Slider
+            label={t.hubs.heading}
+            desktopClassName="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
+            slides={Array.from({ length: Math.ceil(t.hubs.list.length / 2) }, (_, slide) => (
+              <div key={slide} className="flex flex-col gap-3 sm:contents">
+                {t.hubs.list.slice(slide * 2, slide * 2 + 2).map((hub, i) => (
+                  <HubCard
+                    key={slide * 2 + i}
+                    hub={hub}
+                    badgeLabel={t.hubs.badgeActive}
+                    index={slide * 2 + i}
+                  />
+                ))}
+              </div>
+            ))}
+          />
         </div>
 
         <motion.div
@@ -70,14 +79,19 @@ export default function HubsAndCrews() {
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {t.groups.items.map((item, index) => (
-            <GroupSizeCard
-              key={item.title}
-              index={index}
-              group={{ ...item, ...groupImages[index] }}
-            />
-          ))}
+        <div className="mt-10">
+          <Slider
+            label={t.groups.heading}
+            desktopClassName="sm:grid sm:grid-cols-3 sm:gap-6"
+            slideClassName="w-[78%]"
+            slides={t.groups.items.map((item, index) => (
+              <GroupSizeCard
+                key={item.title}
+                index={index}
+                group={{ ...item, ...groupImages[index] }}
+              />
+            ))}
+          />
         </div>
       </div>
     </section>
