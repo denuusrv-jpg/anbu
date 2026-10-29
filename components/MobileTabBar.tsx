@@ -121,9 +121,16 @@ export default function MobileTabBar() {
       setPastHero(false);
       return;
     }
+    // Beim ersten Scrollen nach unten klappt die Leiste ein; zurück kommt sie, sobald man nach oben scrollt und der Hero wieder zu sehen ist
+    let lastY = window.scrollY;
     const update = () => {
+      const y = window.scrollY;
       const hero = document.querySelector(".hero-bg");
-      setPastHero(hero ? hero.getBoundingClientRect().bottom < window.innerHeight * 0.4 : false);
+      const heroVisible = hero ? hero.getBoundingClientRect().bottom > window.innerHeight * 0.5 : true;
+      if (y <= 8) setPastHero(false);
+      else if (y > lastY) setPastHero(true);
+      else if (y < lastY && heroVisible) setPastHero(false);
+      lastY = y;
     };
     update();
     window.addEventListener("scroll", update, { passive: true });
