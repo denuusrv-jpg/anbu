@@ -2,6 +2,8 @@
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
+const THICKNESS = 16; // Dicke der drehenden Karten in px
+
 // Handy: horizontaler Slider mit einrastenden Slides, sichtbarer Nachbarkarte, Pfeilen und Punkten.
 // Ab der sm-Breite (Tablet/Desktop) lösen sich die Slides auf und liegen im übergebenen Raster.
 export default function Slider({
@@ -22,28 +24,48 @@ export default function Slider({
   const [active, setActive] = useState(0);
   const count = slides.length;
 
-  // Drehung beim Wischen: zwischen zwei Einrast-Punkten dreht sich jede Karte einmal ganz um ihre Achse (wie eine Bankkarte) und zeigt danach wieder die Vorderseite
+  // Drehung beim Wischen: Nur die Karte, die als Nächstes ins Bild kommt, dreht sich einmal ganz um ihre Achse (wie eine Bankkarte)
+  // und zeigt danach wieder die Vorderseite. Die Karte, von der man weg wischt, bleibt flach.
+  const settled = useRef(0);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const applyFlip = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
+    const kids = Array.from(track.children) as HTMLElement[];
     const mobile = window.matchMedia("(max-width: 639px)").matches;
     const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
     const max = track.scrollWidth - track.clientWidth;
-    const snaps = Array.from(track.children).map((c) => Math.min((c as HTMLElement).offsetLeft - pad, max));
-    let angle = 0;
-    if (mobile && max > 0) {
-      const x = track.scrollLeft;
-      for (let i = 0; i < snaps.length - 1; i++) {
-        if (x > snaps[i] && x < snaps[i + 1]) {
-          const t = (x - snaps[i]) / (snaps[i + 1] - snaps[i]);
-          angle = 360 * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-          break;
-        }
+    const x = track.scrollLeft;
+    const step = kids.length > 1 ? kids[1].offsetLeft - kids[0].offsetLeft : track.clientWidth;
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    kids.forEach((kid, j) => {
+      let angle = 0;
+      if (mobile && max > 0 && j !== settled.current) {
+        const d = Math.abs(Math.min(kid.offsetLeft - pad, max) - x) / step;
+        if (d > 0 && d < 1) angle = 360 * ease(1 - d);
       }
-    }
-    Array.from(track.children).forEach((c) => {
-      (c as HTMLElement).style.transform = angle ? `perspective(900px) rotateY(${angle.toFixed(1)}deg)` : "";
+      kid.style.transform = angle ? `perspective(1000px) rotateY(${angle.toFixed(1)}deg)` : "";
+      // Vorder- und Rückseite per Winkel umschalten (zuverlässiger als backface-visibility auf iOS)
+      const front = angle === 0 || Math.cos((angle * Math.PI) / 180) >= 0;
+      const f = kid.querySelector<HTMLElement>("[data-face=front]");
+      const b = kid.querySelector<HTMLElement>("[data-face=back]");
+      if (f) f.style.visibility = front ? "visible" : "hidden";
+      if (b) b.style.visibility = front ? "hidden" : "visible";
     });
+    // Ruhe nach dem Wischen: erst wenn eine Karte wirklich eingerastet ist, gilt sie als die, von der man wegwischt
+    // (hält man den Finger mitten im Wischen still, bleibt alles wie es ist)
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      const at = kids.findIndex((kid) => Math.abs(Math.min(kid.offsetLeft - pad, max) - track.scrollLeft) < 2);
+      if (at >= 0 && settled.current !== at) {
+        settled.current = at;
+        applyFlip();
+      }
+    }, 140);
+  }, []);
+
+  useEffect(() => () => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
   }, []);
 
   const update = useCallback(() => {
@@ -111,18 +133,42 @@ export default function Slider({
         {slides.map((slide, i) => (
           <div
             key={i}
-            className={`relative shrink-0 snap-start ${slideClassName} [transform-style:preserve-3d] sm:contents sm:w-auto`}
+            className={`relative shrink-0 snap-start snap-always ${slideClassName} [transform-style:preserve-3d] sm:contents sm:w-auto`}
           >
-            <div className="h-full [backface-visibility:hidden] [&>*]:h-full sm:contents">{slide}</div>
+            <div
+              data-face="front"
+              className="h-full [&>*]:h-full sm:contents"
+              style={flip ? { transform: `translateZ(${THICKNESS / 2}px)` } : undefined}
+            >
+              {slide}
+            </div>
             {flip && (
-              <div
-                aria-hidden
-                className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_30%_20%,#8a1630,#4a0e24_55%,#1a0810)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:hidden"
-              >
-                <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-2xl" />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-wordmark-solid-white.png" alt="" className="relative w-3/5 opacity-90" draggable={false} />
-              </div>
+              <>
+                {/* Rückseite */}
+                <div
+                  data-face="back"
+                  aria-hidden
+                  className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_30%_20%,#8a1630,#4a0e24_55%,#1a0810)] sm:hidden"
+                  style={{ visibility: "hidden", transform: `rotateY(180deg) translateZ(${THICKNESS / 2}px)` }}
+                >
+                  <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-2xl" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo-wordmark-solid-white.png" alt="" className="relative w-3/5 opacity-90" draggable={false} />
+                </div>
+                {/* Seitenkanten: geben der Karte Dicke, wenn sie sich dreht */}
+                {(["left", "right"] as const).map((side) => (
+                  <div
+                    key={side}
+                    aria-hidden
+                    className="absolute top-3 bottom-3 bg-gradient-to-b from-[#4b3a2a] via-[#a9783f] to-[#4b3a2a] sm:hidden"
+                    style={{
+                      width: THICKNESS,
+                      [side]: -THICKNESS / 2,
+                      transform: `rotateY(${side === "left" ? -90 : 90}deg)`,
+                    }}
+                  />
+                ))}
+              </>
             )}
           </div>
         ))}
