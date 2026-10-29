@@ -18,14 +18,28 @@ function content(name: string) {
 }
 
 /** Mail über Resend (Absender info@dspora.de). Ohne RESEND_API_KEY passiert nichts und es wird false zurückgegeben. */
-export async function sendMail(to: string, subject: string, text: string, html: string): Promise<boolean> {
+export async function sendMail(
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+  extra?: { replyTo?: string; attachments?: { filename: string; content: string }[] },
+): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: "DSpora <info@dspora.de>", to: [to], subject, text, html }),
-    signal: AbortSignal.timeout(10000),
+    body: JSON.stringify({
+      from: "DSpora <info@dspora.de>",
+      to: [to],
+      subject,
+      text,
+      html,
+      ...(extra?.replyTo ? { reply_to: extra.replyTo } : {}),
+      ...(extra?.attachments?.length ? { attachments: extra.attachments } : {}),
+    }),
+    signal: AbortSignal.timeout(extra?.attachments?.length ? 20000 : 10000),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}`);
   return true;

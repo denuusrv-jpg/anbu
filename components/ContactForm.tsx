@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChatIcon, CheckIcon, GlobeIcon, ShieldIcon } from "@/components/Icons";
 import SlideToSend from "@/components/SlideToSend";
 
 type Topic = "allgemein" | "events" | "presse" | "sicherheit";
 type Status = "idle" | "success";
+
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
 
 const topics: { id: Topic; label: string; Icon: typeof ChatIcon }[] = [
   { id: "allgemein", label: "Allgemeine Frage", Icon: ChatIcon },
@@ -25,6 +27,54 @@ export default function ContactForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [name, setName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [slideKey, setSlideKey] = useState(0);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const honeypot = useRef<HTMLInputElement>(null);
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = Date.now();
+  }, []);
+
+  function pickFile(f: File | undefined) {
+    setError("");
+    if (!f) return;
+    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
+      setError("Bitte wähle eine PDF-Datei.");
+    } else if (f.size > MAX_PDF_BYTES) {
+      setError("Die PDF-Datei ist größer als 5 MB.");
+    } else {
+      setFile(f);
+    }
+    if (fileInput.current) fileInput.current.value = "";
+  }
+
+  // Senden: Nachricht (und PDF) gehen als E-Mail an uns. Bei einem Fehler springt der Schieber zurück.
+  async function send() {
+    setError("");
+    try {
+      const data = new FormData();
+      data.set("topic", topic);
+      data.set("name", name);
+      data.set("email", email);
+      data.set("message", message);
+      data.set("website", honeypot.current?.value ?? "");
+      data.set("elapsed", String(Date.now() - shownAt.current));
+      if (file) data.set("file", file);
+      const res = await fetch("/api/contact", { method: "POST", body: data, signal: AbortSignal.timeout(30000) });
+      if (res.ok) {
+        setStatus("success");
+        return;
+      }
+      const json = await res.json().catch(() => null);
+      setError(json?.error ?? "Das hat leider nicht geklappt. Bitte versuch es noch einmal.");
+    } catch {
+      setError("Keine Verbindung. Bitte versuch es noch einmal.");
+    }
+    setSlideKey((k) => k + 1);
+  }
 
   const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && message.trim().length > 0;
 
@@ -119,6 +169,9 @@ export default function ContactForm() {
                   <input
                     id="name"
                     type="text"
+                    value={name}
+                    maxLength={80}
+                    onChange={(e) => setName(e.target.value)}
                     className="rounded-xl border border-zinc-800 bg-zinc-900/70 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-gold focus:outline-none"
                     placeholder="Wie dürfen wir dich nennen?"
                   />
@@ -154,12 +207,46 @@ export default function ContactForm() {
                 />
               </div>
 
+              {/* PDF anhängen (optional) */}
+              <div className="flex flex-col gap-1.5 text-left">
+                <input ref={honeypot} type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="pointer-events-none absolute h-0 w-0 opacity-0" />
+                <input ref={fileInput} type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => pickFile(e.target.files?.[0])} aria-label="PDF-Datei auswählen" />
+                <span className="text-xs font-medium text-zinc-300">PDF anhängen (optional, bis 5 MB)</span>
+                {file ? (
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-gold/40 bg-gold/[0.07] px-4 py-3 text-sm text-zinc-100">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-gold" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M7 3h7l5 5v13H7z" />
+                        <path d="M14 3v5h5" />
+                      </svg>
+                      <span className="truncate">{file.name}</span>
+                    </span>
+                    <button type="button" onClick={() => setFile(null)} aria-label="PDF entfernen" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xl leading-none text-zinc-300 transition-colors hover:text-rose">
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInput.current?.click()}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/25 bg-white/[0.04] px-4 py-3.5 text-sm font-medium text-zinc-200 transition-colors hover:border-gold/50 hover:text-gold"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M21 12.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l9-9a3.7 3.7 0 0 1 5.2 5.2l-9 9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2" />
+                    </svg>
+                    PDF auswählen
+                  </button>
+                )}
+              </div>
+
+              {error && (
+                <p role="alert" className="text-sm text-rose">
+                  {error}
+                </p>
+              )}
+
               <div className="mt-2">
-                <SlideToSend
-                  label="Zum Senden schieben"
-                  disabled={!isValid}
-                  onSuccess={() => setStatus("success")}
-                />
+                <SlideToSend key={slideKey} label="Zum Senden schieben" disabled={!isValid} onSuccess={send} />
               </div>
             </motion.div>
           )}
