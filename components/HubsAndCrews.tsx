@@ -16,7 +16,7 @@ const groupImages = [
 ];
 
 export default function HubsAndCrews() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <section
@@ -35,7 +35,7 @@ export default function HubsAndCrews() {
           </h2>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-4 sm:mt-10">
           <Slider
             label={t.hubs.heading}
             desktopClassName="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
@@ -55,14 +55,20 @@ export default function HubsAndCrews() {
         </div>
 
         <motion.div
-          className="glass-soft mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl transition-[border-color,box-shadow,background-color] duration-500 hover:border-gold/35 hover:bg-white/[0.07] hover:shadow-[0_0_32px_-10px_rgba(242,166,90,0.4)]"
+          className="glass-soft mt-8 w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-6 text-center backdrop-blur-xl [container-type:inline-size] transition-[border-color,box-shadow,background-color] duration-500 hover:border-gold/35 hover:bg-white/[0.07] hover:shadow-[0_0_32px_-10px_rgba(242,166,90,0.4)]"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="mx-auto max-w-5xl text-balance text-sm leading-relaxed text-zinc-300 sm:text-base">
-            <Translated text={t.hubs.infoText} />
+          <p className={`mx-auto max-w-5xl text-justify text-[5.05cqw] leading-relaxed sm:text-base text-zinc-300 [hyphens:auto] ${language === "ta" ? "[text-align-last:start]" : "[text-align-last:justify]"} sm:text-balance sm:text-center sm:[hyphens:manual] sm:[text-align-last:auto]`}>
+            {/* Handy: Schriftgröße folgt der Boxbreite, damit der Blocksatz auf jedem iPhone gleich umbricht */}
+            <span className="sm:hidden">
+              <Translated text={t.hubs.infoTextMobile ?? t.hubs.infoText} />
+            </span>
+            <span className="hidden sm:inline">
+              <Translated text={t.hubs.infoText} />
+            </span>
           </p>
           <div className="mt-6">
             <WaitlistCapture />
@@ -79,7 +85,7 @@ export default function HubsAndCrews() {
           </p>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-4 sm:mt-10">
           <Slider
             label={t.groups.heading}
             desktopClassName="sm:grid sm:grid-cols-3 sm:gap-6"

@@ -22,7 +22,11 @@ export default function HubCard({
   const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), springConfig);
   const scale = useSpring(1, springConfig);
 
+  // Handy und Touch: kein 3D-Effekt
+  const touchLayout = () => window.matchMedia("(max-width: 639px), (pointer: coarse)").matches;
+
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (touchLayout()) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
     x.set((e.clientX - rect.left) / rect.width - 0.5);
@@ -30,6 +34,7 @@ export default function HubCard({
   }
 
   function handleMouseEnter() {
+    if (touchLayout()) return;
     scale.set(1.04);
   }
 
@@ -55,10 +60,16 @@ export default function HubCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.05 }}
       transition={{ duration: 0.5, delay: (index % 4) * 0.08, ease: "easeOut" }}
-      className="glass-soft flex cursor-default flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
+      className="glass-soft flex min-h-[92px] flex-1 cursor-default flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur-xl transition-[border-color,box-shadow] duration-300 will-change-transform hover:border-gold/60 hover:shadow-[0_0_28px_-4px_rgba(242,166,90,0.55)]"
     >
       <span className="text-sm font-medium text-zinc-100">
-        <Translated text={hub} />
+        {/* Handy: ohne die Angaben in Klammern */}
+        <span className="sm:hidden">
+          <Translated text={hub.replace(/\s*[(（].*?[)）]/g, "")} />
+        </span>
+        <span className="hidden sm:inline">
+          <Translated text={hub} />
+        </span>
       </span>
       <span className="mt-auto inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/60 px-2.5 py-1 text-[10px] font-medium whitespace-nowrap text-rose">
         <span className="h-1.5 w-1.5 rounded-full bg-rose" />

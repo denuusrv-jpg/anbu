@@ -33,7 +33,13 @@ export default function ShareLinkBadge() {
       ) : (
         <>
           <LinkIcon className="h-3.5 w-3.5" />
-          <Translated text={t.share.text} />
+          {/* Handy: nur der erste Teil, in Großbuchstaben */}
+          <span className="tracking-wide uppercase sm:hidden">
+            <Translated text={t.share.text.split(" – ")[0]} />
+          </span>
+          <span className="hidden sm:inline">
+            <Translated text={t.share.text} />
+          </span>
         </>
       )}
     </button>

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRightIcon, CheckIcon, RetryIcon } from "@/components/Icons";
-import { useLanguage } from "@/lib/LanguageContext";
+import { useLanguage, useTx } from "@/lib/LanguageContext";
+import SlideToSend from "@/components/SlideToSend";
 import Translated from "@/components/Translated";
 
 type Status = "idle" | "loading" | "success";
@@ -16,6 +17,10 @@ export default function WaitlistCapture() {
   // Der lange Hinweistext passt erst ab Tablet-Breite ins Badge
   const [wide, setWide] = useState(false);
   const { t, language } = useLanguage();
+  const tx = useTx();
+  // Handy: Eintragen per Schieben (wie im Kontaktformular); der Knopf wird nach einem Fehler zurückgesetzt
+  const [slideKey, setSlideKey] = useState(0);
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
   // Bot-Schutz: Honeypot-Feld und Zeit seit dem Laden des Formulars
   const honeypot = useRef<HTMLInputElement>(null);
@@ -55,6 +60,11 @@ export default function WaitlistCapture() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!wide) return; // am Handy sendet nur das Schieben
+    startSend();
+  }
+
+  function startSend() {
     if (status !== "idle") return;
     setError("");
     request.current = send();
@@ -70,6 +80,7 @@ export default function WaitlistCapture() {
     } else {
       setError(result);
       setStatus("idle");
+      setSlideKey((k) => k + 1);
     }
   }
 
@@ -77,6 +88,7 @@ export default function WaitlistCapture() {
     setEmail("");
     setError("");
     setStatus("idle");
+    setSlideKey((k) => k + 1);
   }
 
   return (
@@ -161,8 +173,9 @@ export default function WaitlistCapture() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={wide ? t.waitlistCapture.placeholderLong : t.waitlistCapture.placeholder}
                   key={language}
-                  className="w-full bg-transparent py-3.5 pr-2 pl-6 text-sm text-white placeholder:text-white/60 focus:outline-none disabled:opacity-80"
+                  className="w-full bg-transparent py-3.5 pr-6 pl-6 text-sm text-white placeholder:text-white/60 focus:outline-none disabled:opacity-80 sm:pr-2"
                 />
+                {wide && (
                 <button
                   type="submit"
                   disabled={status === "loading"}
@@ -171,11 +184,23 @@ export default function WaitlistCapture() {
                 >
                   <ArrowRightIcon className="h-[18px] w-[18px] transition-transform group-hover:translate-x-0.5" />
                 </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </form>
+      {!wide && status !== "success" && (
+        <div className="mt-3">
+          <SlideToSend
+            key={slideKey}
+            label={tx("Zum Eintragen schieben")}
+            sendingLabel={tx("Wird eingetragen …")}
+            disabled={!validEmail || status === "loading"}
+            onSuccess={startSend}
+          />
+        </div>
+      )}
       {error && (
         <p role="alert" className="mt-3 text-center text-xs text-rose">
           {error}

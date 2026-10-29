@@ -54,15 +54,31 @@ export default function Slider({
     track.scrollTo({ left: child.offsetLeft - pad, behavior: "smooth" });
   }
 
-  const arrow =
-    "flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-zinc-200 backdrop-blur-xl transition-[opacity,border-color,color] duration-200 active:scale-95 disabled:opacity-30";
-
   return (
     <div role="group" aria-roledescription="carousel" aria-label={label}>
+      {/* Punkte direkt unter der Überschrift des Bereichs, nicht unter den Slides */}
+      <div className="mb-3 flex items-center justify-center sm:hidden">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`${i + 1} / ${count}`}
+            aria-current={i === active}
+            onClick={() => goTo(i)}
+            className="flex h-6 items-center px-1"
+          >
+            <span
+              className={`block h-1.5 rounded-full transition-all duration-300 ${
+                i === active ? "w-6 bg-gold shadow-[0_0_10px_rgba(242,166,90,0.6)]" : "w-1.5 bg-white/25"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
       <div
         ref={trackRef}
         onScroll={update}
-        className={`no-scrollbar relative -mx-6 flex snap-x snap-mandatory scroll-pl-6 gap-3 overflow-x-auto px-6 py-4 -my-4 sm:mx-0 sm:my-0 sm:snap-none sm:overflow-visible sm:p-0 ${desktopClassName}`}
+        className={`no-scrollbar relative -mx-6 flex snap-x snap-mandatory scroll-pl-6 gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain px-6 py-4 -my-4 sm:mx-0 sm:my-0 sm:snap-none sm:overflow-visible sm:p-0 ${desktopClassName}`}
       >
         {slides.map((slide, i) => (
           <div
@@ -74,48 +90,6 @@ export default function Slider({
         ))}
       </div>
 
-      <div className="mt-5 flex items-center justify-center gap-4 sm:hidden">
-        <button
-          type="button"
-          aria-label="Zurück"
-          disabled={active === 0}
-          onClick={() => goTo(active - 1)}
-          className={arrow}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-            <path d="M15 5l-7 7 7 7" />
-          </svg>
-        </button>
-
-        <div className="flex items-center gap-2">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`${i + 1} / ${count}`}
-              aria-current={i === active}
-              onClick={() => goTo(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === active
-                  ? "w-6 bg-gold shadow-[0_0_10px_rgba(242,166,90,0.6)]"
-                  : "w-1.5 bg-white/25"
-              }`}
-            />
-          ))}
-        </div>
-
-        <button
-          type="button"
-          aria-label="Weiter"
-          disabled={active === count - 1}
-          onClick={() => goTo(active + 1)}
-          className={arrow}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-            <path d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
     </div>
   );
 }

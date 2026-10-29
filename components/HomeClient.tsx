@@ -141,6 +141,7 @@ export default function HomeClient() {
         <div className="mx-auto max-w-5xl">
           <AiMatchingCard />
 
+          <div className="hidden sm:block">
           <Slider
             label={t.ai.heading}
             desktopClassName="sm:grid sm:grid-cols-3 sm:gap-8"
@@ -174,6 +175,7 @@ export default function HomeClient() {
               );
             })}
           />
+          </div>
 
           <SignUpCta />
         </div>
@@ -181,7 +183,7 @@ export default function HomeClient() {
 
       {/* Footer */}
       <footer className="mx-auto max-w-5xl px-6 py-10 text-center sm:px-8">
-        <p className="text-sm text-zinc-400">
+        <p className="hidden text-sm text-zinc-400 sm:block">
           <Translated text={t.footer.tagline} />
         </p>
         <div className="mt-3 flex items-center justify-center gap-4 text-xs text-zinc-400">

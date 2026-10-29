@@ -37,6 +37,8 @@ export type Translation = {
     list: string[];
     badgeActive: string;
     infoText: string;
+    /** Handy: auf die Zeilenlänge im Blocksatz abgestimmte Fassung (optional) */
+    infoTextMobile?: string;
   };
   groups: {
     heading: string;
@@ -105,6 +107,8 @@ export const translations: Record<Language, Translation> = {
       badgeActive: "Warteliste aktiv",
       infoText:
         "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam.",
+      infoTextMobile:
+        "Sobald sich 100 Personen in einer Region eintragen, öffnet sich das Hub. Der erste Schritt: Du erhältst eine E-Mail mit dem Link zu unserem KI-Persönlichkeits-Check, der dein optimales Match ermittelt. Das Ganze bleibt anfangs vollkommen anonym und ganz ohne Spam – versprochen.",
     },
     groups: {
       heading: "Gemeinschaft nach Maß",
@@ -208,6 +212,8 @@ export const translations: Record<Language, Translation> = {
       badgeActive: "Waitlist active",
       infoText:
         "As soon as 100 people in a region sign up, the hub unlocks. The first step: you'll get an email with the link to our AI personality check, which finds your ideal match. It all stays completely anonymous at first, and completely spam-free.",
+      infoTextMobile:
+        "As soon as 100 people in a region sign up, the hub unlocks. The first step: you'll get an email with the link to our AI personality check, which finds your ideal match. It all stays completely anonymous at first, and completely free of any spam whatsoever.",
     },
     groups: {
       heading: "Community, your size",

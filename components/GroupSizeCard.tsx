@@ -30,7 +30,11 @@ export default function GroupSizeCard({
   const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-10, 10]), springConfig);
   const scale = useSpring(1, springConfig);
 
+  // Handy und Touch: kein 3D-Effekt
+  const touchLayout = () => window.matchMedia("(max-width: 639px), (pointer: coarse)").matches;
+
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (touchLayout()) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
     x.set((e.clientX - rect.left) / rect.width - 0.5);
@@ -38,6 +42,7 @@ export default function GroupSizeCard({
   }
 
   function handleMouseEnter() {
+    if (touchLayout()) return;
     scale.set(1.03);
   }
 
