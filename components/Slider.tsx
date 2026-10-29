@@ -9,19 +9,47 @@ export default function Slider({
   desktopClassName,
   slideClassName = "w-[84%]",
   label,
+  flip = false,
 }: {
   slides: ReactNode[];
   desktopClassName: string;
   slideClassName?: string;
   label: string;
+  /** Handy: die Slides drehen sich beim Wischen kurz wie eine Karte */
+  flip?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const count = slides.length;
 
+  // Drehung beim Wischen: zwischen zwei Einrast-Punkten dreht sich jede Karte kurz um ihre Mittelachse und liegt in Ruhe wieder flach
+  const applyFlip = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const mobile = window.matchMedia("(max-width: 639px)").matches;
+    const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    const max = track.scrollWidth - track.clientWidth;
+    const snaps = Array.from(track.children).map((c) => Math.min((c as HTMLElement).offsetLeft - pad, max));
+    let angle = 0;
+    if (mobile && max > 0) {
+      const x = track.scrollLeft;
+      for (let i = 0; i < snaps.length - 1; i++) {
+        if (x > snaps[i] && x < snaps[i + 1]) {
+          const t = (x - snaps[i]) / (snaps[i + 1] - snaps[i]);
+          angle = Math.sin(Math.PI * t) * -42;
+          break;
+        }
+      }
+    }
+    Array.from(track.children).forEach((c) => {
+      (c as HTMLElement).style.transform = angle ? `perspective(900px) rotateY(${angle.toFixed(1)}deg)` : "";
+    });
+  }, []);
+
   const update = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
+    if (flip) applyFlip();
     const max = track.scrollWidth - track.clientWidth;
     if (max <= 0) return setActive(0);
     if (track.scrollLeft >= max - 4) return setActive(count - 1);
@@ -36,7 +64,7 @@ export default function Slider({
       }
     });
     setActive(best);
-  }, [count]);
+  }, [count, flip, applyFlip]);
 
   useEffect(() => {
     update();

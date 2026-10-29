@@ -88,6 +88,7 @@ export default function HubsAndCrews() {
         <div className="mt-4 sm:mt-10">
           <Slider
             label={t.groups.heading}
+            flip
             desktopClassName="sm:grid sm:grid-cols-3 sm:gap-6"
             slideClassName="w-[78%]"
             slides={t.groups.items.map((item, index) => (
