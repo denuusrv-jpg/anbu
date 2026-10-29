@@ -332,3 +332,12 @@ input::-webkit-credentials-auto-fill-button {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
   }
 }
+
+/* Handy: Eingabefelder mindestens 16 px groß, sonst zoomt iOS-Safari beim Antippen die Seite heran und schiebt alles zur Seite */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}

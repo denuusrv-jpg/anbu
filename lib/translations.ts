@@ -69,6 +69,8 @@ export type Translation = {
     placeholderLong: string;
     button: string;
     success: string;
+    /** Handy: kürzer, damit die Fläche nicht größer wird */
+    successShort: string;
     retry: string;
     error: string;
   };
@@ -179,6 +181,7 @@ export const translations: Record<Language, Translation> = {
       placeholderLong: "Deine E-Mail-Adresse, z. B. deine@mail.com",
       button: "Beitreten",
       success: "Fast geschafft! Prüfe dein Postfach",
+      successShort: "Prüfe dein Postfach",
       retry: "Andere E-Mail eingeben",
       error: "Das hat leider nicht geklappt. Bitte versuch es noch einmal.",
     },
@@ -283,6 +286,7 @@ export const translations: Record<Language, Translation> = {
       placeholderLong: "Your email address, e.g. your@mail.com",
       button: "Join",
       success: "Almost there! Check your inbox",
+      successShort: "Check your inbox",
       retry: "Enter a different email",
       error: "That didn't work. Please try again.",
     },
@@ -387,6 +391,7 @@ export const translations: Record<Language, Translation> = {
       placeholderLong: "உங்கள் மின்னஞ்சல் முகவரியை இங்கே உள்ளிடவும்",
       button: "சேரவும்",
       success: "கிட்டத்தட்ட முடிந்தது! உங்கள் இன்பாக்ஸைப் பார்க்கவும்",
+      successShort: "இன்பாக்ஸைப் பார்க்கவும்",
       retry: "வேறு மின்னஞ்சலை உள்ளிடவும்",
       error: "இது வெற்றிபெறவில்லை. தயவுசெய்து மீண்டும் முயற்சிக்கவும்.",
     },

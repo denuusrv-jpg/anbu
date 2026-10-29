@@ -92,14 +92,17 @@ export default function SlideToSend({
   return (
     <div
       ref={trackRef}
-      className={`relative h-14 w-full touch-none overflow-hidden rounded-full bg-white/[0.07] ring-1 ring-white/15 ring-inset select-none ${
+      onScroll={(e) => {
+        e.currentTarget.scrollLeft = 0;
+      }}
+      className={`relative h-14 w-full touch-none overflow-hidden rounded-2xl bg-white/[0.07] sm:rounded-full ring-1 ring-white/15 ring-inset select-none ${
         disabled && !field ? "opacity-60" : ""
       }`}
     >
       {/* Fortschritts-Füllung: gleiche Höhe und Position wie der Knopf, endet unter ihm (kein Rand um den Knopf) */}
       <div
         aria-hidden
-        className="absolute top-1 left-1 rounded-full bg-gradient-to-r from-gold/70 to-gold-light"
+        className="absolute top-1 left-1 rounded-xl bg-gradient-to-r from-gold/70 to-gold-light sm:rounded-full"
         style={{ height: THUMB, width: status === "sending" ? "calc(100% - 8px)" : `${dragX + THUMB}px`, transition }}
       />
 
@@ -135,7 +138,7 @@ export default function SlideToSend({
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onKeyDown={onKeyDown}
-        className="absolute top-1 left-1 flex touch-none items-center justify-center rounded-full bg-gradient-to-b from-gold-light to-gold text-zinc-950 shadow-[0_3px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.45)] outline-none select-none focus-visible:ring-2 focus-visible:ring-white/80"
+        className="absolute top-1 left-1 flex touch-none items-center justify-center rounded-xl bg-gradient-to-b from-gold-light to-gold text-zinc-950 sm:rounded-full shadow-[0_3px_12px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.45)] outline-none select-none focus-visible:ring-2 focus-visible:ring-white/80"
         style={{
           width: THUMB,
           height: THUMB,

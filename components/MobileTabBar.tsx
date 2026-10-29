@@ -116,6 +116,22 @@ export default function MobileTabBar() {
   // Platz unter dem Inhalt, damit nichts hinter der Leiste verschwindet (siehe globals.css)
   // Startseite: Nach dem Hero-Bereich klappt die Leiste ein und kommt erst am Hero wieder
   const [pastHero, setPastHero] = useState(false);
+  // Während getippt wird (Tastatur offen), verschwindet die Leiste, damit sie nicht über der Tastatur schwebt
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const isField = (el: EventTarget | null) =>
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement ||
+      (el instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "range", "file"].includes(el.type));
+    const onIn = (e: FocusEvent) => setTyping(isField(e.target));
+    const onOut = () => setTyping(false);
+    document.addEventListener("focusin", onIn);
+    document.addEventListener("focusout", onOut);
+    return () => {
+      document.removeEventListener("focusin", onIn);
+      document.removeEventListener("focusout", onOut);
+    };
+  }, []);
   useEffect(() => {
     if (path !== "/") {
       setPastHero(false);
@@ -175,12 +191,12 @@ export default function MobileTabBar() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      aria-hidden={pastHero}
+      aria-hidden={pastHero || typing}
       className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),12px)] transition-[transform,opacity] duration-300 ease-out sm:hidden ${
-        pastHero ? "translate-y-[140%] opacity-0" : "translate-y-0 opacity-100"
+        pastHero || typing ? "translate-y-[140%] opacity-0" : "translate-y-0 opacity-100"
       }`}
     >
-      <div className={`relative mx-auto grid h-[66px] max-w-md grid-cols-[1fr_1fr_88px_1fr_1fr] rounded-2xl border border-white/70 bg-white/95 px-1.5 shadow-[0_12px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl ${pastHero ? "pointer-events-none" : "pointer-events-auto"}`}>
+      <div className={`relative mx-auto grid h-[66px] max-w-md grid-cols-[1fr_1fr_88px_1fr_1fr] rounded-2xl border border-white/70 bg-white/95 px-1.5 shadow-[0_12px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl ${pastHero || typing ? "pointer-events-none" : "pointer-events-auto"}`}>
         {tabs.map((tab) => {
           if (tab.id === "ki") {
             return (

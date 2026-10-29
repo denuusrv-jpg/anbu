@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowRightIcon, CheckIcon, RetryIcon } from "@/components/Icons";
 import { useLanguage, useTx } from "@/lib/LanguageContext";
 import SlideToSend from "@/components/SlideToSend";
+import { scrollFieldIntoView } from "@/lib/scrollIntoViewOnFocus";
 import Translated from "@/components/Translated";
 
 type Status = "idle" | "loading" | "success";
@@ -76,6 +77,19 @@ export default function WaitlistCapture() {
     setError("");
     request.current = send();
     setStatus("loading");
+    if (!wide) void finishOnPhone();
+  }
+
+  // Handy: kein Füll-Balken, der das Ende meldet. Kurz warten, damit das Häkchen sichtbar ist, dann Ergebnis zeigen.
+  async function finishOnPhone() {
+    const [result] = await Promise.all([request.current, new Promise((r) => setTimeout(r, 500))]);
+    if (result === null) {
+      setStatus("success");
+    } else {
+      setError(result ?? t.waitlistCapture.error);
+      setStatus("idle");
+      setSlideKey((k) => k + 1);
+    }
   }
 
   // Die Amber-Füllung ist fertig: Erfolg erst zeigen, wenn auch der Server geantwortet hat
@@ -103,7 +117,7 @@ export default function WaitlistCapture() {
       {(wide || status === "success") && (
       <form onSubmit={handleSubmit}>
         <div
-          className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
+          className="relative isolate min-h-14 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
         >
           {sheenKey > 0 && (
             <div key={sheenKey} aria-hidden className="pointer-events-none absolute inset-0 z-10">
@@ -132,7 +146,12 @@ export default function WaitlistCapture() {
               >
                 <div className="flex flex-1 items-center justify-center gap-2 py-3.5 pr-2 pl-6 text-sm font-semibold text-zinc-950">
                   <CheckIcon className="h-4 w-4 shrink-0" />
-                  <Translated text={t.waitlistCapture.success} />
+                  <span className="sm:hidden">
+                    <Translated text={t.waitlistCapture.successShort} />
+                  </span>
+                  <span className="hidden sm:inline">
+                    <Translated text={t.waitlistCapture.success} />
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -221,9 +240,10 @@ export default function WaitlistCapture() {
                   spellCheck={false}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onFocus={scrollFieldIntoView}
                   placeholder={t.waitlistCapture.placeholder}
                   key={language}
-                  className="w-full bg-transparent text-sm text-white [-webkit-user-select:text] [user-select:text] placeholder:text-white/60 focus:outline-none"
+                  className="w-full bg-transparent text-base text-white [-webkit-user-select:text] [user-select:text] placeholder:text-white/60 focus:outline-none"
                 />
               </>
             }
