@@ -92,7 +92,7 @@ export default function HomeClient() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section
-            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center touch:justify-start touch:pt-36 touch:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center touch:min-h-[100svh] touch:justify-start touch:pt-36 touch:pb-[8.5rem] ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
             {/* Logo und Navigation. Handy: Kopfleiste mit Sprache, Logo und Menü (Logo hier ausgeblendet) */}
             <div className="mb-12 flex flex-col touch:mb-0">
@@ -124,7 +124,8 @@ export default function HomeClient() {
               <Translated text={t.hero.description} />
             </p>
 
-            <div className="touch:mt-32">
+            {/* Handy: die Knöpfe sitzen am unteren Rand des sichtbaren Bildschirms, mit Abstand zur Navigationsleiste */}
+            <div className="touch:mt-auto touch:pt-12">
             <WaitlistForm />
             </div>
           </section>
