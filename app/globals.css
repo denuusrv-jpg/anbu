@@ -352,3 +352,19 @@ input::-webkit-credentials-auto-fill-button {
   stroke-dasharray: 14 86;
   animation: dash-run 3.6s linear infinite;
 }
+
+/* Handy: alle Knöpfe und antippbaren Pillen einheitlich als Rechteck mit abgerundeten Ecken (statt Kapsel).
+   Erfasst Buttons und Links mit rounded-full und seitlichem Innenabstand; reine Symbol-Kreise (ohne px-), Schalter und Punkte bleiben rund. */
+@media (max-width: 639px) {
+  button[class*="rounded-full"][class*="px-"],
+  a[class*="rounded-full"][class*="px-"] {
+    border-radius: 12px;
+  }
+  /* kleine, flache Knöpfe: etwas engere Ecken, damit sie nicht wieder wie Kapseln wirken */
+  button[class*="rounded-full"][class*="px-"][class~="py-1"],
+  button[class*="rounded-full"][class*="px-"][class~="py-1.5"],
+  a[class*="rounded-full"][class*="px-"][class~="py-1"],
+  a[class*="rounded-full"][class*="px-"][class~="py-1.5"] {
+    border-radius: 8px;
+  }
+}

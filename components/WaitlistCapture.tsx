@@ -117,7 +117,7 @@ export default function WaitlistCapture() {
       {(wide || status === "success") && (
       <form onSubmit={handleSubmit}>
         <div
-          className="relative isolate min-h-14 overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
+          className="relative isolate min-h-14 overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-zinc-950/50"
         >
           {sheenKey > 0 && (
             <div key={sheenKey} aria-hidden className="pointer-events-none absolute inset-0 z-10">

@@ -412,7 +412,7 @@ export default function ProfileEditor({
 
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           <button type="button" onClick={edit} className="rounded-xl border border-white/15 bg-white/[0.07] px-4 py-2.5 text-sm font-semibold text-zinc-50 transition-colors active:bg-white/15">
-            {tx("Profil bearbeiten")}
+            {tx("Bearbeiten")}
           </button>
           <Link href={`/profil/${userId}`} className="rounded-xl border border-white/15 bg-white/[0.07] px-4 py-2.5 text-center text-sm font-semibold text-zinc-50 transition-colors active:bg-white/15">
             {tx("Profil-Ansicht")}
