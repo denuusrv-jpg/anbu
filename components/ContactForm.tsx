@@ -40,7 +40,28 @@ export default function ContactForm() {
 
       <div className="relative">
         {/* Themenwahl */}
-        <div className="flex flex-wrap justify-center gap-2">
+        {/* Handy: Thema per Dropdown */}
+        <div className="relative sm:hidden">
+          <label htmlFor="topic" className="sr-only">
+            Thema
+          </label>
+          <select
+            id="topic"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value as Topic)}
+            className="w-full appearance-none rounded-xl border border-zinc-800 bg-zinc-900/70 py-3.5 pr-11 pl-4 text-sm font-medium text-white focus:border-gold focus:outline-none"
+          >
+            {topics.map(({ id, label }) => (
+              <option key={id} value={id} className="bg-zinc-900 text-white">
+                {label}
+              </option>
+            ))}
+          </select>
+          <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-gold" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
+        <div className="hidden flex-wrap justify-center gap-2 sm:flex">
           {topics.map(({ id, label, Icon }) => {
             const active = topic === id;
             return (

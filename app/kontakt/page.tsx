@@ -47,7 +47,7 @@ export default function Kontakt() {
         </div>
 
         {/* Gut zu wissen */}
-        <div className="mt-10 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:p-10">
+        <div className="mt-10 hidden rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl sm:block sm:p-10">
           <h2 className="text-lg font-semibold text-zinc-50">Gut zu wissen</h2>
           <div className="mt-5 flex flex-col divide-y divide-white/10">
             {faqs.map((faq) => (

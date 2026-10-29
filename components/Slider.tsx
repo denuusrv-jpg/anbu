@@ -22,7 +22,7 @@ export default function Slider({
   const [active, setActive] = useState(0);
   const count = slides.length;
 
-  // Drehung beim Wischen: zwischen zwei Einrast-Punkten dreht sich jede Karte kurz um ihre Mittelachse und liegt in Ruhe wieder flach
+  // Drehung beim Wischen: zwischen zwei Einrast-Punkten dreht sich jede Karte einmal ganz um ihre Achse (wie eine Bankkarte) und zeigt danach wieder die Vorderseite
   const applyFlip = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
@@ -36,7 +36,7 @@ export default function Slider({
       for (let i = 0; i < snaps.length - 1; i++) {
         if (x > snaps[i] && x < snaps[i + 1]) {
           const t = (x - snaps[i]) / (snaps[i + 1] - snaps[i]);
-          angle = Math.sin(Math.PI * t) * -42;
+          angle = 360 * (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
           break;
         }
       }
@@ -111,9 +111,19 @@ export default function Slider({
         {slides.map((slide, i) => (
           <div
             key={i}
-            className={`shrink-0 snap-start ${slideClassName} [&>*]:h-full sm:contents sm:w-auto`}
+            className={`relative shrink-0 snap-start ${slideClassName} [transform-style:preserve-3d] sm:contents sm:w-auto`}
           >
-            {slide}
+            <div className="h-full [backface-visibility:hidden] [&>*]:h-full sm:contents">{slide}</div>
+            {flip && (
+              <div
+                aria-hidden
+                className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_30%_20%,#8a1630,#4a0e24_55%,#1a0810)] [backface-visibility:hidden] [transform:rotateY(180deg)] sm:hidden"
+              >
+                <div className="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-2xl" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-wordmark-solid-white.png" alt="" className="relative w-3/5 opacity-90" draggable={false} />
+              </div>
+            )}
           </div>
         ))}
       </div>

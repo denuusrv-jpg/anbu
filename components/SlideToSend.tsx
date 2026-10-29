@@ -15,11 +15,14 @@ export default function SlideToSend({
   sendingLabel = "Wird gesendet …",
   onSuccess,
   disabled = false,
+  field,
 }: {
   label: string;
   sendingLabel?: string;
   onSuccess: () => void;
   disabled?: boolean;
+  /** Statt der Beschriftung ein Eingabefeld in der Spur (z. B. E-Mail), der Knopf sendet erst, wenn "disabled" aus ist */
+  field?: React.ReactNode;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
@@ -90,7 +93,7 @@ export default function SlideToSend({
     <div
       ref={trackRef}
       className={`relative h-14 w-full touch-none overflow-hidden rounded-full bg-white/[0.07] ring-1 ring-white/15 ring-inset select-none ${
-        disabled ? "opacity-60" : ""
+        disabled && !field ? "opacity-60" : ""
       }`}
     >
       {/* Fortschritts-Füllung: gleiche Höhe und Position wie der Knopf, endet unter ihm (kein Rand um den Knopf) */}
@@ -107,6 +110,10 @@ export default function SlideToSend({
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950/30 border-t-zinc-950" />
             {sendingLabel}
           </span>
+        ) : field ? (
+          <div className="pointer-events-auto w-full" style={{ opacity: Math.max(0, 1 - progress * 1.6) }}>
+            {field}
+          </div>
         ) : (
           <span className="text-sm font-medium whitespace-nowrap text-white" style={{ opacity: Math.max(0, 1 - progress * 1.6) }}>
             {label}
@@ -134,7 +141,8 @@ export default function SlideToSend({
           height: THUMB,
           transform: `translateX(${dragX}px)`,
           transition,
-          cursor: status === "dragging" ? "grabbing" : "grab",
+          cursor: disabled ? "not-allowed" : status === "dragging" ? "grabbing" : "grab",
+          opacity: disabled && field ? 0.55 : 1,
           WebkitTapHighlightColor: "transparent",
         }}
       >

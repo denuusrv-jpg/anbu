@@ -100,6 +100,7 @@ export default function WaitlistCapture() {
 
   return (
     <div className="mx-auto w-full max-w-md">
+      {(wide || status === "success") && (
       <form onSubmit={handleSubmit}>
         <div
           className="relative isolate overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/50"
@@ -194,15 +195,40 @@ export default function WaitlistCapture() {
           </AnimatePresence>
         </div>
       </form>
+      )}
+      {/* Handy: E-Mail-Feld und Schieberegler in einer Fläche */}
       {!wide && status !== "success" && (
-        <div className="mt-3">
+        <div>
+          <input ref={honeypot} type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="pointer-events-none absolute h-0 w-0 opacity-0" />
           <SlideToSend
             key={slideKey}
             label={tx("Zum Eintragen schieben")}
             sendingLabel={tx("Wird eingetragen …")}
             disabled={!validEmail || status === "loading"}
             onSuccess={startSend}
+            field={
+              <>
+                <label htmlFor="waitlist-capture-email-m" className="sr-only">
+                  {t.waitlistCapture.placeholder}
+                </label>
+                <input
+                  id="waitlist-capture-email-m"
+                  name="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t.waitlistCapture.placeholder}
+                  key={language}
+                  className="w-full bg-transparent text-sm text-white [-webkit-user-select:text] [user-select:text] placeholder:text-white/60 focus:outline-none"
+                />
+              </>
+            }
           />
+          <p className="mt-2 text-center text-xs text-zinc-400">{tx("E-Mail eintragen und nach rechts schieben")}</p>
         </div>
       )}
       {error && (

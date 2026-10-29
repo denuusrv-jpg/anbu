@@ -152,7 +152,7 @@ export default function MobileTabBar() {
   const tabs: { id: TabId; href: string; label: string; gated: boolean }[] = [
     { id: "home", href: "/", label: "Home", gated: false },
     { id: "events", href: "/events", label: tx("Events"), gated: true },
-    { id: "ki", href: "/dashboard", label: tx("KI-Check"), gated: true },
+    { id: "ki", href: "/dashboard", label: "KI-CHECK", gated: true },
     { id: "chats", href: "/dashboard/chats", label: tx("Chats"), gated: true },
     { id: "profil", href: "/dashboard/profil", label: tx("Profil"), gated: true },
   ];

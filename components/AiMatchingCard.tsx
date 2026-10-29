@@ -74,7 +74,11 @@ export default function AiMatchingCard() {
           <Translated text={t.ai.badge} className="ai-shimmer-text" />
         </span>
 
-        <h3 className="relative mt-5 text-xl font-semibold text-zinc-50 uppercase sm:text-2xl">
+        <h3
+          className={`relative mt-5 font-semibold text-zinc-50 uppercase sm:text-2xl sm:leading-normal sm:whitespace-normal ${
+            language === "ta" ? "text-xl" : language === "en" ? "text-[15.05cqw] leading-none whitespace-nowrap" : "text-[14.6cqw] leading-none whitespace-nowrap"
+          }`}
+        >
           <span className="sm:hidden">
             <Translated text={t.ai.headingMobile ?? t.ai.heading} />
           </span>
