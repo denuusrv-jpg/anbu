@@ -100,14 +100,14 @@ export default function SlideToSend({
       <div
         aria-hidden
         className="absolute top-1 left-1 rounded-full bg-gradient-to-r from-gold/70 to-gold-light"
-        style={{ height: THUMB, width: `${dragX + THUMB}px`, transition }}
+        style={{ height: THUMB, width: status === "sending" ? "calc(100% - 8px)" : `${dragX + THUMB}px`, transition }}
       />
 
       {/* Beschriftung */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center pr-3 pl-[64px]">
+      <div className={`pointer-events-none absolute inset-0 flex items-center justify-center pr-3 ${status === "sending" ? "pl-3" : "pl-[64px]"}`}>
         {status === "sending" ? (
-          <span className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-950/30 border-t-zinc-950" />
+          <span className="flex items-center justify-center gap-2 text-sm font-semibold text-zinc-950">
+            <CheckIcon className="h-5 w-5 shrink-0" />
             {sendingLabel}
           </span>
         ) : field ? (
@@ -142,13 +142,12 @@ export default function SlideToSend({
           transform: `translateX(${dragX}px)`,
           transition,
           cursor: disabled ? "not-allowed" : status === "dragging" ? "grabbing" : "grab",
-          opacity: disabled && field ? 0.55 : 1,
+          opacity: status === "sending" ? 0 : disabled && field ? 0.55 : 1,
+          pointerEvents: status === "sending" ? "none" : undefined,
           WebkitTapHighlightColor: "transparent",
         }}
       >
-        {status === "sending" ? (
-          <CheckIcon className="h-5 w-5" />
-        ) : (
+        {status === "sending" ? null : (
           <svg viewBox="0 0 24 24" className="pointer-events-none h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>

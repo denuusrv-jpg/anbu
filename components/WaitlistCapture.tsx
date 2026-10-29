@@ -228,7 +228,7 @@ export default function WaitlistCapture() {
               </>
             }
           />
-          <p className="mt-2 text-center text-xs text-zinc-400">{tx("E-Mail eintragen und nach rechts schieben")}</p>
+          {status === "idle" && <p className="mt-2 text-center text-xs text-zinc-400">{tx("E-Mail eintragen und nach rechts schieben")}</p>}
         </div>
       )}
       {error && (
