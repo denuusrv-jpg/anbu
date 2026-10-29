@@ -16,12 +16,15 @@ export default function Sheet({
   title,
   children,
   tone = "default",
+  hideTitle = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   tone?: "default" | "danger";
+  /** Titel nur für Screenreader, nicht sichtbar */
+  hideTitle?: boolean;
 }) {
   const tx = useTx();
   const titleId = useId();
@@ -91,8 +94,8 @@ export default function Sheet({
             }`}
           >
             <div className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-white/20 sm:hidden" />
-            <div className="flex items-center justify-between gap-4 px-6 pt-4 pb-2">
-              <h2 id={titleId} className={`text-lg font-semibold ${tone === "danger" ? "text-rose" : "text-zinc-50"}`}>
+            <div className={`flex items-center gap-4 px-6 pt-4 pb-2 ${hideTitle ? "justify-end" : "justify-between"}`}>
+              <h2 id={titleId} className={hideTitle ? "sr-only" : `text-lg font-semibold ${tone === "danger" ? "text-rose" : "text-zinc-50"}`}>
                 {title}
               </h2>
               <button

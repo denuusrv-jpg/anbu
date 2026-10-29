@@ -236,9 +236,9 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
   return (
     <>
       {/* Kopfleiste (Handy): Sprache links, Logo mittig, Menü rechts */}
-      <header className="absolute inset-x-0 top-4 z-30 flex items-center justify-between rounded-[28px] border border-white/20 bg-white/10 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_14px_40px_-18px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+      <header className="absolute inset-x-0 top-3 z-30 flex h-[52px] items-center justify-between rounded-full border border-white/20 bg-white/[0.09] px-2 backdrop-blur-2xl">
         <LanguageButton iconOnly />
-        <Image src="/logo-orange.png" alt="DSpora Community" width={1548} height={454} priority className="h-10 w-auto" />
+        <Image src="/logo-orange.png" alt="DSpora Community" width={1548} height={454} priority className="h-9 w-auto" />
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -247,8 +247,8 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
           aria-label={tx("Menü")}
           className="flex h-11 w-11 items-center justify-center rounded-full text-white/90 transition-colors hover:text-gold"
         >
-          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden>
-            <path d="M4 7h16M4 12h16M4 17h16" />
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden>
+            <path d="M4 8h16M4 16h16" />
           </svg>
         </button>
       </header>

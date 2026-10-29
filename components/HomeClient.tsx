@@ -9,7 +9,6 @@ import HubsAndCrews from "@/components/HubsAndCrews";
 import AiMatchingCard from "@/components/AiMatchingCard";
 import SignUpCta from "@/components/SignUpCta";
 import Translated from "@/components/Translated";
-import EmphasizedText from "@/components/EmphasizedText";
 import { useLanguage } from "@/lib/LanguageContext";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
@@ -49,8 +48,8 @@ export default function HomeClient() {
     const update = () => {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
-      // Handy: der Verlauf geht von Rot über Orange in Schwarz; am Desktop bleibt es bei der Welle
-      html.style.background = inHero ? (mobile ? "#09090b" : "#a21c4f") : "#09090b";
+      // Handy: der Verlauf geht von Rot bis Orange; am Desktop bleibt es bei der Welle
+      html.style.background = inHero ? (mobile ? "#f2701a" : "#a21c4f") : "#09090b";
       meta?.setAttribute("content", inHero ? (mobile ? "#8a1630" : "#86195a") : "#09090b");
     };
     update();
@@ -74,7 +73,7 @@ export default function HomeClient() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section
-            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center touch:justify-start touch:pt-40 touch:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center touch:justify-start touch:pt-36 touch:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
             {/* Logo und Navigation. Handy: Kopfleiste mit Sprache, Logo und Menü (Logo hier ausgeblendet) */}
             <div className="mb-12 flex flex-col touch:mb-0">
@@ -91,7 +90,7 @@ export default function HomeClient() {
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase touch:text-[clamp(2.1rem,11vw,3.3rem)] touch:leading-[1.04] touch:font-black touch:text-[#fff3e8] touch:[text-shadow:0_2px_30px_rgba(255,190,140,0.35)]">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase touch:text-[clamp(2.1rem,13.3vw,4.4rem)] touch:leading-[1.02] touch:font-black touch:text-[#fff3e8] touch:[text-shadow:0_2px_30px_rgba(255,190,140,0.35)]">
               <Translated text={t.hero.heading[0]} />
               {/* Am Handy nur die erste Zeile */}
               <span className="touch:hidden">
@@ -103,10 +102,10 @@ export default function HomeClient() {
             <p
               className={`mx-auto mt-5 text-base leading-relaxed text-white touch:mt-6 touch:text-[1rem] touch:leading-snug touch:hyphens-auto touch:text-justify touch:text-orange-50/90 touch:[text-shadow:0_1px_10px_rgba(60,10,10,0.35)] sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
             >
-              <EmphasizedText text={t.hero.description} />
+              <Translated text={t.hero.description} />
             </p>
 
-            <div className="touch:mt-16">
+            <div className="touch:mt-32">
             <WaitlistForm />
             </div>
           </section>

@@ -31,10 +31,10 @@ export default function LanguageButton({ onChange, iconOnly = false }: { onChang
             : "inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-2 text-sm font-medium text-zinc-100 backdrop-blur-md transition-colors hover:border-gold/50"
         }
       >
-        <GlobeIcon className={iconOnly ? "h-7 w-7" : "h-4 w-4 text-gold"} />
+        <GlobeIcon className={iconOnly ? "h-6 w-6" : "h-4 w-4 text-gold"} />
         {!iconOnly && <span lang={current.id}>{current.label}</span>}
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="Language · Sprache · மொழி">
+      <Sheet open={open} onClose={() => setOpen(false)} title="Language · Sprache · மொழி" hideTitle>
         <div className="grid gap-3" role="radiogroup" aria-label="Language / Sprache / மொழி">
           {OPTIONS.map((o) => {
             const on = o.id === language;
