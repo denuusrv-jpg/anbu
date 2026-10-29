@@ -267,36 +267,45 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
               >
-                <div className="flex items-center justify-between">
-                  <Image src="/logo-orange.png" alt="DSpora" width={1548} height={454} className="h-9 w-auto" />
-                  <button type="button" onClick={() => setOpen(false)} className={pill} aria-label={tx("Schließen")}>
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+                    <Image src="/logo-orange.png" alt="DSpora Community" width={1548} height={454} className="h-14 w-auto" />
+                  </motion.div>
+
+                  <nav className="mt-12 flex flex-col items-center gap-7" aria-label={tx("Menü")}>
+                    {items.map((item, i) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 18 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.08 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <NavLink href={item.href}>
+                          <span
+                            onClick={(e) => choose(e, item.href)}
+                            className="block py-1 text-center text-[clamp(1.7rem,8vw,2.6rem)] leading-tight font-semibold tracking-wide text-white uppercase transition-colors hover:text-gold"
+                          >
+                            <Translated text={item.title} />
+                          </span>
+                        </NavLink>
+                      </motion.div>
+                    ))}
+                  </nav>
+
+                  <motion.button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label={tx("Schließen")}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.08 + items.length * 0.07, ease: [0.16, 1, 0.3, 1] }}
+                    className="mt-14 flex h-14 w-14 items-center justify-center rounded-full border border-white/30 text-white transition-colors hover:border-gold hover:text-gold"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden>
                       <path d="M6 6l12 12M18 6L6 18" />
                     </svg>
-                    {tx("Schließen")}
-                  </button>
+                  </motion.button>
                 </div>
-
-                <nav className="flex flex-1 flex-col items-center justify-center gap-7" aria-label={tx("Menü")}>
-                  {items.map((item, i) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.08 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
-                    >
-                      <NavLink href={item.href}>
-                        <span
-                          onClick={(e) => choose(e, item.href)}
-                          className="block py-1 text-center text-[clamp(1.9rem,9vw,2.9rem)] leading-tight font-semibold text-white transition-colors hover:text-gold"
-                        >
-                          <Translated text={item.title} />
-                        </span>
-                      </NavLink>
-                    </motion.div>
-                  ))}
-                </nav>
-
               </motion.div>
             )}
           </AnimatePresence>,
