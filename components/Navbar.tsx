@@ -236,9 +236,12 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
   return (
     <>
       {/* Kopfleiste (Handy): Sprache links, Logo mittig, Menü rechts */}
-      <header className="absolute inset-x-0 top-3 z-30 flex h-[52px] items-center justify-between rounded-full border border-white/20 bg-white/[0.09] px-2 backdrop-blur-2xl">
+      <header className="absolute inset-x-0 top-3 z-30 flex h-[58px] items-center justify-between rounded-full border border-white/20 bg-white/[0.09] px-2 backdrop-blur-2xl">
         <LanguageButton iconOnly />
-        <Image src="/logo-outline.png" alt="DSpora Community" width={1548} height={454} priority className="h-10 w-auto" />
+        <div className="flex flex-col items-center">
+          <Image src="/logo-wordmark-outline.png" alt="DSpora" width={1520} height={321} priority className="h-7 w-auto" />
+          <span className="mt-1.5 text-[9px] leading-none font-medium tracking-[0.4em] text-white uppercase">Community</span>
+        </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -269,7 +272,7 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
               >
                 <div className="flex flex-1 flex-col items-center justify-center">
                   <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-                    <Image src="/logo-outline.png" alt="DSpora Community" width={1548} height={454} className="h-16 w-auto" />
+                    <Image src="/logo-wordmark-outline.png" alt="DSpora" width={1520} height={321} className="h-14 w-auto" />
                   </motion.div>
 
                   <nav className="mt-12 flex flex-col items-center gap-7" aria-label={tx("Menü")}>
