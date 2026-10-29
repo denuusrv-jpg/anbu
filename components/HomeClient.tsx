@@ -48,8 +48,8 @@ export default function HomeClient() {
     const update = () => {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
-      // Handy: der Verlauf geht von Rot bis Orange; am Desktop bleibt es bei der Welle
-      html.style.background = inHero ? (mobile ? "#f2701a" : "#a21c4f") : "#09090b";
+      // Handy: der Verlauf geht von Rot über Orange in Schwarz; am Desktop bleibt es bei der Welle
+      html.style.background = inHero ? (mobile ? "#09090b" : "#a21c4f") : "#09090b";
       meta?.setAttribute("content", inHero ? (mobile ? "#8a1630" : "#86195a") : "#09090b");
     };
     update();
@@ -73,7 +73,7 @@ export default function HomeClient() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section
-            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center max-sm:justify-start max-sm:pt-6 max-sm:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
             {/* Logo und Menü: am Handy steht das Menü oben, das Logo darunter */}
             <div className="mb-12 flex flex-col max-sm:flex-col-reverse">
@@ -90,7 +90,7 @@ export default function HomeClient() {
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase max-sm:font-black">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase max-sm:font-black max-sm:text-white">
               <Translated text={t.hero.heading[0]} />
               {/* Am Handy nur die erste Zeile */}
               <span className="max-sm:hidden">
@@ -100,7 +100,7 @@ export default function HomeClient() {
             </h1>
 
             <p
-              className={`mx-auto mt-5 text-base leading-relaxed text-white max-sm:hyphens-auto max-sm:text-justify max-sm:text-zinc-300 max-sm:[text-shadow:0_1px_8px_rgba(0,0,0,0.3)] sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
+              className={`mx-auto mt-5 text-base leading-relaxed text-white max-sm:hyphens-auto max-sm:text-justify max-sm:text-black sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
             >
               <Translated text={t.hero.description} />
             </p>
