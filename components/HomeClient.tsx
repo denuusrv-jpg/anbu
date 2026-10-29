@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import Navbar from "@/components/Navbar";
@@ -24,6 +24,15 @@ export default function HomeClient() {
   const { t, language } = useLanguage();
   const isTamil = language === "ta";
   const heroRef = useRef<HTMLDivElement>(null);
+  // Handy und Touch: fester Farbverlauf statt der bewegten Welle (keine Pulse, keine wechselnden Farben)
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px), (pointer: coarse)");
+    const set = () => setMobile(mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, []);
 
   // Handy: Solange der Hero-Bereich den Bildschirm füllt, sind auch Statusleiste, Browser-Leisten und der Bereich
   // dahinter in seiner Farbe (statt schwarz). Erst wenn man nach unten scrollt, wird alles dunkel.
@@ -39,8 +48,9 @@ export default function HomeClient() {
     const update = () => {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
-      html.style.background = inHero ? "#a21c4f" : "#09090b";
-      meta?.setAttribute("content", inHero ? "#86195a" : "#09090b");
+      // Handy: oben beginnt der Verlauf schwarz und endet in warmem Orange; am Desktop bleibt es bei der Welle
+      html.style.background = inHero ? (mobile ? "#f08a24" : "#a21c4f") : "#09090b";
+      meta?.setAttribute("content", inHero ? (mobile ? "#09090b" : "#86195a") : "#09090b");
     };
     update();
     window.addEventListener("scroll", update, { passive: true });
@@ -50,15 +60,15 @@ export default function HomeClient() {
       html.style.background = previousHtml;
       if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
     };
-  }, []);
+  }, [mobile]);
 
   return (
     <main className="min-h-[100dvh] bg-zinc-950">
       <div
         ref={heroRef}
-        className="relative isolate flex min-h-[100lvh] flex-col overflow-hidden bg-gradient-to-b from-[#86195a] to-[#c52a3c] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+        className="hero-bg relative isolate flex min-h-[100lvh] flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       >
-        <FlowingWaveBackground />
+        {!mobile && <FlowingWaveBackground />}
 
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
