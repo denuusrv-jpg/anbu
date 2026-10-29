@@ -325,3 +325,10 @@ input::-webkit-credentials-auto-fill-button {
     );
   }
 }
+
+/* Handy: Platz unter dem Inhalt für die untere Navigationsleiste */
+@media (max-width: 639px) {
+  html.has-tabbar body {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+}

@@ -1,21 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChatIcon, CheckIcon, GlobeIcon, ShieldIcon } from "@/components/Icons";
 import SlideToSend from "@/components/SlideToSend";
 
-type Topic = "allgemein" | "presse" | "sicherheit";
+type Topic = "allgemein" | "events" | "presse" | "sicherheit";
 type Status = "idle" | "success";
 
 const topics: { id: Topic; label: string; Icon: typeof ChatIcon }[] = [
   { id: "allgemein", label: "Allgemeine Frage", Icon: ChatIcon },
+  { id: "events", label: "Event beantragen", Icon: CheckIcon },
   { id: "presse", label: "Presse & Partnerschaften", Icon: GlobeIcon },
   { id: "sicherheit", label: "Sicherheit & Support", Icon: ShieldIcon },
 ];
 
 export default function ContactForm() {
   const [topic, setTopic] = useState<Topic>("allgemein");
+
+  // Aus dem Bereich "Events" kommt man mit vorgewähltem Thema hierher
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("thema") === "events") setTopic("events");
+  }, []);
   const [status, setStatus] = useState<Status>("idle");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

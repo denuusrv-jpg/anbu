@@ -119,6 +119,7 @@ export default function HubDashboard({
   unreadCount = 0,
   isAdmin,
   preview = false,
+  view,
   wishes: initialWishes,
   userId,
   avatar = null,
@@ -135,6 +136,8 @@ export default function HubDashboard({
   isAdmin: boolean;
   /** Admin-Vorschau: zeigt alles wie live, schreibt aber nichts und ruft nichts auf */
   preview?: boolean;
+  /** Handy: "ki" zeigt den KI-Check, "profil" die Profilseite; ohne Angabe (und am Desktop) steht alles auf einer Seite */
+  view?: "ki" | "profil";
   wishes: HubWish[];
 }) {
   const router = useRouter();
@@ -595,6 +598,8 @@ export default function HubDashboard({
   ];
 
   const card = "rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7";
+  // Am Handy gehört jeder Abschnitt zu genau einer Ansicht, am Desktop bleibt alles sichtbar
+  const only = (belongs: "ki" | "profil") => (view && view !== belongs ? "hidden sm:block" : "");
 
   return (
     <main className="relative isolate min-h-screen bg-zinc-950 px-5 py-10 sm:px-8 sm:py-14">
@@ -603,13 +608,13 @@ export default function HubDashboard({
         {/* Kopf */}
         <header className="space-y-4 sm:flex sm:items-start sm:justify-between sm:gap-6 sm:space-y-0">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-gold uppercase">{tx("DSpora Profil")}</p>
+            <p className="text-xs font-semibold tracking-wide text-gold uppercase">{view === "ki" ? tx("KI-Check") : tx("DSpora Profil")}</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-50 sm:text-3xl">
               {name ? tx("Hey {name}", { name }) : tx("Willkommen")}
             </h1>
             <p className="mt-0.5 truncate text-sm text-zinc-300">{email}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
+          <div className={`flex-wrap items-center gap-2.5 sm:flex sm:justify-end ${view === "ki" ? "hidden" : "flex"}`}>
             <LanguageButton onChange={saveLanguage} />
             {isAdmin && (
               <Link
@@ -629,12 +634,36 @@ export default function HubDashboard({
           </div>
         </header>
 
+        {/* Handy, KI-Check: das Gespräch mit der KI steht ganz oben */}
+        {view === "ki" && (
+          <motion.section
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="relative overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-br from-[#6b1233]/80 via-zinc-950/80 to-zinc-950/80 p-5 backdrop-blur-md sm:hidden"
+          >
+            <div className="pointer-events-none absolute -top-14 -right-14 h-44 w-44 rounded-full glow-gold" />
+            <div className="relative">
+              <h2 className="text-lg font-semibold text-zinc-50">{tx("Mit der KI sprechen")}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-zinc-200">
+                {tx("Erzähl der KI jederzeit Neues über dich, damit deine Matches noch besser passen.")}
+              </p>
+              <Link
+                href={preview ? "#" : "/onboarding?talk=1"}
+                className="cta-premium mt-4 inline-flex items-center rounded-full bg-gradient-to-b from-gold-light to-gold px-6 py-2.5 text-sm font-semibold text-zinc-950"
+              >
+                {tx("Gespräch starten")}
+              </Link>
+            </div>
+          </motion.section>
+        )}
+
         {/* Matching-Status */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className={`${card} relative overflow-hidden`}
+          className={`${card} relative overflow-hidden ${only("ki")}`}
         >
           <motion.div
             className="pointer-events-none absolute -top-16 -right-16 h-52 w-52 rounded-full glow-gold"
@@ -694,7 +723,9 @@ export default function HubDashboard({
 
         {/* Profilseite (Instagram-Stil) */}
         {userId && (
+          <div className={only("profil")}>
           <ProfileEditor
+            variant={view === "profil" ? "instagram" : "classic"}
             userId={userId}
             visibility={profile.visibility}
             track={businessOn ? "business" : "community"}
@@ -710,6 +741,7 @@ export default function HubDashboard({
               hobbies: profile.profile?.hobbies ?? [],
             }}
           />
+          </div>
         )}
 
         {/* Profil verwalten */}
@@ -717,7 +749,7 @@ export default function HubDashboard({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.08 }}
-          className={card}
+          className={`${card} ${only("ki")}`}
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Profil")}</h2>
 
@@ -1054,7 +1086,7 @@ export default function HubDashboard({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.09 }}
-          className={card}
+          className={`${card} ${view ? "hidden sm:block" : ""}`}
         >
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1088,7 +1120,7 @@ export default function HubDashboard({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
-          className={card}
+          className={`${card} ${only("ki")}`}
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Dein Steckbrief")}</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
@@ -1235,7 +1267,7 @@ export default function HubDashboard({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE, delay: 0.12 }}
-          className={card}
+          className={`${card} ${only("profil")}`}
         >
           <h2 className="text-lg font-semibold text-zinc-50">{tx("Deine Ideen für DSpora")}</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
@@ -1284,7 +1316,7 @@ export default function HubDashboard({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: EASE, delay: 0.16 }}
-            className={card}
+            className={`${card} ${only("profil")}`}
           >
             <h2 className="text-lg font-semibold text-zinc-50">{tx("Schneller anmelden")}</h2>
             <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">
@@ -1326,7 +1358,7 @@ export default function HubDashboard({
         )}
 
         {/* Benachrichtigungen */}
-        <section className={card}>
+        <section className={`${card} ${only("profil")}`}>
           <h2 className="text-sm font-semibold text-zinc-100">{tx("Benachrichtigungen")}</h2>
           <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
             <input
@@ -1343,7 +1375,7 @@ export default function HubDashboard({
         </section>
 
         {/* Konto löschen: Pop-up mit Warnung, danach Bestätigung per E-Mail */}
-        <section className="rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7">
+        <section className={`rounded-3xl border border-white/10 bg-zinc-950/75 p-5 backdrop-blur-md sm:p-7 ${only("profil")}`}>
           <h2 className="text-sm font-semibold text-zinc-100">{tx("Konto löschen")}</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-zinc-300">
             {tx("Du kannst dein Konto und alle Daten jederzeit löschen. Zur Sicherheit bestätigst du das noch einmal per E-Mail.")}
@@ -1405,7 +1437,7 @@ export default function HubDashboard({
           )}
         </Sheet>
 
-        <footer className="flex items-center justify-between px-1 pt-2 text-xs text-white/70">
+        <footer className={`items-center justify-between px-1 pt-2 text-xs text-white/70 ${view === "ki" ? "hidden sm:flex" : "flex"}`}>
           <Link href="/onboarding" className="transition-colors hover:text-white">
             {tx("Chat erneut durchspielen")}
           </Link>

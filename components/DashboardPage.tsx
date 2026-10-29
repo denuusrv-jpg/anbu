@@ -1,0 +1,90 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import ConsentGate from "@/components/ConsentGate";
+import NoProfile from "@/components/NoProfile";
+import { isFirstLogin } from "@/lib/firstLogin";
+import { hasConsent } from "@/lib/consent";
+import HubDashboard, { type HubProfile, type HubWish } from "@/components/HubDashboard";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getServerClient } from "@/lib/supabase/server";
+import { getServiceClient, isServiceRoleConfigured } from "@/lib/supabase/admin";
+import { isAdminRequest } from "@/lib/requireAdmin";
+import { listRooms } from "@/lib/chatRooms";
+import { avatarUrl, loadPosts, type PostView } from "@/lib/profileMedia";
+import { ALL_HUBS, labelOf } from "@/lib/onboarding";
+
+// Gemeinsame Seite für KI-Check (/dashboard) und Profil (/dashboard/profil): Am Handy zeigt jede nur ihren Teil.
+export default async function DashboardPage({ view, path }: { view: "ki" | "profil"; path: string }) {
+  if (!isSupabaseConfigured) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-6 py-16 text-center">
+        <div className="max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+          <h1 className="text-xl font-semibold text-zinc-50">Dein Hub kommt bald</h1>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+            Die Anmeldung wird gerade eingerichtet. Danach findest du hier deinen persönlichen Bereich.
+          </p>
+          <Link href="/" className="mt-6 inline-block text-sm text-zinc-400 hover:text-white">
+            ← Zurück zur Startseite
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  const supabase = await getServerClient();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) redirect(`/login?next=${path}`);
+  if (!hasConsent(auth.user)) return <ConsentGate />;
+
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("region, city, interests, vibes, mode, profile, status, deleted_at, track, friends_active, business_active, business, visibility, group_size, second_region, gender, match_gender, extras, age, age_min, age_max, meet_mode, travel_minutes, languages, life_phase, meet_frequency, notify_matches, has_avatar, ui_language")
+    .eq("user_id", auth.user.id)
+    .maybeSingle();
+  if (!profile) {
+    // Nur direkt nach der Registrierung geht es automatisch in den Fragenkatalog, danach immer ins Profil
+    if (isFirstLogin(auth.user)) redirect("/onboarding");
+    return <NoProfile email={auth.user.email ?? ""} />;
+  }
+  // Gelöschtes Konto (Soft-Delete): kein Zugriff mehr, solange die Frist läuft
+  if (profile.deleted_at) {
+    await supabase.auth.signOut();
+    redirect("/");
+  }
+
+  // Alles Weitere gleichzeitig laden (statt nacheinander): schnellerer Seitenaufbau
+  const service = isServiceRoleConfigured();
+  const db = service ? getServiceClient() : null;
+  const [wishesResult, roomsResult, avatar, posts, isAdmin] = await Promise.all([
+    // Eigene eingereichte Ideen (die RLS-Regeln zeigen nur die eigenen)
+    supabase.from("user_wishes").select("id, wish, created_at").order("created_at", { ascending: false }).limit(20),
+    // Aktive Chats (höchstens 4) und ungelesene Nachrichten
+    db ? listRooms(db, auth.user.id) : Promise.resolve(null),
+    // Profilbild und Beiträge (kurzlebige Links)
+    db && (profile as { has_avatar?: boolean }).has_avatar ? avatarUrl(db, auth.user.id) : Promise.resolve(null),
+    db ? loadPosts(db, auth.user.id) : Promise.resolve([] as PostView[]),
+    isAdminRequest(),
+  ]);
+  const wishes = wishesResult.data;
+  // Die Zahl der Anmeldungen im Hub wird bewusst nicht angezeigt
+  const hubs: { id: string; label: string; count: number }[] | null = null;
+  const rooms = roomsResult?.rooms ?? [];
+  const matchCount = rooms.filter((r) => !r.dissolved).length;
+  const unreadCount = rooms.reduce((sum, r) => sum + r.unread, 0);
+
+  return (
+    <HubDashboard
+      view={view}
+      userId={auth.user.id}
+      avatar={avatar}
+      posts={posts}
+      email={auth.user.email ?? ""}
+      profile={profile as unknown as HubProfile}
+      hubs={hubs}
+      matchCount={matchCount}
+      unreadCount={unreadCount}
+      isAdmin={isAdmin}
+      wishes={(wishes ?? []) as HubWish[]}
+    />
+  );
+}

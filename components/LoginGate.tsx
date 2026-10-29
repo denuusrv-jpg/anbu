@@ -10,10 +10,15 @@ export const OPEN_LOGIN_EVENT = "dspora:open-login";
 // Globales Anmelde-Fenster: öffnet sich über das Event (Klick auf "Anmelden").
 export default function LoginGate() {
   const [open, setOpen] = useState(false);
+  const [next, setNext] = useState("/dashboard");
   useScrollLock(open);
 
   useEffect(() => {
-    const openGate = () => setOpen(true);
+    const openGate = (e: Event) => {
+      const target = (e as CustomEvent<{ next?: string } | undefined>).detail?.next;
+      setNext(target && target.startsWith("/") && !target.startsWith("//") ? target : "/dashboard");
+      setOpen(true);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
@@ -48,7 +53,7 @@ export default function LoginGate() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm"
           >
-            <LoginCard next="/dashboard" />
+            <LoginCard next={next} />
           </motion.div>
         </motion.div>
       )}

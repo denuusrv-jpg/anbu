@@ -58,7 +58,7 @@ export default function PageTransition({
       const anchor = (e.target as Element | null)?.closest?.("a[href]");
       if (!(anchor instanceof HTMLAnchorElement)) return;
       if (anchor.target && anchor.target !== "_self") return;
-      if (anchor.hasAttribute("download")) return;
+      if (anchor.hasAttribute("download") || anchor.hasAttribute("data-no-transition")) return;
 
       const url = new URL(anchor.href, window.location.href);
       if (url.origin !== window.location.origin) return;

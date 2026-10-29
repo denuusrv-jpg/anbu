@@ -5,6 +5,7 @@ import { LanguageProvider } from "@/lib/LanguageContext";
 import PageTransition from "@/components/PageTransition";
 import AdminGate from "@/components/AdminGate";
 import LoginGate from "@/components/LoginGate";
+import MobileTabBar from "@/components/MobileTabBar";
 import ErrorReporter from "@/components/ErrorReporter";
 
 // Tamil-Schrift: wird nur genutzt, wenn die Sprache Tamil gewählt ist (siehe globals.css), damit sie auf allen Geräten gleich aussieht
@@ -36,6 +37,7 @@ export default function RootLayout({
           <PageTransition>{children}</PageTransition>
           <AdminGate />
           <LoginGate />
+          <MobileTabBar />
           <ErrorReporter />
         </LanguageProvider>
       </body>
