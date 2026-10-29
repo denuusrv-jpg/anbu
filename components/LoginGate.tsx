@@ -53,7 +53,7 @@ export default function LoginGate() {
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm"
           >
-            <LoginCard next={next} />
+            <LoginCard next={next} onBack={() => setOpen(false)} />
           </motion.div>
         </motion.div>
       )}

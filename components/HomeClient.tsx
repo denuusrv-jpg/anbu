@@ -25,6 +25,7 @@ export default function HomeClient() {
   const { t, language } = useLanguage();
   const isTamil = language === "ta";
   const heroRef = useRef<HTMLDivElement>(null);
+  const [edgeHero, setEdgeHero] = useState(true);
   // Handy und Touch: fester Farbverlauf statt der bewegten Welle (keine Pulse, keine wechselnden Farben)
   const [mobile, setMobile] = useState(false);
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function HomeClient() {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
       // Handy: der Verlauf geht von Rot bis Orange; am Desktop bleibt es bei der Welle
-      html.style.background = inHero ? (mobile ? "#f2701a" : "#a21c4f") : "#09090b";
+      html.style.background = inHero ? (mobile ? "#8a1630" : "#a21c4f") : "#09090b";
+      setEdgeHero(inHero);
       meta?.setAttribute("content", inHero ? (mobile ? "#8a1630" : "#86195a") : "#09090b");
     };
     update();
@@ -65,6 +67,22 @@ export default function HomeClient() {
 
   return (
     <main className="min-h-[100dvh] bg-zinc-950">
+      {/* iPhone-Safari färbt die obere und untere Leiste nach festen Elementen am Bildschirmrand (Verläufe erkennt er nicht):
+          oben die Farbe, mit der der Verlauf beginnt, unten die, mit der er endet. Unsichtbar hinter dem Hero. */}
+      {mobile && (
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[max(env(safe-area-inset-top),24px)]"
+            style={{ background: edgeHero ? "#8a1630" : "#09090b" }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[max(env(safe-area-inset-bottom),24px)]"
+            style={{ background: edgeHero ? "#f2701a" : "#09090b" }}
+          />
+        </>
+      )}
       <div
         ref={heroRef}
         className="hero-bg relative isolate flex min-h-[100lvh] flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
@@ -91,7 +109,7 @@ export default function HomeClient() {
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase touch:text-[clamp(2.1rem,13.3vw,4.4rem)] touch:leading-[1.02] touch:font-black touch:text-[#fff3e8] touch:[text-shadow:0_2px_30px_rgba(255,190,140,0.35)]">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase touch:-mx-3 touch:text-[clamp(2.2rem,13.7vw,4.5rem)] touch:leading-[1.02] touch:font-black touch:text-[#fff3e8] touch:[text-shadow:0_2px_30px_rgba(255,190,140,0.35)]">
               <Translated text={t.hero.heading[0]} />
               {/* Am Handy nur die erste Zeile */}
               <span className="touch:hidden">

@@ -114,15 +114,36 @@ export default function MobileTabBar() {
   }, []);
 
   // Platz unter dem Inhalt, damit nichts hinter der Leiste verschwindet (siehe globals.css)
+  // Startseite: Nach dem Hero-Bereich klappt die Leiste ein und kommt erst am Hero wieder
+  const [pastHero, setPastHero] = useState(false);
   useEffect(() => {
-    document.documentElement.classList.toggle("has-tabbar", visible);
+    if (path !== "/") {
+      setPastHero(false);
+      return;
+    }
+    const update = () => {
+      const hero = document.querySelector(".hero-bg");
+      setPastHero(hero ? hero.getBoundingClientRect().bottom < window.innerHeight * 0.4 : false);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [path]);
+
+  useEffect(() => {
+    // Auf der Startseite liegt die Leiste nur über dem Hero: dort braucht der Inhalt keinen Platz darunter
+    document.documentElement.classList.toggle("has-tabbar", visible && path !== "/");
     return () => document.documentElement.classList.remove("has-tabbar");
-  }, [visible]);
+  }, [visible, path]);
 
   if (!visible) return null;
 
   const tabs: { id: TabId; href: string; label: string; gated: boolean }[] = [
-    { id: "home", href: "/", label: tx("Startseite"), gated: false },
+    { id: "home", href: "/", label: "Home", gated: false },
     { id: "events", href: "/events", label: tx("Events"), gated: true },
     { id: "ki", href: "/dashboard", label: tx("KI-Check"), gated: true },
     { id: "chats", href: "/dashboard/chats", label: tx("Chats"), gated: true },
@@ -147,9 +168,12 @@ export default function MobileTabBar() {
   return (
     <nav
       aria-label="Hauptnavigation"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] sm:hidden"
+      aria-hidden={pastHero}
+      className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),12px)] transition-[transform,opacity] duration-300 ease-out sm:hidden ${
+        pastHero ? "translate-y-[140%] opacity-0" : "translate-y-0 opacity-100"
+      }`}
     >
-      <div className="pointer-events-auto relative mx-auto grid h-[66px] max-w-md grid-cols-[1fr_1fr_88px_1fr_1fr] rounded-full border border-white/70 bg-white/95 shadow-[0_12px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+      <div className={`relative mx-auto grid h-[66px] max-w-md grid-cols-[1fr_1fr_88px_1fr_1fr] rounded-2xl border border-white/70 bg-white/95 px-1.5 shadow-[0_12px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl ${pastHero ? "pointer-events-none" : "pointer-events-auto"}`}>
         {tabs.map((tab) => {
           if (tab.id === "ki") {
             return (

@@ -20,9 +20,12 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export default function LoginCard({
   next = "/dashboard",
   notice,
+  onBack,
 }: {
   next?: string;
   notice?: string;
+  /** Im Anmelde-Fenster: schließt das Fenster, statt zur Startseite zu springen */
+  onBack?: () => void;
 }) {
   const tx = useTx();
   const router = useRouter();
@@ -258,6 +261,12 @@ export default function LoginCard({
     </div>
     <Link
       href="/"
+      onClick={(e) => {
+        if (!onBack) return;
+        e.preventDefault();
+        onBack();
+      }}
+      {...(onBack ? { "data-no-transition": "" } : {})}
       className="mt-8 inline-flex items-center justify-center rounded-full border border-white/15 bg-white/[0.07] px-5 py-2.5 text-sm font-medium text-zinc-100 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-white"
     >
       {tx("← Zurück zur Startseite")}
