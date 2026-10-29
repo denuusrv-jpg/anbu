@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useTx } from "@/lib/LanguageContext";
+import LanguageButton from "@/components/LanguageButton";
 import { useScrollLock } from "@/lib/useScrollLock";
 import { useLanguage } from "@/lib/LanguageContext";
 import { Language, languages } from "@/lib/translations";
@@ -205,11 +206,8 @@ function LanguageSwitcher({ isDesktop }: { isDesktop: boolean }) {
   );
 }
 
-const NATIVE_LANGUAGE_LABELS: Record<Language, string> = { de: "Deutsch", ta: "தமிழ்", en: "English" };
-
 function MobileMenu({ items }: { items: { id: string; title: string; href: string }[] }) {
   const tx = useTx();
-  const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   useScrollLock(open);
@@ -237,15 +235,23 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-expanded={open} className={`${pill} relative z-30 mx-auto shadow-lg shadow-black/30`}>
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
-          <rect x="3" y="3" width="8" height="8" rx="2" />
-          <rect x="13" y="3" width="8" height="8" rx="2" />
-          <rect x="3" y="13" width="8" height="8" rx="2" />
-          <rect x="13" y="13" width="8" height="8" rx="2" />
-        </svg>
-        {tx("Menü")}
-      </button>
+      {/* Kopfleiste (Handy): Sprache links, Logo mittig, Menü rechts */}
+      <header className="absolute inset-x-0 top-4 z-30 flex items-center justify-between rounded-[28px] border border-white/20 bg-white/10 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_14px_40px_-18px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+        <LanguageButton iconOnly />
+        <Image src="/logo-orange.png" alt="DSpora Community" width={1548} height={454} priority className="h-10 w-auto" />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={tx("Menü")}
+          className="flex h-11 w-11 items-center justify-center rounded-full text-white/90 transition-colors hover:text-gold"
+        >
+          <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden>
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </header>
 
       {mounted &&
         createPortal(
@@ -291,26 +297,6 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
                   ))}
                 </nav>
 
-                <div className="flex items-center justify-center gap-2" role="radiogroup" aria-label="Language / Sprache / மொழி">
-                  {languages.map((lang) => {
-                    const on = lang === language;
-                    return (
-                      <button
-                        key={lang}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        lang={lang}
-                        onClick={() => setLanguage(lang)}
-                        className={`rounded-full border px-5 py-2.5 text-base font-medium transition-colors ${
-                          on ? "border-gold/70 bg-gold/15 text-gold" : "border-white/15 text-zinc-200 hover:border-gold/50"
-                        }`}
-                      >
-                        {NATIVE_LANGUAGE_LABELS[lang]}
-                      </button>
-                    );
-                  })}
-                </div>
               </motion.div>
             )}
           </AnimatePresence>,

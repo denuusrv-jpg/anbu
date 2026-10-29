@@ -9,6 +9,7 @@ import HubsAndCrews from "@/components/HubsAndCrews";
 import AiMatchingCard from "@/components/AiMatchingCard";
 import SignUpCta from "@/components/SignUpCta";
 import Translated from "@/components/Translated";
+import EmphasizedText from "@/components/EmphasizedText";
 import { useLanguage } from "@/lib/LanguageContext";
 import { ChatIcon, ShieldIcon, UsersIcon } from "@/components/Icons";
 import Image from "next/image";
@@ -73,11 +74,11 @@ export default function HomeClient() {
         {/* Hero — takes the full first screen */}
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 sm:px-8">
           <section
-            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center max-sm:justify-start max-sm:pt-6 max-sm:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
+            className={`relative mx-auto flex w-full flex-1 flex-col justify-center py-16 text-center touch:justify-start touch:pt-40 touch:pb-10 ${isTamil ? "max-w-4xl" : "max-w-3xl"}`}
           >
-            {/* Logo und Menü: am Handy steht das Menü oben, das Logo darunter */}
-            <div className="mb-12 flex flex-col max-sm:flex-col-reverse">
-              <div className="mb-6 flex justify-center max-sm:mt-8 max-sm:mb-0">
+            {/* Logo und Navigation. Handy: Kopfleiste mit Sprache, Logo und Menü (Logo hier ausgeblendet) */}
+            <div className="mb-12 flex flex-col touch:mb-0">
+              <div className="mb-6 flex justify-center touch:hidden">
                 <Image
                   src="/logo-orange.png"
                   alt="DSpora Community"
@@ -90,22 +91,24 @@ export default function HomeClient() {
               <Navbar />
             </div>
 
-            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase max-sm:font-black max-sm:text-white">
+            <h1 className="text-[clamp(1.25rem,calc(7.76vw_-_5px),3rem)] leading-tight font-bold tracking-tight text-black uppercase touch:text-[clamp(2.1rem,11vw,3.3rem)] touch:leading-[1.04] touch:font-black touch:text-[#fff3e8] touch:[text-shadow:0_2px_30px_rgba(255,190,140,0.35)]">
               <Translated text={t.hero.heading[0]} />
               {/* Am Handy nur die erste Zeile */}
-              <span className="max-sm:hidden">
+              <span className="touch:hidden">
                 <br />
                 <Translated text={t.hero.heading[1]} />
               </span>
             </h1>
 
             <p
-              className={`mx-auto mt-5 text-base leading-relaxed text-white max-sm:hyphens-auto max-sm:text-justify max-sm:text-black sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
+              className={`mx-auto mt-5 text-base leading-relaxed text-white touch:mt-6 touch:text-[1rem] touch:leading-snug touch:hyphens-auto touch:text-justify touch:text-orange-50/90 touch:[text-shadow:0_1px_10px_rgba(60,10,10,0.35)] sm:text-lg ${isTamil ? "max-w-3xl" : "max-w-lg"}`}
             >
-              <Translated text={t.hero.description} />
+              <EmphasizedText text={t.hero.description} />
             </p>
 
+            <div className="touch:mt-16">
             <WaitlistForm />
+            </div>
           </section>
         </div>
       </div>

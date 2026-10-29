@@ -4,6 +4,10 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      screens: {
+        // Handy und Touch-Geräte (gleiche Bedingung wie die Navigation im Code): "touch:" gilt nur dort
+        touch: { raw: "(max-width: 639px), (pointer: coarse)" },
+      },
       colors: {
         // Warmes Gold – Akzentfarbe für die Marke allgemein
         gold: {
