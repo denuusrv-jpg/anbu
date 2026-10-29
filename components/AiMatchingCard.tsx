@@ -60,7 +60,7 @@ export default function AiMatchingCard() {
       </motion.div>
 
       <motion.div
-        className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center backdrop-blur-xl [container-type:inline-size] sm:px-12"
+        className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/[0.07] px-6 py-10 text-center backdrop-blur-xl [container-type:inline-size] sm:border-white/10 sm:bg-white/5 sm:px-12"
         variants={cardVariant}
       >
         {/* Dezentes Leuchten */}

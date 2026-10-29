@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 const vertexShader = /* glsl */ `
@@ -142,11 +142,21 @@ function WavePlane({ pulses }: { pulses: boolean }) {
 // fixed=true: Hintergrund bleibt beim Scrollen stehen (lange Seiten)
 // pulses=false: derselbe Hintergrund ohne die pulsierenden Verbindungs-Impulse (z. B. hinter dem Chat)
 export default function FlowingWaveBackground({ pulses = true, fixed = false }: { pulses?: boolean; fixed?: boolean }) {
-  // Seiten mit diesem Hintergrund (Profil, Chat, Fragenkatalog): Statusleiste und Fläche hinter den Browser-Leisten
-  // in der Weinrot-Farbe des Hintergrunds statt Schwarz. Die Startseite (pulses) regelt das über ihre eigene Theme-Color.
+  // Handy und Touch: kein bewegter Hintergrund, sondern der feste Verlauf der Startseite (Dunkelrot oben, Orange unten)
+  const [mobile, setMobile] = useState<boolean | null>(null);
   useEffect(() => {
-    if (pulses) return;
-    const color = "#4a1630";
+    const mq = window.matchMedia("(max-width: 639px), (pointer: coarse)");
+    const set = () => setMobile(mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, []);
+
+  // Seiten mit diesem Hintergrund (Profil, Chat, Fragenkatalog): Statusleiste und Fläche hinter den Browser-Leisten
+  // in der Farbe des Hintergrunds statt Schwarz. Die Startseite (pulses) regelt das über ihre eigene Theme-Color.
+  useEffect(() => {
+    if (pulses || mobile === null) return;
+    const color = mobile ? "#8a1630" : "#4a1630";
     const meta = document.querySelector('meta[name="theme-color"]');
     const html = document.documentElement;
     const previousMeta = meta?.getAttribute("content") ?? null;
@@ -161,7 +171,19 @@ export default function FlowingWaveBackground({ pulses = true, fixed = false }: 
       if (meta && previousMeta !== null) meta.setAttribute("content", previousMeta);
       html.style.background = previousBackground;
     };
-  }, [pulses]);
+  }, [pulses, mobile]);
+
+  if (mobile === null) return null;
+  if (mobile) {
+    return (
+      <>
+        <div aria-hidden className="hero-bg pointer-events-none fixed inset-0 -z-10" />
+        {/* Wie auf der Startseite: feste Streifen am Rand, damit Safari die Leisten oben und unten passend färbt */}
+        <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[max(env(safe-area-inset-top),24px)] bg-[#8a1630]" />
+        <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[max(env(safe-area-inset-bottom),24px)] bg-[#f2701a]" />
+      </>
+    );
+  }
 
   return (
     <div className={`pointer-events-none ${fixed ? "fixed" : "absolute"} inset-0 -z-10 overflow-hidden`}>
