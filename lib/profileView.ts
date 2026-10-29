@@ -10,6 +10,8 @@ import type { Choice } from "@/lib/onboarding";
 //  - "Privat": nur Profilbild und Spitzname, und nur für Personen, die mit ihr in einem Chat sind oder gematcht wurden
 export type ProfilePageData = {
   state: "self" | "full" | "limited";
+  /** Die eigene Profilseite (Vorschau: zeigt, was andere sehen) */
+  self?: boolean;
   userId: string;
   displayName: string;
   avatar: string | null;
@@ -71,7 +73,8 @@ export async function loadProfilePage(db: SupabaseClient, viewerId: string, targ
     posts: await loadPosts(db, row.user_id),
   });
 
-  if (viewerId === targetId) return full("self");
+  // Die eigene Ansicht zeigt, was andere sehen: ein privates Profil nur mit Profilbild und Spitzname
+  if (viewerId === targetId) return row.visibility === "stealth" ? { ...limited, self: true } : full("self");
 
   const { data: me } = await db.from("user_profiles").select("track, business_active, deleted_at").eq("user_id", viewerId).maybeSingle();
   const viewer = me as { track: string; business_active: boolean | null; deleted_at: string | null } | null;

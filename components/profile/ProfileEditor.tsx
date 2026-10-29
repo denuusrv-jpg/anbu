@@ -366,9 +366,9 @@ export default function ProfileEditor({
             onClick={() => (avatar ? setSheet("avatar") : avatarInput.current?.click())}
             disabled={busy === "avatar"}
             aria-label={tx("Profilbild ändern")}
-            className="relative h-[88px] w-[88px] shrink-0 rounded-full bg-gradient-to-tr from-gold via-rose to-gold p-[3px] disabled:opacity-60"
+            className="relative h-[88px] w-[88px] shrink-0 rounded-3xl bg-gradient-to-tr from-gold via-rose to-gold p-[3px] disabled:opacity-60"
           >
-            <span className="block h-full w-full overflow-hidden rounded-full border-2 border-zinc-950 bg-zinc-900">
+            <span className="block h-full w-full overflow-hidden rounded-[1.25rem] border-2 border-zinc-950 bg-zinc-900">
               {avatar ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatar} alt={tx("Dein Profilbild")} className="h-full w-full object-cover" />
@@ -376,7 +376,7 @@ export default function ProfileEditor({
                 <span className="flex h-full w-full items-center justify-center text-3xl font-bold text-gold/80">{initial}</span>
               )}
             </span>
-            <span aria-hidden className="absolute -right-0.5 -bottom-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-zinc-950 bg-gold text-lg leading-none font-semibold text-zinc-950">
+            <span aria-hidden className="absolute -right-1 -bottom-1 flex h-7 w-7 items-center justify-center rounded-lg border-2 border-zinc-950 bg-gold text-lg leading-none font-semibold text-zinc-950">
               {busy === "avatar" ? "…" : "+"}
             </span>
           </button>
@@ -439,19 +439,6 @@ export default function ProfileEditor({
         {/* Beiträge im Raster */}
         <div className="mt-5 border-t border-white/10 pt-4">
           <div className="grid grid-cols-3 gap-1">
-            {posts.length < MAX_POSTS && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMessage("");
-                  setSheet("post");
-                }}
-                aria-label={tx("Neuen Beitrag erstellen")}
-                className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-white/25 bg-white/[0.04] text-3xl text-gold transition-colors active:bg-white/10"
-              >
-                +
-              </button>
-            )}
             {posts.map((p) => (
               <div key={p.id} className="relative aspect-square overflow-hidden rounded-lg bg-zinc-900">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -467,6 +454,19 @@ export default function ProfileEditor({
                 </button>
               </div>
             ))}
+            {posts.length < MAX_POSTS && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMessage("");
+                  setSheet("post");
+                }}
+                aria-label={tx("Neuen Beitrag erstellen")}
+                className="flex aspect-square items-center justify-center rounded-lg border border-dashed border-white/25 bg-white/[0.04] text-3xl text-gold transition-colors active:bg-white/10"
+              >
+                +
+              </button>
+            )}
           </div>
           {posts.length === 0 && <p className="mt-3 text-center text-xs text-zinc-400">{tx("Du kannst bis zu 6 Beiträge mit je einem Bild zeigen.")}</p>}
         </div>

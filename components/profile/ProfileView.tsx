@@ -22,7 +22,7 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
       <FlowingWaveBackground pulses={false} fixed />
       <div className="mx-auto max-w-2xl space-y-5">
         <Link
-          href="/dashboard"
+          href={data.self || data.state === "self" ? "/dashboard/profil" : "/dashboard"}
           className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-5 py-3 text-base font-semibold text-zinc-50 backdrop-blur-md transition-colors hover:border-gold/50 hover:text-gold"
         >
           <span aria-hidden className="text-xl leading-none">←</span>
@@ -43,20 +43,14 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
               <h1 className="truncate text-2xl font-bold text-zinc-50 sm:text-3xl">{data.displayName}</h1>
               {data.realName && <p className="mt-0.5 text-sm text-zinc-300">{data.realName}</p>}
               {meta && <p className="mt-0.5 text-xs text-zinc-400">{meta}</p>}
-              {data.state === "self" && (
-                <Link
-                  href="/dashboard"
-                  className="mt-3 inline-flex items-center rounded-full border border-gold/40 bg-gold/10 px-5 py-2.5 text-sm font-semibold text-gold transition-colors hover:bg-gold/20"
-                >
-                  {tx("Profil bearbeiten")}
-                </Link>
-              )}
             </div>
           </div>
 
           {data.state === "limited" ? (
             <p className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-zinc-300">
-              {tx("Dieses Profil ist privat. Mehr als Profilbild und Spitzname siehst du nicht.")}
+              {data.self
+                ? tx("Dein Profil ist privat. Andere sehen nur dein Profilbild und deinen Spitznamen.")
+                : tx("Dieses Profil ist privat. Mehr als Profilbild und Spitzname siehst du nicht.")}
             </p>
           ) : (
             <>
