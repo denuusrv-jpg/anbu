@@ -177,7 +177,12 @@ export default function FlowingWaveBackground({ pulses = true, fixed = false }: 
   if (mobile) {
     return (
       <>
-        <div aria-hidden className="hero-bg pointer-events-none fixed inset-0 -z-10" />
+        {/* Der Verlauf beginnt genau unter dem oberen und endet genau über dem unteren Streifen: so gibt es keine sichtbare Kante */}
+        <div
+          aria-hidden
+          className="hero-bg pointer-events-none fixed inset-x-0 -z-10"
+          style={{ top: "max(env(safe-area-inset-top), 24px)", bottom: "max(env(safe-area-inset-bottom), 24px)" }}
+        />
         {/* Wie auf der Startseite: feste Streifen am Rand, damit Safari die Leisten oben und unten passend färbt */}
         <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[max(env(safe-area-inset-top),24px)] bg-[#8a1630]" />
         <div aria-hidden className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 h-[max(env(safe-area-inset-bottom),24px)] bg-[#f2701a]" />
