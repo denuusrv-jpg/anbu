@@ -48,9 +48,9 @@ export default function HomeClient() {
     const update = () => {
       const hero = heroRef.current;
       const inHero = hero ? window.scrollY < hero.offsetHeight * 0.6 : true;
-      // Handy: oben beginnt der Verlauf schwarz und endet in Orange; am Desktop bleibt es bei der Welle
+      // Handy: der Verlauf geht von Rot bis Orange; am Desktop bleibt es bei der Welle
       html.style.background = inHero ? (mobile ? "#f2701a" : "#a21c4f") : "#09090b";
-      meta?.setAttribute("content", inHero ? (mobile ? "#09090b" : "#86195a") : "#09090b");
+      meta?.setAttribute("content", inHero ? (mobile ? "#8a1630" : "#86195a") : "#09090b");
     };
     update();
     window.addEventListener("scroll", update, { passive: true });
