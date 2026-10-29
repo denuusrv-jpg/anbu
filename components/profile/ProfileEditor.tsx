@@ -91,11 +91,11 @@ export default function ProfileEditor({
     const word = hobbyDraft.trim();
     if (!word) return;
     if (!CUSTOM_PATTERN.test(word)) {
-      setMessage(tx("Hobby: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen."));
+      setMessage(tx("Interesse: 2 bis 30 Zeichen, nur Buchstaben, Zahlen und einfache Zeichen."));
       return;
     }
     if (form.hobbies.length >= MAX_HOBBIES) {
-      setMessage(tx("Höchstens {n} Hobbys.", { n: MAX_HOBBIES }));
+      setMessage(tx("Höchstens {n} Interessen.", { n: MAX_HOBBIES }));
       return;
     }
     if (form.hobbies.some((h) => h.toLowerCase() === word.toLowerCase())) {
@@ -228,7 +228,7 @@ export default function ProfileEditor({
             <textarea id="pf-bio" value={form.bio} rows={3} onChange={(e) => setForm({ ...form, bio: e.target.value.slice(0, 300) })} placeholder={tx("Ein paar Sätze über dich …")} className={`${fieldClass} mt-1.5 resize-none`} />
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-200">{tx("Hobbys")}</p>
+            <p className="text-sm font-medium text-zinc-200">{tx("Interessen")}</p>
             <div className="mt-1.5 flex gap-2">
               <input
                 value={hobbyDraft}
@@ -240,8 +240,8 @@ export default function ProfileEditor({
                     addHobby();
                   }
                 }}
-                placeholder={tx("Hobby eintippen, Enter")}
-                aria-label={tx("Hobby hinzufügen")}
+                placeholder={tx("Interesse eintippen, Enter")}
+                aria-label={tx("Interesse hinzufügen")}
                 className={fieldClass}
               />
               <button type="button" onClick={addHobby} className={pill}>
@@ -401,11 +401,15 @@ export default function ProfileEditor({
           </p>
           {form.hobbies.length > 0 && (
             <span className="mt-2 flex flex-wrap gap-1.5">
-              {form.hobbies.map((h) => (
+              {/* Im Profil nur ein paar, die ganze Auswahl steht in der Profil-Ansicht */}
+              {form.hobbies.slice(0, 3).map((h) => (
                 <span key={h} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-zinc-300">
                   {h}
                 </span>
               ))}
+              {form.hobbies.length > 3 && (
+                <span className="rounded-full border border-gold/30 bg-gold/10 px-2.5 py-1 text-xs font-semibold text-gold">+{form.hobbies.length - 3}</span>
+              )}
             </span>
           )}
         </button>
@@ -518,7 +522,7 @@ export default function ProfileEditor({
         </ChipRow>
         <p className="mt-2 text-xs leading-relaxed text-zinc-400">
           {visibility === "public"
-            ? tx("Alle angemeldeten Mitglieder sehen Name, Alter, Text, Hobbys und Beiträge.")
+            ? tx("Alle angemeldeten Mitglieder sehen Name, Alter, Text, Interessen und Beiträge.")
             : visibility === "business"
               ? tx("Business-Mitglieder sehen alles, alle anderen nur Profilbild und Spitzname.")
               : tx("Nur Profilbild und Spitzname sind sichtbar, und nur für Leute, mit denen du in einem Chat bist.")}

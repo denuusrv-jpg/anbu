@@ -107,7 +107,7 @@ export default function Slider({
   return (
     <div role="group" aria-roledescription="carousel" aria-label={label}>
       {/* Punkte direkt unter der Überschrift des Bereichs, nicht unter den Slides */}
-      <div className="mb-3 flex items-center justify-center sm:hidden">
+      <div className={`mb-3 items-center justify-center sm:hidden ${count > 1 ? "flex" : "hidden"}`}>
         {slides.map((_, i) => (
           <button
             key={i}

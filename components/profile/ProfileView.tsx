@@ -5,11 +5,18 @@ import Link from "next/link";
 import { useState } from "react";
 import FlowingWaveBackground from "@/components/FlowingWaveBackground";
 import PostCarousel from "@/components/profile/PostCarousel";
+import Slider from "@/components/Slider";
 import { INTERESTS, choiceLabels } from "@/lib/onboarding";
 import type { ProfilePageData } from "@/lib/profileView";
 
 // Profilseite im Instagram-Stil: Profilbild (eckig), Spitzname, Alter, Text, Hobbys und bis zu 6 Beiträge mit Slides.
 // Private Profile zeigen nur Profilbild und Spitzname.
+function chunk<T>(list: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
+  return out;
+}
+
 export default function ProfileView({ data }: { data: ProfilePageData }) {
   const tx = useTx();
   const [open, setOpen] = useState<string | null>(null);
@@ -56,12 +63,24 @@ export default function ProfileView({ data }: { data: ProfilePageData }) {
             <>
               {data.bio && <p className="mt-5 text-sm leading-relaxed whitespace-pre-line text-zinc-200">{data.bio}</p>}
               {(data.hobbies.length > 0 || interests.length > 0) && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {[...data.hobbies, ...interests.filter((i) => data.hobbies.indexOf(i) < 0)].map((h) => (
-                    <span key={h} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
-                      {h}
-                    </span>
-                  ))}
+                <div className="mt-5">
+                  {/* Handy: größere Badges im Slider (vier pro Seite), am Desktop wie bisher als Reihe */}
+                  <Slider
+                    label={tx("Interessen")}
+                    desktopClassName="sm:flex sm:flex-wrap sm:gap-2"
+                    slides={chunk([...data.hobbies, ...interests.filter((i) => data.hobbies.indexOf(i) < 0)], 4).map((group, i) => (
+                      <div key={i} className="grid grid-cols-2 gap-2 sm:contents">
+                        {group.map((h) => (
+                          <span
+                            key={h}
+                            className="flex min-h-14 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center text-sm font-medium text-zinc-100 sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1 sm:text-xs sm:font-normal sm:text-zinc-300"
+                          >
+                            {h}
+                          </span>
+                        ))}
+                      </div>
+                    ))}
+                  />
                 </div>
               )}
             </>
