@@ -238,10 +238,7 @@ function MobileMenu({ items }: { items: { id: string; title: string; href: strin
       {/* Kopfleiste (Handy): Sprache links, Logo mittig, Menü rechts */}
       <header className="absolute inset-x-0 top-3 z-30 flex h-[58px] items-center justify-between rounded-full border border-white/20 bg-white/[0.09] px-2 backdrop-blur-2xl">
         <LanguageButton iconOnly />
-        <div className="flex flex-col items-center">
-          <Image src="/logo-wordmark-outline.png" alt="DSpora" width={1520} height={321} priority className="h-7 w-auto" />
-          <span className="mt-1.5 text-[9px] leading-none font-medium tracking-[0.4em] text-white uppercase">Community</span>
-        </div>
+        <Image src="/logo-wordmark-white.png" alt="DSpora" width={1520} height={321} priority className="h-9 w-auto" />
         <button
           type="button"
           onClick={() => setOpen(true)}
